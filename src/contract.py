@@ -22,8 +22,18 @@ NOT_VISIBLE = np.zeros(OBS_DIM, dtype=np.float32)
 ACTION_FIELDS = ("right", "forward", "up", "yaw_cw")
 ACTION_DIM = len(ACTION_FIELDS)
 
-# The policy sees the last 3 observations and its own last 2 actions.
-OBS_STACK = 3
+# The policy sees a strided window of past observations and its own last 2
+# actions. OBS_LAGS holds the lags in control steps, oldest first, so the newest
+# frame stays last and frames[-1] still means "now".
+#
+# The hoop leaves the frame about 0.40 m out, and the drone needs about 0.5 m to
+# carry its body through. At 0.2 m/s that is 25 steps at 10 Hz, so the window
+# spans 24 lags. Close lags give velocity, far lags hold the last sighting
+# through the blind final approach. Striding covers 2.5 s with 9 frames instead
+# of 25, which keeps POLICY_INPUT_DIM at 71 rather than 183.
+OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
+OBS_STACK = len(OBS_LAGS)
+FRAME_HISTORY = max(OBS_LAGS) + 1
 ACTION_HISTORY = 2
 POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM
 

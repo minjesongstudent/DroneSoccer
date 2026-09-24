@@ -140,7 +140,8 @@ class HoopEnv(gym.Env):
         self.yaw_rate = 0.0
         self.steps = 0
         self._pending = deque([_ZERO_ACTION] * self.drone.delay_steps)
-        self._frames = deque([self.observe()] * contract.OBS_STACK, maxlen=contract.OBS_STACK)
+        self._frames = deque([self.observe()] * contract.FRAME_HISTORY,
+                             maxlen=contract.FRAME_HISTORY)
         self._actions = deque([_ZERO_ACTION] * contract.ACTION_HISTORY, maxlen=contract.ACTION_HISTORY)
         return self._policy_input()
 
@@ -241,7 +242,10 @@ class HoopEnv(gym.Env):
         return np.stack([rel @ right, rel @ down, rel @ optical], axis=1)
 
     def _policy_input(self):
-        return np.concatenate([*self._frames, *self._actions]).astype(np.float32)
+        # _frames holds every step. OBS_LAGS picks the strided subset, oldest
+        # first, so the newest frame lands last.
+        frames = [self._frames[-1 - lag] for lag in contract.OBS_LAGS]
+        return np.concatenate([*frames, *self._actions]).astype(np.float32)
 
     def _info(self, outcome):
         return {"outcome": outcome, "drone_pos": self.pos.copy(), "heading": self.heading,
