@@ -1,6 +1,6 @@
 """Train SAC on the hoop simulator.
 
-Run: python -m src.train --steps 200000 --name sac
+Run: python -m src.train --steps 500000 --name sac
 Watch: tensorboard --logdir runs   (rollout/pass_rate is the number that matters)
 
 Saves runs/<name>/model.zip, then evaluates it against the baseline on the
@@ -67,7 +67,7 @@ def train(steps: int, name: str, seed: int) -> Path:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--steps", type=int, default=200_000)
+    parser.add_argument("--steps", type=int, default=500_000)
     parser.add_argument("--name", default="sac")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--eval-episodes", type=int, default=500)

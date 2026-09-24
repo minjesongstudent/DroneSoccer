@@ -7,7 +7,7 @@ set -euo pipefail
 
 NAME=${1:?usage: run_seeds.sh <name> <n_seeds> [steps]}
 SEEDS=${2:?usage: run_seeds.sh <name> <n_seeds> [steps]}
-STEPS=${3:-200000}
+STEPS=${3:-500000}
 
 # Each run gets one core; without this PyTorch grabs every core in every run.
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
