@@ -1,0 +1,6 @@
+gymnasium
+numpy
+opencv-python
+stable-baselines3
+djitellopy
+pytest
