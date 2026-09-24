@@ -13,7 +13,11 @@ cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
 PY=.venv/bin/python
 JOB=hpc/job.pbs
-NAME_DEFAULT=sac
+LAST=runs/.last-name
+
+# The name of the most recent submission, so status and progress follow the run
+# you actually started rather than whatever came before it.
+name_default() { cat "$LAST" 2>/dev/null || echo sac; }
 
 if [ -t 1 ]; then
   B=$'\033[1m'; D=$'\033[2m'; R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; N=$'\033[0m'
@@ -47,12 +51,14 @@ walltime_min() {
 # One row per running job: id, name, state, elapsed.
 job_rows() {
   command -v qstat >/dev/null 2>&1 || return 1
-  qstat -u "$USER" 2>/dev/null | grep -E '^[0-9]+\.' | awk '{print $1, $4, $10, $11}'
+  # -w stops the id and name being truncated with a trailing *, which qstat -f
+  # rejects as an illegally formed job identifier.
+  qstat -u "$USER" -w 2>/dev/null | grep -E '^[0-9]+\.' | awk '{print $1, $4, $10, $11}'
 }
 
 # Highest eta across the last progress line of every seed log, in minutes.
 max_eta_min() {
-  local name=${1:-$NAME_DEFAULT}
+  local name=${1:-$(name_default)}
   local log line eta best=''
   for log in runs/"${name}"_s*.log; do
     [ -e "$log" ] || return 1
@@ -79,7 +85,7 @@ cmd_setup() {
 
 cmd_run() {  # local or interactive training
   need_venv
-  local seeds=${1:-5} steps=${2:-500000} name=${3:-$NAME_DEFAULT}
+  local seeds=${1:-5} steps=${2:-500000} name=${3:-sac}
   bash hpc/run_seeds.sh "$name" "$seeds" "$steps"
 }
 
@@ -95,8 +101,14 @@ walltime_for() {
 cmd_submit() {
   need_qsub
   have_venv || warn "no .venv on this machine. The job fails unless you ran ./ds setup here."
-  local seeds=${1:-4} steps=${2:-2000000} name=${3:-$NAME_DEFAULT} wall
+  local seeds=${1:-4} steps=${2:-2000000} name=${3:-sac} wall
   wall=$(walltime_for "$steps")
+  # Two runs under one name put their logs in one glob, and nothing downstream
+  # can separate them again.
+  if compgen -G "runs/${name}_s*.log" >/dev/null; then
+    warn "runs/${name}_s*.log already exists. Pick a new name, or the logs mix."
+  fi
+  mkdir -p runs && printf '%s\n' "$name" > "$LAST"
   # -l and -N on the command line beat the #PBS lines in the job file, so the
   # walltime always matches the step count. ncpus must cover one core per seed.
   qsub -N "hoop-$name" \
@@ -108,12 +120,12 @@ cmd_submit() {
 }
 
 cmd_progress() {
-  bash hpc/progress.sh "${1:-$NAME_DEFAULT}"
+  bash hpc/progress.sh "${1:-$(name_default)}"
 }
 
 cmd_logs() {
   local seed=${1:-0}
-  local name=${2:-$NAME_DEFAULT}
+  local name=${2:-$(name_default)}
   local log="runs/${name}_s${seed}.log"
   [ -e "$log" ] || die "no log at $log"
   tail -f "$log"
@@ -148,12 +160,12 @@ cmd_status() {
   fi
 
   printf '\n%sprogress%s\n' "$B" "$N"
-  if bash hpc/progress.sh "${1:-$NAME_DEFAULT}" 2>/dev/null | sed 's/^/  /'; then :; else
+  if bash hpc/progress.sh "${1:-$(name_default)}" 2>/dev/null | sed 's/^/  /'; then :; else
     printf '  %sno logs yet%s\n' "$D" "$N"
   fi
 
   # Compare the slowest seed against the walltime left, and say so plainly.
-  if eta=$(max_eta_min "${1:-$NAME_DEFAULT}") && total=$(walltime_min); then
+  if eta=$(max_eta_min "${1:-$(name_default)}") && total=$(walltime_min); then
     elapsed_min=0
     if rows=$(job_rows) && [ -n "$rows" ]; then
       IFS=: read -r h m <<<"$(awk 'NR==1{print $4}' <<<"$rows")"
