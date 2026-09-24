@@ -76,10 +76,28 @@ cmd_run() {  # local or interactive training
   bash hpc/run_seeds.sh "$name" "$seeds" "$steps"
 }
 
+# Wall minutes one seed needs, plus a quarter. Seeds run in parallel on their
+# own core, so the count does not change the wall time. 86 steps/s is measured.
+walltime_for() {
+  local steps=$1 mins
+  mins=$(( steps * 125 / (86 * 60 * 100) ))
+  [ "$mins" -lt 30 ] && mins=30
+  printf '%02d:%02d:00' $(( mins / 60 )) $(( mins % 60 ))
+}
+
 cmd_submit() {
   need_qsub
   have_venv || warn "no .venv on this machine. The job fails unless you ran ./ds setup here."
-  qsub "$JOB"
+  local seeds=${1:-4} steps=${2:-2000000} name=${3:-$NAME_DEFAULT} wall
+  wall=$(walltime_for "$steps")
+  # -l and -N on the command line beat the #PBS lines in the job file, so the
+  # walltime always matches the step count. ncpus must cover one core per seed.
+  qsub -N "hoop-$name" \
+       -l "ncpus=${seeds},mem=16GB,walltime=${wall}" \
+       -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
+       "$JOB"
+  printf '%s%s seeds, %s steps, walltime %s, logs runs/%s_s*.log%s\n' \
+    "$D" "$seeds" "$steps" "$wall" "$name" "$N"
 }
 
 cmd_progress() {
@@ -162,7 +180,7 @@ banner() {
 
   ${B}setup${N}     build .venv, once per machine
   ${B}run${N}       train here: ./ds run [seeds] [steps]
-  ${B}submit${N}    qsub $JOB
+  ${B}submit${N}    qsub a job: ./ds submit [seeds] [steps] [name]
   ${B}status${N}    jobs, progress and walltime headroom
   ${B}progress${N}  one line per seed
   ${B}logs${N}      follow a seed: ./ds logs [seed]

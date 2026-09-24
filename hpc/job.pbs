@@ -1,22 +1,20 @@
 #!/bin/bash
-# Train 4 seeds in parallel on one node. Submit from the repo root:
-#   qsub hpc/job.pbs
-# Check with `qstat -u $USER`. Output lands in runs/ and hoop-sac3.o<jobid>.
-# Progress of every seed: `bash hpc/progress.sh sac3` (every 10k steps).
-# ncpus must be at least the number of seeds below. Outputs are a few MB,
-# so they stay in home rather than /scratch.
+# Train N seeds in parallel on one node. Submit from the repo root:
+#   ./ds submit [seeds] [steps] [name]
+# ds sets DS_SEEDS, DS_STEPS and DS_NAME, and computes the walltime from the
+# step count, so the -l and -N lines below are only defaults for a bare qsub.
+# Check with `./ds status <name>`. Output lands in runs/ and hoop-<name>.o<jobid>.
+# Outputs are a few MB, so they stay in home rather than /scratch.
 #
-# 3M steps at the measured 86 steps/s takes about 9.7 hours, so walltime
-# carries about 25% margin. The first run broke through at 400k steps on one
-# seed of five, which 500k steps was too short to exploit.
-#
-# The name is sac3 because the reward changed in 0ff7b7a. Runs under sac2 used
-# axial progress, so their logs do not compare with these.
+# One seed runs at about 86 steps/s on one core, so 2M steps takes about
+# 6.5 hours. Seeds run in parallel, so the count does not change the walltime.
+# The first run broke through at 400k steps on one seed of five, which 500k
+# steps was too short to exploit.
 
-#PBS -N hoop-sac3
+#PBS -N hoop-sac
 #PBS -l ncpus=4
 #PBS -l mem=16GB
-#PBS -l walltime=12:00:00
+#PBS -l walltime=08:00:00
 #PBS -j oe
 
 # Uncomment to get an email when the job aborts, begins or ends.
@@ -24,4 +22,4 @@
 ##PBS -M your.email@student.uts.edu.au
 
 cd ${PBS_O_WORKDIR}
-bash hpc/run_seeds.sh sac3 4 3000000
+bash hpc/run_seeds.sh "${DS_NAME:-sac}" "${DS_SEEDS:-4}" "${DS_STEPS:-2000000}"
