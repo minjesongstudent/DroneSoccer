@@ -1,5 +1,5 @@
 #!/bin/bash
-# Train 8 seeds in parallel on one node. Submit from the repo root:
+# Train 5 seeds in parallel on one node. Submit from the repo root:
 #   qsub hpc/job.pbs
 # Check with `qstat -u $USER`; output lands in runs/ and hoop-sac.o<jobid>.
 # Progress of every seed: `bash hpc/progress.sh` (one line per seed, every 10k steps).
@@ -7,9 +7,9 @@
 # so they stay in home rather than /scratch.
 
 #PBS -N hoop-sac
-#PBS -l ncpus=8
+#PBS -l ncpus=5
 #PBS -l mem=16GB
-#PBS -l walltime=02:00:00
+#PBS -l walltime=05:00:00
 #PBS -j oe
 
 # Uncomment to get an email when the job aborts, begins or ends.
@@ -17,4 +17,4 @@
 ##PBS -M your.email@student.uts.edu.au
 
 cd ${PBS_O_WORKDIR}
-bash hpc/run_seeds.sh sac 8
+bash hpc/run_seeds.sh sac 5
