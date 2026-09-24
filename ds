@@ -168,8 +168,12 @@ cmd_status() {
   if eta=$(max_eta_min "${1:-$(name_default)}") && total=$(walltime_min); then
     elapsed_min=0
     if rows=$(job_rows) && [ -n "$rows" ]; then
-      IFS=: read -r h m <<<"$(awk 'NR==1{print $4}' <<<"$rows")"
-      [ -n "${m:-}" ] && elapsed_min=$(( 10#$h * 60 + 10#$m ))
+      # qstat prints HH:MM, qstat -w prints HH:MM:SS. Read three fields either
+      # way, or the seconds land in $m and the arithmetic sees "11:10".
+      IFS=: read -r h m _ <<<"$(awk 'NR==1{print $4}' <<<"$rows")"
+      if [[ ${h:-} =~ ^[0-9]+$ && ${m:-} =~ ^[0-9]+$ ]]; then
+        elapsed_min=$(( 10#$h * 60 + 10#$m ))
+      fi
     fi
     remaining=$(( total - elapsed_min ))
     printf '\n%swalltime%s\n' "$B" "$N"
