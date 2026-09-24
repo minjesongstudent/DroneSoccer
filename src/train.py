@@ -9,6 +9,7 @@ same episodes.
 from __future__ import annotations
 
 import argparse
+import time
 from collections import deque
 from pathlib import Path
 
@@ -26,28 +27,40 @@ RUNS = ROOT / "runs"
 
 
 class PassRate(BaseCallback):
-    """Logs the pass rate over the last 100 training episodes."""
+    """Logs the pass rate over the last 100 training episodes, and prints a
+    one-line progress report every `every` steps."""
 
-    def __init__(self):
+    def __init__(self, total: int, every: int = 10_000):
         super().__init__()
         self.recent = deque(maxlen=100)
+        self.total, self.every = total, every
+
+    def _on_training_start(self) -> None:
+        self.start = time.time()
 
     def _on_step(self) -> bool:
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
             if done:
                 self.recent.append(info["outcome"] == "passed")
                 self.logger.record("rollout/pass_rate", float(np.mean(self.recent)))
+        if self.num_timesteps % self.every == 0:
+            elapsed = time.time() - self.start
+            eta = elapsed / self.num_timesteps * (self.total - self.num_timesteps)
+            rate = f"{np.mean(self.recent):.0%}" if self.recent else "-"
+            print(f"progress {self.num_timesteps:>7}/{self.total} "
+                  f"({self.num_timesteps / self.total:.0%})  pass_rate {rate}  "
+                  f"elapsed {elapsed / 60:.0f}m  eta {eta / 60:.0f}m", flush=True)
         return True
 
 
 def train(steps: int, name: str, seed: int) -> Path:
     out = RUNS / name
     env = Monitor(HoopEnv())
-    model = SAC("MlpPolicy", env, seed=seed, device="cpu", verbose=1,
+    model = SAC("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
                 gamma=0.98,              # episodes are at most 150 steps
                 learning_starts=5_000,   # fill the buffer with random flying first
                 tensorboard_log=str(RUNS))
-    model.learn(total_timesteps=steps, callback=PassRate(), tb_log_name=name)
+    model.learn(total_timesteps=steps, callback=PassRate(steps), tb_log_name=name)
     model.save(out / "model")
     return out / "model.zip"
 
