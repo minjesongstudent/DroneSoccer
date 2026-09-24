@@ -31,15 +31,19 @@ MIN_ARC_FRACTION = 0.25
 
 # Reward weights. MISSED must outweigh the progress a drone can bank by flying
 # past the hoop instead of through it (up to 12 over a 1.2 m approach).
+# R_PROGRESS pays for closing the straight-line distance to the hoop centre, not
+# for closing the axial gap. Axial progress rated the rim and the centre alike,
+# so SAC charged the plane and hit. Distance to the centre falls fastest on the
+# line that passes through, which is the behaviour we want.
 PROGRESS_UNIT = 0.10           # metres
-R_PROGRESS = 1.0               # per PROGRESS_UNIT along the hoop's axis
+R_PROGRESS = 1.0               # per PROGRESS_UNIT closer to the hoop centre
 R_HIDDEN = 0.1                 # per step the hoop is not visible
 # Per step, so hovering until the timeout costs 7.5. Without it SAC learned to
 # stop short of the hoop and hover, which scored better than risking the pass.
 R_TIME = 0.05
 # left_cage is crossing the geofence, Cage.margin inside the net.
 # PASSED is well above HIT so that an attempt with even odds is worth making.
-R_TERMINAL = {"passed": 20.0, "hit": -10.0, "missed": -15.0, "left_cage": -10.0}
+R_TERMINAL = {"passed": 25.0, "hit": -10.0, "missed": -15.0, "left_cage": -10.0}
 
 _ZERO_ACTION = np.zeros(contract.ACTION_DIM, dtype=np.float32)
 
@@ -175,7 +179,8 @@ class HoopEnv(gym.Env):
         self._frames.append(obs)
         self._actions.append(action)
 
-        progress = float((self.pos - prev) @ self.hoop_normal)
+        progress = float(np.linalg.norm(prev - self.hoop_centre)
+                         - np.linalg.norm(self.pos - self.hoop_centre))
         reward = (R_PROGRESS * progress / PROGRESS_UNIT - R_HIDDEN * (1.0 - obs[6])
                   - R_TIME + R_TERMINAL.get(outcome, 0.0))
         terminated = outcome != "running"
