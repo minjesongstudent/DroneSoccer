@@ -33,10 +33,13 @@ MIN_ARC_FRACTION = 0.25
 # past the hoop instead of through it (up to 12 over a 1.2 m approach).
 PROGRESS_UNIT = 0.10           # metres
 R_PROGRESS = 1.0               # per PROGRESS_UNIT along the hoop's axis
-R_JERK = 0.05                  # times squared change in action
 R_HIDDEN = 0.1                 # per step the hoop is not visible
+# Per step, so hovering until the timeout costs 7.5. Without it SAC learned to
+# stop short of the hoop and hover, which scored better than risking the pass.
+R_TIME = 0.05
 # left_cage is crossing the geofence, Cage.margin inside the net.
-R_TERMINAL = {"passed": 10.0, "hit": -10.0, "missed": -15.0, "left_cage": -10.0}
+# PASSED is well above HIT so that an attempt with even odds is worth making.
+R_TERMINAL = {"passed": 20.0, "hit": -10.0, "missed": -15.0, "left_cage": -10.0}
 
 _ZERO_ACTION = np.zeros(contract.ACTION_DIM, dtype=np.float32)
 
@@ -168,13 +171,12 @@ class HoopEnv(gym.Env):
 
         outcome = self._outcome(prev)
         obs = self.observe()
-        jerk = float(np.sum((action - self._actions[-1]) ** 2))
         self._frames.append(obs)
         self._actions.append(action)
 
         progress = float((self.pos - prev) @ self.hoop_normal)
-        reward = (R_PROGRESS * progress / PROGRESS_UNIT - R_JERK * jerk - R_HIDDEN * (1.0 - obs[6])
-                  + R_TERMINAL.get(outcome, 0.0))
+        reward = (R_PROGRESS * progress / PROGRESS_UNIT - R_HIDDEN * (1.0 - obs[6])
+                  - R_TIME + R_TERMINAL.get(outcome, 0.0))
         terminated = outcome != "running"
         truncated = not terminated and self.steps >= MAX_STEPS
         if truncated:

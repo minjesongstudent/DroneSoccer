@@ -101,8 +101,8 @@ A Gymnasium environment producing the same seven numbers from geometry, renderin
   calibrated camera matrix, **drop points behind the camera or outside the image**, and fit
   with **the same `cv2.fitEllipse` call the detector uses**. The clipping matters: the real
   detector only sees the part of the hoop in frame.
-- **Reward:** mostly progress along the hoop's axis, through it. Small penalties for jerky
-  actions and for the hoop not being visible. Terminal bonus for passing through, penalty
+- **Reward:** mostly progress along the hoop's axis, through it. Small penalties per step
+  and for the hoop not being visible. Terminal bonus for passing through, penalty
   for hitting the hoop or leaving the cage. **Do not reward closeness to the hoop centre**,
   or the drone hovers at the hoop instead of flying through.
 - **Commands are body-frame**, so heading changes what "forward" means. Rotate the command
