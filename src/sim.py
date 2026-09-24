@@ -22,6 +22,10 @@ START_HEIGHT_OFFSET = 0.2      # drone start height relative to the hoop centre
 CLEARANCE_BEHIND = 0.4         # free space past the hoop for the drone to stop
 MAX_STEPS = 150                # 15 s at 10 Hz
 
+# Collision checks use this many points along the noodle's centreline. At ~5 mm
+# spacing, a contact can be missed by at most ~0.1 mm.
+CENTRELINE_POINTS = 256
+
 # The real detector needs a decent arc in frame. Stand-in until B3 logs dropout.
 MIN_ARC_FRACTION = 0.25
 
@@ -57,14 +61,12 @@ class HoopEnv(gym.Env):
 
         phi = np.linspace(0.0, 2 * np.pi, self.hoop.n_points, endpoint=False)
         self._cos_phi, self._sin_phi = np.cos(phi), np.sin(phi)
+        phi = np.linspace(0.0, 2 * np.pi, CENTRELINE_POINTS, endpoint=False)
+        self._cos_line, self._sin_line = np.cos(phi), np.sin(phi)
 
-        # Points over the drone's collision box in the body frame (forward, left, up),
-        # spaced closer than the noodle is thick so the noodle cannot slip between them.
+        # Half-sizes of the drone's collision box in the body frame (forward, left, up).
         d = self.drone
-        grid = np.meshgrid(np.linspace(-d.length / 2, d.length / 2, 3),
-                           np.linspace(-d.width / 2, d.width / 2, 5),
-                           [-d.height / 2, d.height / 2], indexing="ij")
-        self._body_points = np.stack([g.ravel() for g in grid], axis=1)
+        self._half_box = np.array([d.length, d.width, d.height]) / 2
 
     # --- episode setup ---------------------------------------------------
 
@@ -74,11 +76,15 @@ class HoopEnv(gym.Env):
         return self._start_episode(), self._info("running")
 
     def place(self, drone_pos, heading, hoop_centre, hoop_normal, hoop_diameter=None):
-        """Set an exact layout instead of a random one. For tests and replaying real flights."""
-        diameter = hoop_diameter or self.hoop.outer_diameter
+        """Set an exact layout instead of a random one. For tests and replaying real flights.
+
+        hoop_diameter is one outer diameter, or (horizontal, vertical) for a squashed hoop.
+        """
+        diameter = self.hoop.outer_diameter if hoop_diameter is None else hoop_diameter
+        radius_h, radius_v = np.broadcast_to(np.asarray(diameter, float), 2) / 2
         self._set_layout(np.asarray(drone_pos, float), float(heading),
                          np.asarray(hoop_centre, float), np.asarray(hoop_normal, float),
-                         diameter / 2, diameter / 2)
+                         radius_h, radius_v)
         return self._start_episode()
 
     def _sample_layout(self):
@@ -113,10 +119,18 @@ class HoopEnv(gym.Env):
         self.hoop_centre = hoop_centre
         n = hoop_normal / np.linalg.norm(hoop_normal)
         self.hoop_normal = n
-        # Outer-edge ellipse axes: horizontal in the hoop's plane, and vertical.
-        self._hoop_h = radius_h * np.array([-n[1], n[0], 0.0])
-        self._hoop_v = radius_v * np.array([0.0, 0.0, 1.0])
-        self._tube_radius = (radius_h + radius_v) / 2 - self.hoop.thickness / 2
+        # Unit axes in the hoop's plane: horizontal, and vertical.
+        self._axis_h = np.array([-n[1], n[0], 0.0])
+        self._axis_v = np.array([0.0, 0.0, 1.0])
+        # Outer-edge ellipse, which the camera sees.
+        self._hoop_h = radius_h * self._axis_h
+        self._hoop_v = radius_v * self._axis_v
+        # Noodle centreline, the same ellipse moved in by half the thickness.
+        # Collisions and passes are scored against it.
+        half_t = self.hoop.thickness / 2
+        self._line_h, self._line_v = radius_h - half_t, radius_v - half_t
+        self._centreline = (hoop_centre + np.outer(self._cos_line, self._line_h * self._axis_h)
+                            + np.outer(self._sin_line, self._line_v * self._axis_v))
 
     def _start_episode(self):
         self.vel = np.zeros(3)
@@ -168,18 +182,16 @@ class HoopEnv(gym.Env):
         return self._policy_input(), float(reward), terminated, truncated, self._info(outcome)
 
     def _outcome(self, prev) -> str:
-        n, c = self.hoop_normal, self.hoop_centre
-        rel = self._body_in_world() - c
-        along = rel @ n
-        radial = np.linalg.norm(rel - np.outer(along, n), axis=1)
-        if (np.hypot(along, radial - self._tube_radius) < self.hoop.thickness / 2).any():
+        if (self._box_distance(self._centreline) < self.hoop.thickness / 2).any():
             return "hit"
 
+        n, c = self.hoop_normal, self.hoop_centre
         along = (self.pos - c) @ n
         before = (prev - c) @ n
         if before < 0.0 <= along:
-            crossing = prev + (self.pos - prev) * (-before / (along - before))
-            return "passed" if np.linalg.norm(crossing - c) < self._tube_radius else "missed"
+            rel = prev + (self.pos - prev) * (-before / (along - before)) - c
+            inside = ((rel @ self._axis_h) / self._line_h) ** 2 + ((rel @ self._axis_v) / self._line_v) ** 2 < 1.0
+            return "passed" if inside else "missed"
 
         cage, m = self.cage, self.cage.margin
         x, y, z = self.pos
@@ -188,10 +200,12 @@ class HoopEnv(gym.Env):
             return "left_cage"
         return "running"
 
-    def _body_in_world(self):
+    def _box_distance(self, pts):
+        """Distance from each world point to the drone's collision box (0 inside it)."""
         c, s = np.cos(self.heading), np.sin(self.heading)
-        f, l, u = self._body_points.T
-        return self.pos + np.stack([f * c - l * s, f * s + l * c, u], axis=1)
+        rel = pts - self.pos
+        body = np.stack([rel @ [c, s, 0.0], rel @ [-s, c, 0.0], rel[:, 2]], axis=1)
+        return np.linalg.norm(np.maximum(np.abs(body) - self._half_box, 0.0), axis=1)
 
     # --- observation -----------------------------------------------------
 
