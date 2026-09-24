@@ -1,0 +1,19 @@
+#!/bin/bash
+# Train 8 seeds in parallel on one node. Submit from the repo root:
+#   qsub hpc/job.pbs
+# Check with `qstat -u $USER`; output lands in runs/ and hoop-sac.o<jobid>.
+# ncpus must be at least the number of seeds below. Outputs are a few MB,
+# so they stay in home rather than /scratch.
+
+#PBS -N hoop-sac
+#PBS -l ncpus=8
+#PBS -l mem=16GB
+#PBS -l walltime=02:00:00
+#PBS -j oe
+
+# Uncomment to get an email when the job aborts, begins or ends.
+##PBS -m abe
+##PBS -M your.email@student.uts.edu.au
+
+cd ${PBS_O_WORKDIR}
+bash hpc/run_seeds.sh sac 8

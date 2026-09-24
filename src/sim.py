@@ -26,11 +26,13 @@ MAX_STEPS = 150                # 15 s at 10 Hz
 MIN_ARC_FRACTION = 0.25
 
 # Reward weights. MISSED must outweigh the progress a drone can bank by flying
-# past the hoop instead of through it.
-R_PROGRESS = 5.0               # per metre along the hoop's axis
+# past the hoop instead of through it (up to 12 over a 1.2 m approach).
+PROGRESS_UNIT = 0.10           # metres
+R_PROGRESS = 1.0               # per PROGRESS_UNIT along the hoop's axis
 R_JERK = 0.05                  # times squared change in action
-R_HIDDEN = 0.02                # per step the hoop is not visible
-R_TERMINAL = {"passed": 10.0, "hit": -10.0, "missed": -10.0, "left_cage": -10.0}
+R_HIDDEN = 0.1                 # per step the hoop is not visible
+# left_cage is crossing the geofence, Cage.margin inside the net.
+R_TERMINAL = {"passed": 10.0, "hit": -10.0, "missed": -15.0, "left_cage": -10.0}
 
 _ZERO_ACTION = np.zeros(contract.ACTION_DIM, dtype=np.float32)
 
@@ -157,7 +159,7 @@ class HoopEnv(gym.Env):
         self._actions.append(action)
 
         progress = float((self.pos - prev) @ self.hoop_normal)
-        reward = (R_PROGRESS * progress - R_JERK * jerk - R_HIDDEN * (1.0 - obs[6])
+        reward = (R_PROGRESS * progress / PROGRESS_UNIT - R_JERK * jerk - R_HIDDEN * (1.0 - obs[6])
                   + R_TERMINAL.get(outcome, 0.0))
         terminated = outcome != "running"
         truncated = not terminated and self.steps >= MAX_STEPS

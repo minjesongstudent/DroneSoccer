@@ -3,3 +3,4 @@ specification.md
 .venv/
 __pycache__/
 .pytest_cache/
+runs/
