@@ -2,6 +2,7 @@
 # Train 8 seeds in parallel on one node. Submit from the repo root:
 #   qsub hpc/job.pbs
 # Check with `qstat -u $USER`; output lands in runs/ and hoop-sac.o<jobid>.
+# Progress of every seed: `bash hpc/progress.sh` (one line per seed, every 10k steps).
 # ncpus must be at least the number of seeds below. Outputs are a few MB,
 # so they stay in home rather than /scratch.
 
