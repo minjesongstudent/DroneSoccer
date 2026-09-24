@@ -30,10 +30,15 @@ need_qsub() { command -v qsub >/dev/null 2>&1 || die "no qsub. Run this on the H
 
 # --- small readers ----------------------------------------------------------
 
-# Total walltime of the PBS job, in minutes.
+# Total walltime of the running job, in minutes. ds submit sets the walltime on
+# the qsub command line, so the #PBS line in the job file is only a fallback.
 walltime_min() {
-  local w h m
-  w=$(sed -n 's/^#PBS -l walltime=\([0-9:]*\).*/\1/p' "$JOB" | head -1)
+  local w h m id
+  if id=$(job_rows | awk 'NR==1{print $1}') && [ -n "$id" ]; then
+    w=$(qstat -f "$id" 2>/dev/null |
+        sed -n 's/.*Resource_List\.walltime = \([0-9:]*\).*/\1/p' | head -1)
+  fi
+  [ -n "${w:-}" ] || w=$(sed -n 's/^#PBS -l walltime=\([0-9:]*\).*/\1/p' "$JOB" | head -1)
   [ -n "$w" ] || return 1
   IFS=: read -r h m _ <<<"$w"
   echo $(( 10#$h * 60 + 10#$m ))
@@ -53,6 +58,8 @@ max_eta_min() {
     [ -e "$log" ] || return 1
     line=$(grep '^progress' "$log" 2>/dev/null | tail -1) || true
     [ -n "$line" ] || continue
+    # A log from an older run would drag the eta to whatever it finished at.
+    [ $(( ($(date +%s) - $(stat -c %Y "$log")) / 60 )) -lt 10 ] || continue
     eta=$(sed -n 's/.*eta \([0-9]*\)m.*/\1/p' <<<"$line")
     [ -n "$eta" ] || continue
     # A chained [ ] || [ ] && ... returns non-zero here and set -e would exit.
