@@ -1,15 +1,19 @@
 #!/bin/bash
-# Train 5 seeds in parallel on one node. Submit from the repo root:
+# Train 4 seeds in parallel on one node. Submit from the repo root:
 #   qsub hpc/job.pbs
-# Check with `qstat -u $USER`; output lands in runs/ and hoop-sac.o<jobid>.
-# Progress of every seed: `bash hpc/progress.sh` (one line per seed, every 10k steps).
+# Check with `qstat -u $USER`. Output lands in runs/ and hoop-sac2.o<jobid>.
+# Progress of every seed: `bash hpc/progress.sh sac2` (every 10k steps).
 # ncpus must be at least the number of seeds below. Outputs are a few MB,
 # so they stay in home rather than /scratch.
+#
+# 2M steps at the measured 86 steps/s takes about 6.5 hours, so walltime
+# carries about 25% margin. The first run broke through at 400k steps on one
+# seed of five, which 500k steps was too short to exploit.
 
-#PBS -N hoop-sac
-#PBS -l ncpus=5
+#PBS -N hoop-sac2
+#PBS -l ncpus=4
 #PBS -l mem=16GB
-#PBS -l walltime=05:00:00
+#PBS -l walltime=08:00:00
 #PBS -j oe
 
 # Uncomment to get an email when the job aborts, begins or ends.
@@ -17,4 +21,4 @@
 ##PBS -M your.email@student.uts.edu.au
 
 cd ${PBS_O_WORKDIR}
-bash hpc/run_seeds.sh sac 5
+bash hpc/run_seeds.sh sac2 4 2000000
