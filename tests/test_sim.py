@@ -127,6 +127,29 @@ def test_outcomes(lateral, vertical, expected):
     assert fly(env, [0.0, 1.0, 0.0, 0.0]) == expected
 
 
+@pytest.mark.parametrize("lateral, expected", [
+    # Box side at 0.085 m, noodle's inner edge at 0.16 m: contact from 0.075 m.
+    (0.07, "passed"),
+    (0.08, "hit"),   # a shallow graze the old point grid could miss
+])
+def test_side_graze(lateral, expected):
+    env = make_env()
+    env.place([5.0, 5.0 + lateral, 1.5], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0])
+    assert fly(env, [0.0, 1.0, 0.0, 0.0]) == expected
+
+
+@pytest.mark.parametrize("lateral, vertical, expected", [
+    # 0.40 m wide, 0.50 m tall. A round hoop of the average size would score both the other way.
+    (0.06, 0.0, "hit"),       # contact from 0.05 m sideways, not 0.075 m
+    (0.0, 0.124, "passed"),   # contact from ~0.127 m up, not ~0.12 m
+])
+def test_squashed_hoop_is_scored_as_seen(lateral, vertical, expected):
+    env = make_env()
+    env.place([5.0, 5.0 + lateral, 1.5 + vertical], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0],
+              hoop_diameter=(0.40, 0.50))
+    assert fly(env, [0.0, 1.0, 0.0, 0.0]) == expected
+
+
 def test_leaving_cage_ends_episode():
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0])
