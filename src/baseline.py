@@ -1,17 +1,13 @@
 """Proportional controller on the same seven numbers the policy sees.
 
 Proves the task is solvable and is the comparison line for the RL results.
-Run: python -m src.baseline --episodes 500
+Run: python -m src.evaluate --baseline
 """
 from __future__ import annotations
-
-import argparse
-from collections import Counter
 
 import numpy as np
 
 from src import contract
-from src.sim import HoopEnv
 
 K_CENTRE = 1.5     # command per unit of u or v
 COMMIT = 0.5       # forward command above which a lost hoop means "keep going"
@@ -33,24 +29,3 @@ def act(policy_input: np.ndarray) -> np.ndarray:
     up = np.clip(-K_CENTRE * v, -1, 1)   # v is positive downwards in the image
     forward = np.clip(1.0 - 2.0 * max(abs(u), abs(v)), 0.0, 1.0)
     return np.array([right, forward, up, 0.0], dtype=np.float32)
-
-
-def evaluate(env: HoopEnv, episodes: int, seed: int = 0) -> Counter:
-    outcomes = Counter()
-    for i in range(episodes):
-        obs, _ = env.reset(seed=seed + i)
-        done = False
-        while not done:
-            obs, _, terminated, truncated, info = env.step(act(obs))
-            done = terminated or truncated
-        outcomes[info["outcome"]] += 1
-    return outcomes
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--episodes", type=int, default=500)
-    args = parser.parse_args()
-    outcomes = evaluate(HoopEnv(), args.episodes)
-    for outcome, count in outcomes.most_common():
-        print(f"{outcome:10s} {count / args.episodes:6.1%}")
