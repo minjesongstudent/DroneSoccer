@@ -77,20 +77,26 @@ class Progress(BaseCallback):
         self.logger.record("rollout/crash_rate",
                            float(np.mean([i["outcome"] in CRASHES for i in self.recent])))
         self.logger.record("curriculum/level", self.level)
-        good = np.mean([i["outcome"] == "timeout" and i["passes"] >= LEVEL_PASSES
-                        for i in self.recent])
-        if len(self.recent) == LEVEL_WINDOW and good >= LEVEL_UP and self.level < 1.0:
+        if len(self.recent) == LEVEL_WINDOW and self._ready() >= LEVEL_UP and self.level < 1.0:
             self.level = min(1.0, self.level + LEVEL_STEP)
             self.training_env.env_method("set_level", self.level)
             self.recent.clear()   # judge the new level on its own episodes
             print(f"level    {self.level:.2f} at step {self.num_timesteps}", flush=True)
+
+    def _ready(self) -> float:
+        """Share of recent episodes that lasted the full minute with LEVEL_PASSES+ passes."""
+        return float(np.mean([i["outcome"] == "timeout" and i["passes"] >= LEVEL_PASSES
+                              for i in self.recent]))
 
     def _summary(self) -> str:
         if not self.recent:
             return "-"
         if self.task == "hover":
             return f"pass_rate {np.mean([i['outcome'] == 'passed' for i in self.recent]):.0%}"
-        return f"passes/min {self._passes_per_min():.2f}  level {self.level:.2f}"
+        # ready: how close the level-up is. It counts over up to LEVEL_WINDOW
+        # episodes, and the level only rises once the window is full.
+        ready = f"ready {self._ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
+        return f"passes/min {self._passes_per_min():.2f}  level {self.level:.2f}  {ready}"
 
 
 def train(steps: int, name: str, seed: int, task: str, level: float, randomise: bool) -> Path:

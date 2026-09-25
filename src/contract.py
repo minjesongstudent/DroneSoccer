@@ -44,7 +44,7 @@ ACTION_HISTORY = 3
 POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM
 
 MIN_POINTS = 5     # fitEllipse needs at least five
-MIN_RATIO = 0.2    # flatter than this is a hoop seen near edge-on: treat as not found
+MIN_RATIO = 0.2    # UNMEASURED: flattest ellipse the detector still finds (edge-on hoop), B3
 CLIP = 3.0         # bound u, v, major when a partial arc puts the centre off-frame
 _FIT_SCALE = 1000.0  # fitEllipse is tuned for pixel-scale input
 
