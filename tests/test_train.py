@@ -11,9 +11,9 @@ def test_curriculum_raises_the_level(monkeypatch):
     monkeypatch.setattr(train, "LEVEL_WINDOW", 1)
     monkeypatch.setattr(train, "LEVEL_UP", 0.0)
     monkeypatch.setattr(train, "LEVEL_PASSES", 0)
-    env = Monitor(HoopEnv(task="laps", level=0.0, camera=Camera()))
+    env = Monitor(HoopEnv(level=0.0, camera=Camera()))
     model = SAC("MlpPolicy", env, seed=0, device="cpu", learning_starts=10_000)
-    callback = train.Progress(total=2 * LAPS_MAX_STEPS, task="laps")
+    callback = train.Progress(total=2 * LAPS_MAX_STEPS)
     model.learn(total_timesteps=2 * LAPS_MAX_STEPS, callback=callback)
     assert callback.level > 0.0
     assert env.get_wrapper_attr("level") == callback.level
@@ -25,13 +25,13 @@ def test_resume_carries_on_from_the_snapshot(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(train, "RUNS", tmp_path)
     monkeypatch.setattr(train, "CHECKPOINT_EVERY", 200)
     monkeypatch.setattr(train, "BUFFER_SIZE", 2000)   # the real one saves 700 MB
-    train.train(600, "r", seed=0, task="laps", level=0.5, randomise=False)
+    train.train(600, "r", seed=0, level=0.5, randomise=False)
     buffered = SAC.load(tmp_path / "r" / "resume" / "model.zip")
     buffered.load_replay_buffer(tmp_path / "r" / "resume" / "replay_buffer.pkl")
     # SB3 calls back before it stores the step, so the newest transition is not in yet.
     assert buffered.replay_buffer.size() == 599
 
-    path = train.train(1000, "r", seed=0, task="laps", level=0.0, randomise=False, resume=True)
+    path = train.train(1000, "r", seed=0, level=0.0, randomise=False, resume=True)
     assert "resumed  from step 600 at level 0.50" in capsys.readouterr().out
     assert SAC.load(path).num_timesteps == 1000
     state = (tmp_path / "r" / "resume" / "state.json").read_text()

@@ -1,11 +1,8 @@
 """Gymnasium environment: the drone flying at a hoop, rendering nothing.
 
-Two tasks:
-    hover   the drone starts hovering near the hoop, facing it; the episode ends
-            at the first pass. The original task, kept so its results reproduce.
-    laps    the mission. The drone starts above the take-off pad in a corner and
-            must find the hoop, pass through it front to back, fly round the
-            outside back to the front, and pass again, for as long as it lasts.
+The mission: the drone starts above the take-off pad in a corner and must find
+the hoop, pass through it front to back, fly round the outside back to the front,
+and pass again, for as long as it lasts.
 
 The policy sees only the eight numbers from contract.py (stacked with its own
 recent actions). The true hoop position is used for reward and termination only.
@@ -21,19 +18,9 @@ import numpy as np
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Pad, Randomise, load_camera
 
-TASKS = ("hover", "laps")
-
-# Hover layout: every reset draws a fresh hoop position and drone start from
-# these ranges, so no two episodes look the same.
-HOOP_DISTANCE = (0.6, 1.2)     # drone start to hoop centre, metres
-HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
-HOOP_YAW_DEG = 30.0            # max hoop angle relative to the drone's line of sight
-START_HEIGHT_OFFSET = 0.2      # drone start height relative to the hoop centre
-CLEARANCE_BEHIND = 0.4         # free space past the hoop for the drone to stop
-MAX_STEPS = 150                # 15 s at 10 Hz
-
-# Laps layout. The hoop goes anywhere with room to fly round it; its front faces
+# Layout. The hoop goes anywhere with room to fly round it; its front faces
 # the pad. The curriculum level blends each start from easy (0) to real (1).
+HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
 PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
 LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad's line of sight, level 0 and 1.
                                # Past ~78 degrees the detector cannot see the hoop at all.
@@ -47,26 +34,28 @@ CENTRELINE_POINTS = 256
 
 MIN_ARC_FRACTION = 0.25        # UNMEASURED: share of the hoop's edge the detector needs in frame, B3
 
-# Reward weights. MISSED must outweigh the progress a drone can bank by flying
-# past the hoop instead of through it (up to 12 over a 1.2 m approach).
+# Reward weights.
 # R_PROGRESS pays for closing the straight-line distance to the hoop centre, not
 # for closing the axial gap. Axial progress rated the rim and the centre alike,
 # so SAC charged the plane and hit. Distance to the centre falls fastest on the
 # line that passes through, which is the behaviour we want.
-# In laps, behind the hoop the target is a side waypoint instead: distance to the
+# Behind the hoop the target is a side waypoint instead: distance to the
 # centre from behind would pay for flying back through the hole.
 PROGRESS_UNIT = 0.10           # metres
 R_PROGRESS = 1.0               # per PROGRESS_UNIT closer to the target
-R_HIDDEN = 0.1                 # per step the hoop is not visible
-# Per step, so hovering until the timeout costs 7.5. Without it SAC learned to
-# stop short of the hoop and hover, which scored better than risking the pass.
-R_TIME = 0.05
-# left_cage is crossing the geofence, Cage.margin inside the net.
-# PASSED is well above HIT so that an attempt with even odds is worth making.
-# In laps a pass pays and the episode goes on; wrong_way is back through the hole.
-R_TERMINAL = {"passed": 25.0, "hit": -10.0, "missed": -15.0, "left_cage": -10.0,
-              "wrong_way": -10.0}
-LAPS_TERMINAL = ("hit", "wrong_way", "left_cage")
+# Per step the hoop is not visible. Kept small: going round the outside hides the
+# hoop, and at 0.1 a minute of lapping cost more than crashing out.
+R_HIDDEN = 0.02
+# There is no per-step time cost. With one, a 60 s episode cost -30 and a crash
+# only -10, so ending the episode early was the cheap way out. Passes (+25) are
+# what keep the drone from hovering, and the curriculum needs 2+ per minute.
+# A pass pays and the episode goes on. The crash endings (a hit, including the
+# hanger; back through the hole; crossing the geofence, Cage.margin inside the net)
+# cost more than a pass pays, so trading the rest of the minute for a quick pass
+# does not pay.
+R_PASS = 25.0
+R_CRASH = 40.0
+CRASHES = ("hit", "wrong_way", "left_cage")
 
 
 def _wrap(angle):
@@ -76,14 +65,10 @@ def _wrap(angle):
 class HoopEnv(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self, task: str = "hover", level: float = 1.0, randomise: bool = False,
-                 hanger: bool = True, yaw_enabled: bool = False, start_angle_deg: float = 10.0,
+    def __init__(self, level: float = 1.0, randomise: bool = False, hanger: bool = True,
                  cage: Cage | None = None, hoop: Hoop | None = None,
                  camera: Camera | None = None, drone: Drone | None = None,
                  pad: Pad | None = None, ranges: Randomise | None = None):
-        if task not in TASKS:
-            raise ValueError(f"task must be one of {TASKS}, not {task!r}")
-        self.task = task
         self.cage = cage or Cage()
         self.hoop = hoop or Hoop()
         self.camera = camera or load_camera()
@@ -91,12 +76,7 @@ class HoopEnv(gym.Env):
         self.pad = pad or Pad()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
-        self.hanger = hanger   # laps only; off replays models trained before it existed
-        # Laps needs yaw: the drone turns to find the hoop and to fly round it.
-        self.yaw_enabled = yaw_enabled or task == "laps"
-        self.max_steps = LAPS_MAX_STEPS if task == "laps" else MAX_STEPS
-        # Hover only: max heading offset from the hoop at the start.
-        self.start_angle_deg = start_angle_deg
+        self.hanger = hanger   # off replays models trained before it existed
         self.set_level(level)
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, (contract.ACTION_DIM,), np.float32)
@@ -116,17 +96,14 @@ class HoopEnv(gym.Env):
         self._half_box = np.array([d.length, d.width, d.height]) / 2
 
     def set_level(self, level: float):
-        """Curriculum level for laps starts, 0 (easy) to 1 (the real layout)."""
+        """Curriculum level for starts, 0 (easy) to 1 (the real layout)."""
         self.level = float(np.clip(level, 0.0, 1.0))
 
     # --- episode setup ---------------------------------------------------
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        if self.task == "laps":
-            self._sample_pad_layout()
-        else:
-            self._sample_layout()
+        self._sample_layout()
         return self._start_episode(), self._info("running")
 
     def place(self, drone_pos, heading, hoop_centre, hoop_normal, hoop_diameter=None):
@@ -148,32 +125,6 @@ class HoopEnv(gym.Env):
         return bool(m <= xy[0] <= self.cage.length - m and m <= xy[1] <= self.cage.width - m)
 
     def _sample_layout(self):
-        rng, cage, m = self.np_random, self.cage, self.cage.margin
-        lo = np.array([m, m])
-        hi = np.array([cage.length - m, cage.width - m])
-        for _ in range(1000):
-            start = rng.uniform(lo, hi)
-            bearing = rng.uniform(-np.pi, np.pi)
-            centre = start + rng.uniform(*HOOP_DISTANCE) * np.array([np.cos(bearing), np.sin(bearing)])
-            angle = bearing + np.deg2rad(rng.uniform(-HOOP_YAW_DEG, HOOP_YAW_DEG))
-            normal = np.array([np.cos(angle), np.sin(angle)])
-            side = np.array([-normal[1], normal[0]])
-            radii = (self.hoop.outer_diameter + rng.uniform(-1, 1, 2) * self.hoop.diameter_tolerance) / 2
-            corners = [centre + radii[0] * side, centre - radii[0] * side,
-                       centre + CLEARANCE_BEHIND * normal]
-            if all(((lo <= c) & (c <= hi)).all() for c in corners):
-                break
-        else:
-            raise RuntimeError("cage too small for the episode layout ranges in sim.py")
-
-        hoop_z = rng.uniform(*HOOP_HEIGHT)
-        drone_z = np.clip(hoop_z + rng.uniform(-START_HEIGHT_OFFSET, START_HEIGHT_OFFSET),
-                          cage.min_altitude, cage.height - m)
-        heading = bearing + np.deg2rad(rng.uniform(-self.start_angle_deg, self.start_angle_deg))
-        self._set_layout(np.array([*start, drone_z]), heading,
-                         np.array([*centre, hoop_z]), np.array([*normal, 0.0]), *radii)
-
-    def _sample_pad_layout(self):
         """The drone above the pad in a random corner, the hoop anywhere it can be lapped."""
         rng, cage, pad, m = self.np_random, self.cage, self.pad, self.cage.margin
         max_angle = np.interp(self.level, [0.0, 1.0], LAPS_HOOP_ANGLE_DEG)
@@ -196,7 +147,7 @@ class HoopEnv(gym.Env):
             if all(self._in_fence(p) for p in must_fit) and any(self._in_fence(g) for g in gates):
                 break
         else:
-            raise RuntimeError("cage too small for the laps layout ranges in sim.py")
+            raise RuntimeError("cage too small for the layout ranges in sim.py")
 
         hoop_z = rng.uniform(*HOOP_HEIGHT)
         drone_z = np.clip(np.interp(self.level, [0.0, 1.0], [hoop_z, self.drone.takeoff_height]),
@@ -268,8 +219,6 @@ class HoopEnv(gym.Env):
 
     def step(self, action):
         action = np.clip(np.asarray(action, dtype=np.float32), -1.0, 1.0).copy()
-        if not self.yaw_enabled:
-            action[3] = 0.0
 
         # Command delay: the drone acts on the command from delay_steps ago.
         self._pending.append(action)
@@ -291,7 +240,7 @@ class HoopEnv(gym.Env):
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
         self.steps += 1
 
-        outcome = self._lap_outcome(prev) if self.task == "laps" else self._outcome(prev)
+        outcome = self._outcome(prev)
         if outcome == "passed":
             self.passes += 1
         obs = self.observe()
@@ -299,20 +248,17 @@ class HoopEnv(gym.Env):
         self._actions.append(action)
 
         progress = float(np.linalg.norm(prev - target) - np.linalg.norm(self.pos - target))
+        terminated = outcome in CRASHES
         reward = (R_PROGRESS * progress / PROGRESS_UNIT - R_HIDDEN * (1.0 - obs[6])
-                  - R_TIME + R_TERMINAL.get(outcome, 0.0))
-        if self.task == "laps":
-            terminated = outcome in LAPS_TERMINAL
-        else:
-            terminated = outcome != "running"
-        truncated = not terminated and self.steps >= self.max_steps
+                  + R_PASS * (outcome == "passed") - R_CRASH * terminated)
+        truncated = not terminated and self.steps >= LAPS_MAX_STEPS
         if truncated:
             outcome = "timeout"
         return self._policy_input(), float(reward), terminated, truncated, self._info(outcome)
 
     def _progress_target(self, pos):
-        """The hoop centre, or in laps from behind the hoop, the nearest side waypoint."""
-        if self.task == "laps" and (pos - self.hoop_centre) @ self.hoop_normal >= 0.0:
+        """The hoop centre, or from behind the hoop, the nearest side waypoint."""
+        if (pos - self.hoop_centre) @ self.hoop_normal >= 0.0:
             return min(self._gates, key=lambda g: np.linalg.norm(pos - g))
         return self.hoop_centre
 
@@ -364,16 +310,6 @@ class HoopEnv(gym.Env):
         return not (self._in_fence(self.pos) and self.cage.min_altitude <= z <= self.cage.height - self.cage.margin)
 
     def _outcome(self, prev) -> str:
-        if self._hit():
-            return "hit"
-        crossing = self._crossing(prev)
-        if crossing is not None and crossing[0] == 1:
-            return "passed" if crossing[1] else "missed"
-        if self._left_cage():
-            return "left_cage"
-        return "running"
-
-    def _lap_outcome(self, prev) -> str:
         """Front to back through the ring scores; back through the ring is wrong_way.
         Crossing the plane outside the ring is how the drone gets round, so it is neutral.
         The hanger counts as part of the hoop."""

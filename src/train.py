@@ -1,14 +1,14 @@
 """Train SAC on the hoop simulator.
 
-Run: python -m src.train --steps 3000000 --name laps-v1              (the laps mission)
-     python -m src.train --steps 500000 --name sac --task hover      (the original task)
+Run: python -m src.train --steps 3000000 --name laps-v1
 Watch: tensorboard --logdir runs
-    laps:  rollout/passes_per_min and curriculum/level are the numbers that matter
-    hover: rollout/pass_rate
+    rollout/passes_per_min and curriculum/level are the numbers that matter
 
 Saves a checkpoint to runs/<name>/checkpoints/ every CHECKPOINT_EVERY steps and
 runs/<name>/model.zip at the end, then evaluates it against the baseline on the
-same episodes, then saves the training curves to runs/<name>/plots/.
+same episodes, then saves the training curves to runs/<name>/plots/. The
+policy's scores also go to runs/<name>/eval.json, which run_seeds.sh reads to
+keep only the best seed's models.
 See what a checkpoint does: python -m src.replay --model runs/<name>/checkpoints/<file>.zip
 
 At each checkpoint it also overwrites runs/<name>/resume/ with everything needed
@@ -30,16 +30,17 @@ from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
 
-from src.evaluate import CRASHES, DEFAULT_EPISODES, baseline_for, load_policy, report, run_episodes
+from src import baseline
+from src.evaluate import DEFAULT_EPISODES, load_policy, report, run_episodes
 from src.params import ROOT, Drone
 from src.plots import save_plots
-from src.sim import HoopEnv
+from src.sim import CRASHES, HoopEnv
 
 RUNS = ROOT / "runs"
 CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
 BUFFER_SIZE = 1_000_000      # SB3's default; ~700 MB in each resume snapshot
 
-# Laps curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the
+# Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the
 # last LEVEL_WINDOW episodes lasted the full minute with at least LEVEL_PASSES passes.
 LEVEL_STEP = 0.25
 LEVEL_WINDOW = 200
@@ -48,20 +49,19 @@ LEVEL_PASSES = 2
 
 
 class Progress(BaseCallback):
-    """Logs how the last training episodes went, raises the laps curriculum level,
+    """Logs how the last training episodes went, raises the curriculum level,
     and prints a one-line progress report every `every` steps."""
 
-    def __init__(self, total: int, task: str, every: int = 10_000):
+    def __init__(self, total: int, every: int = 10_000):
         super().__init__()
-        self.total, self.task, self.every = total, task, every
-        self.recent = deque(maxlen=100 if task == "hover" else LEVEL_WINDOW)
+        self.total, self.every = total, every
+        self.recent = deque(maxlen=LEVEL_WINDOW)
         self.level = 0.0
 
     def _on_training_start(self) -> None:
         self.start = time.time()
         self.start_steps = self.num_timesteps   # non-zero after --resume
-        if self.task == "laps":
-            self.level = self.training_env.get_attr("level")[0]
+        self.level = self.training_env.get_attr("level")[0]
 
     def _on_step(self) -> bool:
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
@@ -85,10 +85,6 @@ class Progress(BaseCallback):
         return float(np.mean([i["outcome"] in CRASHES for i in self.recent]))
 
     def _record(self):
-        if self.task == "hover":
-            self.logger.record("rollout/pass_rate",
-                               float(np.mean([i["outcome"] == "passed" for i in self.recent])))
-            return
         self.logger.record("rollout/passes_per_min", self._passes_per_min())
         self.logger.record("rollout/crash_rate", self._crash_rate())
         self.logger.record("curriculum/level", self.level)
@@ -106,8 +102,6 @@ class Progress(BaseCallback):
     def _summary(self) -> str:
         if not self.recent:
             return "-"
-        if self.task == "hover":
-            return f"pass_rate {np.mean([i['outcome'] == 'passed' for i in self.recent]):.0%}"
         # ready: how close the level-up is. It counts over up to LEVEL_WINDOW
         # episodes, and the level only rises once the window is full.
         ready = f"ready {self._ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
@@ -115,6 +109,16 @@ class Progress(BaseCallback):
         seconds = np.mean([i["steps"] for i in self.recent]) * Drone().dt
         return (f"passes/min {self._passes_per_min():.2f}  crashed {self._crash_rate():.0%}  "
                 f"ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
+
+
+def scores(results: list[dict]) -> dict:
+    """What run_seeds.sh ranks seeds by. ready is the curriculum's own bar: the
+    share of episodes that last the full minute with LEVEL_PASSES+ passes."""
+    minutes = sum(r["steps"] for r in results) * Drone().dt / 60
+    return {"ready": float(np.mean([r["outcome"] == "timeout" and r["passes"] >= LEVEL_PASSES
+                                    for r in results])),
+            "passes_per_min": sum(r["passes"] for r in results) / minutes,
+            "crashed": float(np.mean([r["outcome"] in CRASHES for r in results]))}
 
 
 class Snapshot(BaseCallback):
@@ -146,13 +150,13 @@ class Snapshot(BaseCallback):
         print(f"snapshot at step {self.num_timesteps}", flush=True)
 
 
-def train(steps: int, name: str, seed: int, task: str, level: float, randomise: bool,
+def train(steps: int, name: str, seed: int, level: float, randomise: bool,
           resume: bool = False) -> Path:
     out = RUNS / name
     snapshot = out / "resume"
     if resume:
         level = json.loads((snapshot / "state.json").read_text())["level"]
-    env = Monitor(HoopEnv(task=task, level=level, randomise=randomise))
+    env = Monitor(HoopEnv(level=level, randomise=randomise))
     if resume:
         model = SAC.load(snapshot / "model.zip", env=env, device="cpu")
         model.load_replay_buffer(snapshot / "replay_buffer.pkl")
@@ -161,9 +165,9 @@ def train(steps: int, name: str, seed: int, task: str, level: float, randomise: 
         print(f"resumed  from step {model.num_timesteps} at level {level:.2f}", flush=True)
     else:
         model = SAC("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
-                    # Hover episodes are at most 150 steps. A lap takes ~100, so the
-                    # next pass must still be worth chasing from the far side of the hoop.
-                    gamma=0.995 if task == "laps" else 0.98,
+                    # A lap takes ~100 steps, so the next pass must still be
+                    # worth chasing from the far side of the hoop.
+                    gamma=0.995,
                     learning_starts=5_000,   # fill the buffer with random flying first
                     buffer_size=BUFFER_SIZE,
                     tensorboard_log=str(RUNS))
@@ -171,7 +175,7 @@ def train(steps: int, name: str, seed: int, task: str, level: float, randomise: 
     # With reset_num_timesteps=False, learn() counts total_timesteps on from the
     # loaded step count and appends to the same tensorboard run.
     model.learn(total_timesteps=steps - model.num_timesteps,
-                callback=[Progress(steps, task), checkpoints, Snapshot(snapshot, steps)],
+                callback=[Progress(steps), checkpoints, Snapshot(snapshot, steps)],
                 tb_log_name=name, reset_num_timesteps=not resume)
     model.save(out / "model")
     return out / "model.zip"
@@ -182,26 +186,26 @@ if __name__ == "__main__":
     parser.add_argument("--steps", type=int, default=500_000)
     parser.add_argument("--name", default="sac")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--task", choices=("hover", "laps"), default="laps")
     parser.add_argument("--level", type=float, default=0.0,
-                        help="laps: starting curriculum level; evaluation is always at 1")
+                        help="starting curriculum level; evaluation is always at 1")
     parser.add_argument("--randomise", action="store_true", help="draw dynamics per episode")
     parser.add_argument("--eval-episodes", type=int)
     parser.add_argument("--resume", action="store_true",
                         help="carry on from runs/<name>/resume/ up to --steps in total")
     args = parser.parse_args()
 
-    path = train(args.steps, args.name, args.seed, args.task, args.level, args.randomise,
+    path = train(args.steps, args.name, args.seed, args.level, args.randomise,
                  args.resume)
     print(f"saved {path}")
-    episodes = args.eval_episodes or DEFAULT_EPISODES[args.task]
+    episodes = args.eval_episodes or DEFAULT_EPISODES
 
     def evaluate(policy):
-        env = HoopEnv(task=args.task, randomise=args.randomise)
-        return report(run_episodes(policy, episodes, env), args.task)
+        return run_episodes(policy, episodes, HoopEnv(randomise=args.randomise))
 
-    print("policy   ", evaluate(load_policy(str(path))))
-    print("baseline ", evaluate(baseline_for(args.task)))
+    results = evaluate(load_policy(str(path)))
+    print("policy   ", report(results))
+    print("baseline ", report(evaluate(baseline.Lapper())))
+    (path.parent / "eval.json").write_text(json.dumps(scores(results)))
     # Last, and never fatal: the model and scores matter more than the pictures.
     try:
         print(f"plots    {save_plots(args.name)}")

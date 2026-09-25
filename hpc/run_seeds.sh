@@ -4,6 +4,8 @@
 #   bash hpc/run_seeds.sh <name> <n_seeds> [steps] [train options...]
 # Train options go to every seed, e.g. --randomise or --level 0.75.
 # Results: runs/<name>_s<seed>/model.zip, logs in runs/<name>_s<seed>.log
+# Once every seed has finished, only the best seed keeps its model.zip. Every
+# seed's checkpoints and resume snapshot are deleted; logs, eval.json and plots stay.
 # Exits non-zero if any seed fails, so the job shows as failed.
 set -euo pipefail
 
@@ -48,6 +50,21 @@ done
 grep -h '^baseline' runs/${NAME}_s*.log | head -1 || true
 
 if [ "$failed" -gt 0 ]; then
-    echo "$failed of $SEEDS seeds failed"
+    # Keep every snapshot: ./ds resume needs them all to carry the run on.
+    echo "$failed of $SEEDS seeds failed, so nothing was deleted"
     exit 1
 fi
+
+# Best by the curriculum's bar (full minute, enough passes), then passes/min.
+best=$(.venv/bin/python - "$NAME" "$SEEDS" <<'PY'
+import json, sys
+name, seeds = sys.argv[1], int(sys.argv[2])
+scores = {s: json.load(open(f"runs/{name}_s{s}/eval.json")) for s in range(seeds)}
+print(max(scores, key=lambda s: (scores[s]["ready"], scores[s]["passes_per_min"])))
+PY
+)
+echo "best seed $best: keeping runs/${NAME}_s${best}/model.zip, deleting the rest"
+for seed in $(seq 0 $((SEEDS - 1))); do
+    rm -rf "runs/${NAME}_s${seed}/checkpoints" "runs/${NAME}_s${seed}/resume"
+    [ "$seed" = "$best" ] || rm -f "runs/${NAME}_s${seed}/model.zip"
+done
