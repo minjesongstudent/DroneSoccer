@@ -156,6 +156,22 @@ def test_leaving_cage_ends_episode():
     assert fly(env, [0.0, 0.0, 1.0, 0.0]) == "left_cage"
 
 
+def test_hit_shortcut_agrees_with_the_full_check():
+    """_hit skips the centreline check when the drone is far away. It must never
+    skip a real contact, so compare it with the full check around the hoop."""
+    env = make_env()
+    env.place([2.0, 5.0, 1.5], 0.3, [2.5, 5.0, 1.5], [1.0, 0.0, 0.0])
+    rng = np.random.default_rng(0)
+    hits = 0
+    for _ in range(5000):
+        env.pos = env.hoop_centre + rng.uniform(-1, 1, 3) * env._hit_reach * 1.2
+        env.heading = rng.uniform(-np.pi, np.pi)
+        full = bool((env._box_distance(env._centreline) < env.hoop.thickness / 2).any())
+        assert env._hit() == full
+        hits += full
+    assert hits > 0
+
+
 # --- the real cage ----------------------------------------------------------
 
 def test_real_cage_layouts_start_with_hoop_in_view():
