@@ -1,9 +1,9 @@
 """Hand-written controllers on the same eight numbers the policy sees.
 
-They prove the tasks are solvable and are the comparison lines for the RL results.
-    act     hover: a proportional controller that flies at the hoop and through it.
-    Lapper  laps: act for each pass, plus a scripted search and go-round.
-Run: python -m src.evaluate --baseline [--task laps]
+They prove the mission is solvable and are the comparison line for the RL results.
+    act     a proportional controller that flies at the hoop and through it.
+    Lapper  act for each pass, plus a scripted search and go-round.
+Run: python -m src.evaluate --baseline
 """
 from __future__ import annotations
 

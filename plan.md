@@ -33,9 +33,12 @@ The mission is now **continuous laps**, not a single pass:
 | Event | Reward | Episode |
 |---|---|---|
 | Pass front to back | +25 | keeps going |
-| Back through the hole | -10 | ends (`wrong_way`) |
+| Back through the hole | -40 | ends (`wrong_way`) |
 | Crossing the plane outside the ring | nothing | keeps going: this is how the drone gets round |
-| Hit / left the cage | -10 | ends |
+| Hit / left the cage | -40 | ends |
+| Each step the hoop is out of view | -0.02 | |
+
+There is no per-step time cost: with one, a crash was cheaper than flying out the minute.
 
 **Other changes**
 

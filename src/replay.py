@@ -151,7 +151,7 @@ def main():
     out = Path(args.out) if args.out else out
     out.mkdir(parents=True, exist_ok=True)
 
-    env = HoopEnv(task="laps", level=args.level, randomise=args.randomise, hanger=not args.no_hanger)
+    env = HoopEnv(level=args.level, randomise=args.randomise, hanger=not args.no_hanger)
     all_routes, endings = Counter(), Counter()
     for i in range(args.episodes):
         run = fly(policy, env, EVAL_SEED + i)

@@ -27,7 +27,6 @@ RUNS = ROOT / "runs"
 # TensorBoard tag, file name, title; charts a run did not log are skipped. Progress first, then the training-health
 # diagnostics, which say whether training is stable but not whether it is working.
 CHARTS = [
-    ("rollout/pass_rate", "pass_rate", "Pass rate (last 100 episodes)"),
     ("rollout/passes_per_min", "passes_per_min", "Passes per minute (last 200 episodes)"),
     ("curriculum/level", "curriculum_level", "Curriculum level"),
     ("rollout/crash_rate", "crash_rate", "Crash rate (last 200 episodes)"),
@@ -85,7 +84,7 @@ def _draw(ax, steps, values, title, tag):
     ax.tick_params(colors=INK, labelsize=9, length=0)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x / 1e6:g}M" if x >= 1e6 else f"{x / 1e3:g}k"))
     ax.set_xlabel("environment steps", color=INK, fontsize=9)
-    if tag in ("rollout/pass_rate", "rollout/crash_rate"):
+    if tag == "rollout/crash_rate":
         ax.yaxis.set_major_formatter(PercentFormatter(1.0))
 
 

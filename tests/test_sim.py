@@ -4,7 +4,7 @@ from gymnasium.utils.env_checker import check_env
 
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Randomise
-from src.sim import LAPS_MAX_STEPS, SIDE_GAP, HoopEnv
+from src.sim import LAPS_MAX_STEPS, R_CRASH, SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
@@ -32,6 +32,15 @@ def fly(env, action, max_steps=200):
     for _ in range(max_steps):
         _, _, terminated, truncated, info = env.step(action)
         if terminated or truncated:
+            return info["outcome"]
+    return "running"
+
+
+def first_event(env, action, max_steps=200):
+    """The first outcome that is not "running": a pass, or how the episode ended."""
+    for _ in range(max_steps):
+        info = env.step(action)[4]
+        if info["outcome"] != "running":
             return info["outcome"]
     return "running"
 
@@ -88,18 +97,12 @@ def test_commands_are_body_frame():
     assert env.pos[0] > 5.2 and abs(env.pos[1] - 5.0) < 0.01
 
 
-def test_yaw_clockwise_decreases_heading_and_is_masked_by_default():
-    env = make_env(yaw_enabled=True)
-    env.place([5.0, 5.0, 1.5], 0.0, [8.0, 5.0, 1.5], [1.0, 0.0, 0.0])
-    for _ in range(5):
-        env.step([0.0, 0.0, 0.0, 1.0])
-    assert env.heading < -0.05
-
+def test_yaw_clockwise_decreases_heading():
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, [8.0, 5.0, 1.5], [1.0, 0.0, 0.0])
     for _ in range(5):
         env.step([0.0, 0.0, 0.0, 1.0])
-    assert env.heading == 0.0
+    assert env.heading < -0.05
 
 
 def test_command_delay():
@@ -119,12 +122,11 @@ def test_command_delay():
     (0.0, 0.10, "passed"),   # the drone is flat, so it has more room vertically...
     (0.10, 0.0, "hit"),      # ...than sideways, where a prop guard clips the noodle
     ((EXACT.outer_diameter - EXACT.thickness) / 2, 0.0, "hit"),
-    (0.6, 0.0, "missed"),
 ])
 def test_outcomes(lateral, vertical, expected):
     env = make_env()
     env.place([5.0, 5.0 + lateral, 1.5 + vertical], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0])
-    assert fly(env, [0.0, 1.0, 0.0, 0.0]) == expected
+    assert first_event(env, [0.0, 1.0, 0.0, 0.0]) == expected
 
 
 @pytest.mark.parametrize("lateral, expected", [
@@ -135,7 +137,7 @@ def test_outcomes(lateral, vertical, expected):
 def test_side_graze(lateral, expected):
     env = make_env()
     env.place([5.0, 5.0 + lateral, 1.5], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0])
-    assert fly(env, [0.0, 1.0, 0.0, 0.0]) == expected
+    assert first_event(env, [0.0, 1.0, 0.0, 0.0]) == expected
 
 
 @pytest.mark.parametrize("lateral, vertical, expected", [
@@ -147,7 +149,7 @@ def test_squashed_hoop_is_scored_as_seen(lateral, vertical, expected):
     env = make_env()
     env.place([5.0, 5.0 + lateral, 1.5 + vertical], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0],
               hoop_diameter=(0.40, 0.50))
-    assert fly(env, [0.0, 1.0, 0.0, 0.0]) == expected
+    assert first_event(env, [0.0, 1.0, 0.0, 0.0]) == expected
 
 
 def test_leaving_cage_ends_episode():
@@ -172,31 +174,11 @@ def test_hit_shortcut_agrees_with_the_full_check():
     assert hits > 0
 
 
-# --- the real cage ----------------------------------------------------------
-
-def test_real_cage_layouts_start_with_hoop_in_view():
-    env = HoopEnv(camera=Camera())
-    visible = []
-    for seed in range(200):
-        obs, info = env.reset(seed=seed)
-        assert env.observation_space.contains(obs)
-        visible.append(obs[(contract.OBS_STACK - 1) * contract.OBS_DIM + VISIBLE])
-    assert np.mean(visible) > 0.95
-
-
-def test_gymnasium_api():
-    check_env(HoopEnv(camera=Camera()), skip_render_check=True)
-
-
 # --- laps -------------------------------------------------------------------
 # Hoop at (6, 5, 1.5) with its back facing +x, so the front (and the marker)
 # faces a drone coming from x < 6.
 
 HOOP_AT, BACK = [6.0, 5.0, 1.5], [1.0, 0.0, 0.0]
-
-
-def laps_env(**kwargs):
-    return make_env(task="laps", **kwargs)
 
 
 def goto(env, x, y, z=1.5, max_steps=300):
@@ -210,7 +192,7 @@ def goto(env, x, y, z=1.5, max_steps=300):
 
 
 def test_lap_pass_scores_and_keeps_flying():
-    env = laps_env()
+    env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     for _ in range(100):
         _, reward, terminated, truncated, info = env.step([0.0, 1.0, 0.0, 0.0])
@@ -220,14 +202,32 @@ def test_lap_pass_scores_and_keeps_flying():
     assert not terminated and not truncated and info["passes"] == 1
 
 
+def test_a_crash_costs_more_than_a_pass_pays():
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for _ in range(100):
+        _, reward, terminated, _, info = env.step([0.0, 0.0, 1.0, 0.0])   # up, out of the cage
+        if terminated:
+            break
+    assert info["outcome"] == "left_cage" and reward < -R_CRASH + 1.0
+
+
+def test_waiting_out_the_minute_costs_nothing_with_the_hoop_in_view():
+    """No per-step time cost, so crashing is never the cheap way out of an episode."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    total = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
+    assert total == pytest.approx(0.0, abs=0.1)
+
+
 def test_back_through_the_ring_is_wrong_way():
-    env = laps_env()
+    env = make_env()
     env.place([7.0, 5.0, 1.5], np.pi, HOOP_AT, BACK)  # behind the hoop, facing it
     assert fly(env, [0.0, 1.0, 0.0, 0.0]) == "wrong_way"
 
 
 def test_crossing_outside_the_ring_is_neutral():
-    env = laps_env()
+    env = make_env()
     env.place([7.0, 5.8, 1.5], np.pi, HOOP_AT, BACK)
     for _ in range(40):  # 1.6 m at 0.4 m/s: well past the plane
         _, _, terminated, truncated, info = env.step([0.0, 1.0, 0.0, 0.0])
@@ -236,7 +236,7 @@ def test_crossing_outside_the_ring_is_neutral():
 
 
 def test_a_full_lap_scores_twice():
-    env = laps_env()
+    env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     for x, y in [(6.6, 5.0), (6.6, 5.9), (5.4, 5.9), (5.4, 5.0), (6.6, 5.0)]:
         _, _, terminated, truncated, info = goto(env, x, y)
@@ -246,7 +246,7 @@ def test_a_full_lap_scores_twice():
 
 def test_route_records_the_way_round():
     """Back to front outside the ring, at +y: the hoop's left, seen from the front."""
-    env = laps_env()
+    env = make_env()
     env.place([6.6, 5.9, 1.5], 0.0, HOOP_AT, BACK)
     routes = [env.step([0.0, -1.0, 0.0, 0.0])[4]["route"] for _ in range(20)]
     assert [r for r in routes if r] == ["left"]
@@ -258,7 +258,7 @@ def test_route_records_the_way_round():
     (5.4, 2.0, "over"),      # over, but clear of the strip's side
 ])
 def test_hanger_blocks_going_over_the_top(y, z, expected):
-    env = laps_env()
+    env = make_env()
     env.place([6.6, y, z], 0.0, HOOP_AT, BACK)   # behind the hoop, reversing towards the front
     for _ in range(20):
         _, _, terminated, _, info = env.step([0.0, -1.0, 0.0, 0.0])
@@ -268,7 +268,7 @@ def test_hanger_blocks_going_over_the_top(y, z, expected):
 
 
 def test_progress_targets_a_side_waypoint_from_behind():
-    env = laps_env()
+    env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     assert np.allclose(env._progress_target(np.array([5.5, 5.2, 1.5])), HOOP_AT)
     gate = env._progress_target(np.array([6.5, 5.2, 1.5]))
@@ -278,7 +278,7 @@ def test_progress_targets_a_side_waypoint_from_behind():
 @pytest.mark.parametrize("angle_deg, expected", [(0, 1), (60, 1), (75, 0), (180, 0)])
 def test_marker_is_seen_only_from_the_front(angle_deg, expected):
     """Drone 1 m from the hoop at angle_deg off its front normal, facing the hoop."""
-    env = laps_env()
+    env = make_env()
     a = np.deg2rad(angle_deg)
     drone = np.array(HOOP_AT) + [-np.cos(a), np.sin(a), 0.0]
     env.place(drone, np.arctan2(-np.sin(a), np.cos(a)), HOOP_AT, BACK)
@@ -292,7 +292,7 @@ def test_marker_needs_the_hoop():
 
 
 def test_laps_run_to_the_cut_off():
-    env = laps_env()
+    env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     for _ in range(LAPS_MAX_STEPS):
         _, _, terminated, truncated, info = env.step([0.0, 0.0, 0.0, 0.0])
@@ -301,7 +301,7 @@ def test_laps_run_to_the_cut_off():
 
 
 def test_pad_layouts_fit_the_real_cage():
-    env = HoopEnv(task="laps", camera=Camera())
+    env = HoopEnv(camera=Camera())
     for seed in range(300):
         obs, _ = env.reset(seed=seed)
         assert env.observation_space.contains(obs)
@@ -315,7 +315,7 @@ def test_pad_layouts_fit_the_real_cage():
 
 
 def test_level_zero_starts_with_hoop_and_marker_in_view():
-    env = HoopEnv(task="laps", level=0.0, camera=Camera())
+    env = HoopEnv(level=0.0, camera=Camera())
     seen = []
     for seed in range(200):
         obs, _ = env.reset(seed=seed)
@@ -324,7 +324,7 @@ def test_level_zero_starts_with_hoop_and_marker_in_view():
 
 
 def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
-    env = HoopEnv(task="laps", randomise=True, camera=Camera())
+    env = HoopEnv(randomise=True, camera=Camera())
     r = Randomise()
     delays = set()
     for seed in range(50):
@@ -338,12 +338,12 @@ def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
     assert delays == set(range(r.delay_steps[0], r.delay_steps[1] + 1))
 
 
-def test_laps_gymnasium_api():
-    check_env(HoopEnv(task="laps", randomise=True, camera=Camera()), skip_render_check=True)
+def test_gymnasium_api():
+    check_env(HoopEnv(randomise=True, camera=Camera()), skip_render_check=True)
 
 
 def test_hanger_can_be_left_out():
-    env = laps_env(hanger=False)
+    env = make_env(hanger=False)
     env.place([6.6, 5.0, 2.0], 0.0, HOOP_AT, BACK)
     routes = [env.step([0.0, -1.0, 0.0, 0.0])[4]["route"] for _ in range(20)]
     assert [r for r in routes if r] == ["over"]
