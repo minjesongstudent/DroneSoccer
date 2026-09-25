@@ -24,7 +24,8 @@ class Cage:
     length: float = 2.05       # MEASURED 2026-09-24
     width: float = 2.05        # MEASURED 2026-09-24
     height: float = 2.05       # MEASURED 2026-09-24
-    margin: float = 0.25       # DESIGN: geofence inset from the net on every side
+    margin: float = 0.15       # DESIGN: geofence inset from the net on every side. 0.25 put
+                               # the pad start on the fence; the drone still clears the net by ~7 cm
     min_altitude: float = 0.3  # DESIGN: the downward sensor needs this to hold position
 
 
@@ -34,6 +35,10 @@ class Hoop:
     diameter_tolerance: float = 0.03  # DESIGN: +- per episode and per axis; the noodle is floppy
     thickness: float = 0.065          # UNMEASURED: noodle diameter, measure with the tape
     n_points: int = 32                # DESIGN: points projected around the outer edge
+    # The front marker: a disc on the noodle's front face at 6 o'clock. The noodle
+    # hides it from behind, which is how the policy tells front from back.
+    marker_max_angle_deg: float = 70.0  # UNMEASURED: widest view off the hoop's front normal
+                                        # that still shows it; check by eye from the side
 
 
 @dataclass
@@ -64,6 +69,22 @@ class Drone:
     tau: float = 0.3           # UNMEASURED: velocity response time, B2 step flights
     delay_steps: int = 0       # UNMEASURED: command delay in control steps, B2
     dt: float = 0.1            # DESIGN: 10 Hz control; B2 checks the laptop holds it
+    takeoff_height: float = 0.8  # UNMEASURED: hover height after `takeoff`, B2
+
+
+@dataclass
+class Pad:
+    """The take-off pad sits in a corner of the cage, facing in."""
+    inset: float = 0.25              # DESIGN: pad centre from each of the two walls
+    heading_error_deg: float = 15.0  # DESIGN: +- how far off the cage's centre it may face
+
+
+@dataclass
+class Randomise:
+    """Ranges drawn per episode when HoopEnv(randomise=True). Stage 3 of the laps plan."""
+    delay_steps: tuple[int, int] = (0, 3)       # UNMEASURED: B2, 100-300 ms expected
+    tau: tuple[float, float] = (0.15, 0.5)      # UNMEASURED: B2 step flights
+    rate_hz: tuple[float, float] = (8.0, 12.0)  # UNMEASURED: drawn every step, WiFi is not steady
 
 
 def load_camera() -> Camera:

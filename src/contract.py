@@ -1,4 +1,9 @@
-"""The seven numbers: the only thing the policy sees.
+"""The eight numbers: the only thing the policy sees.
+
+Seven describe the hoop's ellipse. The eighth, `marker`, says whether the front
+marker is in view: a disc on the noodle's front face that the noodle hides from
+behind. A hoop looks the same from both sides, so without it the policy cannot
+tell which way through is forwards.
 
 The detector (real camera) and the simulator (projected geometry) both produce
 points on the hoop's outer edge in normalised image coordinates, then call
@@ -13,7 +18,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-FIELDS = ("u", "v", "major", "ratio", "sin_2t", "cos_2t", "visible")
+FIELDS = ("u", "v", "major", "ratio", "sin_2t", "cos_2t", "visible", "marker")
 OBS_DIM = len(FIELDS)
 NOT_VISIBLE = np.zeros(OBS_DIM, dtype=np.float32)
 
@@ -22,19 +27,20 @@ NOT_VISIBLE = np.zeros(OBS_DIM, dtype=np.float32)
 ACTION_FIELDS = ("right", "forward", "up", "yaw_cw")
 ACTION_DIM = len(ACTION_FIELDS)
 
-# The policy sees a strided window of past observations and its own last 2
-# actions. OBS_LAGS holds the lags in control steps, oldest first, so the newest
+# The policy sees a strided window of past observations and its own last 3
+# actions, enough to cover every command still in flight at up to 3 steps of
+# delay. OBS_LAGS holds the lags in control steps, oldest first, so the newest
 # frame stays last and frames[-1] still means "now".
 #
 # The hoop leaves the frame about 0.40 m out, and the drone needs about 0.5 m to
 # carry its body through. At 0.2 m/s that is 25 steps at 10 Hz, so the window
 # spans 24 lags. Close lags give velocity, far lags hold the last sighting
 # through the blind final approach. Striding covers 2.5 s with 9 frames instead
-# of 25, which keeps POLICY_INPUT_DIM at 71 rather than 183.
+# of 25, which keeps POLICY_INPUT_DIM at 84 rather than 212.
 OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
 OBS_STACK = len(OBS_LAGS)
 FRAME_HISTORY = max(OBS_LAGS) + 1
-ACTION_HISTORY = 2
+ACTION_HISTORY = 3
 POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM
 
 MIN_POINTS = 5     # fitEllipse needs at least five
@@ -43,12 +49,15 @@ CLIP = 3.0         # bound u, v, major when a partial arc puts the centre off-fr
 _FIT_SCALE = 1000.0  # fitEllipse is tuned for pixel-scale input
 
 
-def observe(points: np.ndarray, half_extent: tuple[float, float]) -> np.ndarray:
-    """Seven numbers from hoop edge points.
+def observe(points: np.ndarray, half_extent: tuple[float, float],
+            marker: bool = False) -> np.ndarray:
+    """Eight numbers from hoop edge points and whether the front marker is seen.
 
     points: (N, 2) normalised image coordinates of the hoop's outer edge.
     half_extent: half the frame width and height in normalised coordinates,
         so that u and v are +-1 at the frame edges.
+    marker: the front marker is in view. The detector looks for it next to the
+        fitted ellipse, so without a hoop it reads 0 like everything else.
     """
     points = np.asarray(points, dtype=np.float64).reshape(-1, 2)
     if len(points) < MIN_POINTS:
@@ -79,5 +88,6 @@ def observe(points: np.ndarray, half_extent: tuple[float, float]) -> np.ndarray:
         lean * np.sin(two_t),
         lean * np.cos(two_t),
         1.0,
+        float(marker),
     ], dtype=np.float32)
     return obs

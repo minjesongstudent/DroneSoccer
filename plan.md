@@ -16,6 +16,45 @@ Work runs as **three parallel tracks**, so the real drone flies early and nobody
 - **Track B (teammate B):** safety, flight loop, measurements, detector, real flights.
 - **Track C (teammate C):** operator interface and report.
 
+## Mission update (2026-09-25): laps
+
+The mission is now **continuous laps**, not a single pass:
+
+1. Take off from a pad in a corner of the cage. The pad sits 0.25 m from both walls and
+   faces in.
+2. Find the hoop. Its height and position are unknown, so the policy searches: it turns,
+   climbs or descends.
+3. Fly through the hoop **front to back**.
+4. Fly **round the outside** back to the front, then pass again, until the battery check
+   lands the drone.
+
+**Rules**
+
+| Event | Reward | Episode |
+|---|---|---|
+| Pass front to back | +25 | keeps going |
+| Back through the hole | -10 | ends (`wrong_way`) |
+| Crossing the plane outside the ring | nothing | keeps going: this is how the drone gets round |
+| Hit / left the cage | -10 | ends |
+
+**Other changes**
+
+- **Progress reward:** behind the hoop, progress pays for getting closer to a waypoint
+  beside the hoop rather than to its centre.
+- **Episode length:** 60 s in training, and hitting it counts as a cut-off, not a failure.
+- **Search comes before randomisation:** the old A4 now goes ahead of A3.
+- **Geofence:** now 0.15 m from the net, because 0.25 m would put the pad start right on
+  the fence.
+
+**Front marker.** The hoop looks the same from both sides, so the policy needs to see which
+side it's on. A disc on the noodle's front face at 6 o'clock does it, because the noodle
+hides it from behind.
+- Colour the front of the disc **solid magenta or pink**.
+- Colour its back black or hoop-blue, because the back shows below the noodle.
+- Wrap the blue hanger bar in black tape, or it skews the ellipse fit.
+- **B3 detects the marker by colour, not the plus.** At 480×360 the plus is only 2–3 px
+  thick.
+
 ## How it fits together
 
 ```mermaid
@@ -39,9 +78,10 @@ That is the whole trick.
 The true hoop position exists only in the simulator, only to compute reward. The policy
 never receives it, so it must find the hoop by looking. Expect this question in the oral.
 
-## The seven numbers
+## The seven numbers (now eight)
 
-Freeze as `src/contract.py` in stage 0. Everything depends on it.
+Freeze as `src/contract.py` in stage 0. Everything depends on it. The laps mission added an
+eighth field, `marker`, so the policy can tell front from back.
 
 | Field | Meaning |
 |---|---|
@@ -50,6 +90,7 @@ Freeze as `src/contract.py` in stage 0. Everything depends on it.
 | `ratio` | How squashed the ellipse is, so the hoop's angle |
 | `sin_2t`, `cos_2t` | Which way the ellipse leans |
 | `visible` | 1 if found, 0 if not |
+| `marker` | 1 if the front marker is seen next to the hoop, 0 if not |
 
 - **Lean uses 2θ, not θ.** An ellipse at θ and θ+180° is the same ellipse, so plain
   `sin θ, cos θ` would jump as the ellipse rotates. Scale both by `(1 - ratio)`, because
@@ -57,8 +98,9 @@ Freeze as `src/contract.py` in stage 0. Everything depends on it.
 - **When `visible = 0`, the other six are all 0.** Frozen in the contract so the detector
   and simulator agree.
 
-The policy gets these for the last 3 timesteps plus its own last 2 actions. Stacking lets
-it infer its own speed, so a plain MLP works with no recurrent network.
+The policy gets these for 9 frames spread over the last 2.4 s, plus its own last 3
+actions (84 numbers). Stacking lets it infer its own speed, so a plain MLP works with no
+recurrent network.
 
 ## How the tracks meet
 
@@ -290,7 +332,10 @@ Unverified ones are marked, because the plan changes if they are wrong.
     seven numbers.
 11. About 20 real episodes are enough to fit simulator parameters, but nowhere near enough
     to fine-tune by gradient descent. Real flights buy parameters, not training.
-12. Randomisation ranges bracket reality. If not, transfer fails and more training will not
+12. The noodle hides the front marker from behind, up to about 70° off the hoop's front.
+    **Unverified.** Check by eye from behind and the sides; the value is
+    `Hoop.marker_max_angle_deg`.
+13. Randomisation ranges bracket reality. If not, transfer fails and more training will not
     help. **Main technical risk**, reduced by measuring first in B2.
 
 ## If time runs short

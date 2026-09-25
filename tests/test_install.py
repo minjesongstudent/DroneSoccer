@@ -7,7 +7,7 @@ import importlib
 
 import pytest
 
-TRAINING_PACKAGES = ["numpy", "cv2", "gymnasium", "torch", "stable_baselines3", "tensorboard"]
+TRAINING_PACKAGES = ["numpy", "cv2", "gymnasium", "torch", "stable_baselines3", "tensorboard", "matplotlib"]
 
 
 @pytest.mark.parametrize("name", TRAINING_PACKAGES)
@@ -27,5 +27,5 @@ def test_short_training_run(tmp_path):
     model.learn(total_timesteps=300)
     model.save(tmp_path / "model")
 
-    outcomes = run_episodes(load_policy(str(tmp_path / "model.zip")), episodes=2)
-    assert sum(outcomes.values()) == 2
+    results = run_episodes(load_policy(str(tmp_path / "model.zip")), episodes=2)
+    assert len(results) == 2
