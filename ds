@@ -113,6 +113,12 @@ cmd_submit() {
   mkdir -p runs && printf '%s\n' "$name" > "$LAST"
   # Always rewrite, so a reused name never inherits an older run's options.
   if [ $# -gt 0 ]; then printf '%s\n' "$@"; fi > "runs/${name}.args"
+  queue "$name" "$seeds" "$steps" "$wall"
+}
+
+# qsub the job for a run whose options are already in runs/<name>.args.
+queue() {
+  local name=$1 seeds=$2 steps=$3 wall=$4
   # -l and -N on the command line beat the #PBS lines in the job file, so the
   # walltime always matches the step count. ncpus must cover one core per seed.
   qsub -N "hoop-$name" \
@@ -120,7 +126,30 @@ cmd_submit() {
        -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
        "$JOB"
   printf '%s%s seeds, %s steps, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
-    "$D" "$seeds" "$steps" "$wall" "$*" "$name" "$N"
+    "$D" "$seeds" "$steps" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
+}
+
+# Resubmit a run that was cut off. Each seed carries on from its last snapshot
+# in runs/<name>_s<seed>/resume/, with the same options and total step count,
+# and the walltime only covers the steps left for the slowest seed.
+cmd_resume() {
+  need_qsub
+  local name=${1:-$(name_default)} seeds=0 total=0 least=-1 state steps
+  while [ -e "runs/${name}_s${seeds}.log" ]; do
+    state="runs/${name}_s${seeds}/resume/state.json"
+    [ -f "$state" ] || die "no $state. That seed never reached a checkpoint, so start it again with ./ds submit."
+    steps=$(sed -n 's/.*"steps": \([0-9]*\).*/\1/p' "$state")
+    total=$(sed -n 's/.*"total": \([0-9]*\).*/\1/p' "$state")
+    if [ "$least" -lt 0 ] || [ "$steps" -lt "$least" ]; then least=$steps; fi
+    seeds=$((seeds + 1))
+  done
+  [ "$seeds" -gt 0 ] || die "no logs in runs/ for '$name'"
+  [ "$least" -lt "$total" ] || die "every seed of '$name' already reached $total steps"
+  touch "runs/${name}.args"
+  grep -qx -- --resume "runs/${name}.args" || echo --resume >> "runs/${name}.args"
+  printf '%s\n' "$name" > "$LAST"
+  printf '%sresuming from step %s of %s%s\n' "$D" "$least" "$total" "$N"
+  queue "$name" "$seeds" "$total" "$(walltime_for $(( total - least )))"
 }
 
 cmd_progress() {
@@ -208,6 +237,7 @@ banner() {
   ${B}setup${N}     build .venv, once per machine
   ${B}run${N}       train here: ./ds run [seeds] [steps] [name] [train options]
   ${B}submit${N}    qsub a job: ./ds submit [seeds] [steps] [name] [train options]
+  ${B}resume${N}    resubmit a cut-off run from its snapshots: ./ds resume [name]
   ${B}status${N}    jobs, progress and walltime headroom
   ${B}progress${N}  one line per seed
   ${B}logs${N}      follow a seed: ./ds logs [seed]
@@ -220,7 +250,7 @@ EOF
 
 case "${1:-}" in
   ''|-h|--help|help) banner ;;
-  setup|run|submit|progress|status|logs|test|cancel|vpn)
+  setup|run|submit|resume|progress|status|logs|test|cancel|vpn)
     cmd="$1"; shift; "cmd_$cmd" "$@" ;;
   *) die "unknown command: $1  (run ./ds for the list)" ;;
 esac

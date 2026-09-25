@@ -16,12 +16,18 @@ EXTRA=("$@")
 # Each run gets one core; without this PyTorch grabs every core in every run.
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 
+# A resumed run appends to its logs, so each still reads as one run.
+RESUME=false
+for arg in ${EXTRA[@]+"${EXTRA[@]}"}; do [ "$arg" = --resume ] && RESUME=true; done
+
 mkdir -p runs
 pids=()
 for seed in $(seq 0 $((SEEDS - 1))); do
+    log="runs/${NAME}_s${seed}.log"
+    $RESUME || : > "$log"
     # The +"..." form expands an empty array safely under set -u on old bash.
     .venv/bin/python -m src.train --steps "$STEPS" --name "${NAME}_s${seed}" --seed "$seed" \
-        ${EXTRA[@]+"${EXTRA[@]}"} > "runs/${NAME}_s${seed}.log" 2>&1 &
+        ${EXTRA[@]+"${EXTRA[@]}"} >> "$log" 2>&1 &
     pids+=($!)
 done
 
