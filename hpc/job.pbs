@@ -4,7 +4,8 @@
 # ds sets DS_SEEDS, DS_STEPS and DS_NAME, and computes the walltime from the
 # step count, so the -l and -N lines below are only defaults for a bare qsub.
 # Check with `./ds status <name>`. Output lands in runs/ and hoop-<name>.o<jobid>.
-# Outputs are a few MB, so they stay in home rather than /scratch.
+# Outputs stay in home rather than /scratch: a few MB per seed, plus a ~700 MB
+# resume snapshot (runs/<name>_s<seed>/resume/) that ./ds resume needs.
 #
 # One seed runs at about 86 steps/s on one core, so 2M steps takes about
 # 6.5 hours. Seeds run in parallel, so the count does not change the walltime.
