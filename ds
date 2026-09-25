@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+#
+# ds - one entry point for the Drone Soccer experiment workflow.
+#
+# Run it with no arguments for a status banner and the command list. It needs
+# nothing but bash, so it behaves the same on a laptop and on the HPC login
+# node. Every command wraps a script in hpc/, which stays usable on its own.
+
+set -euo pipefail
+
+# Act on the repo whatever directory the caller sits in.
+cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+PY=.venv/bin/python
+JOB=hpc/job.pbs
+LAST=runs/.last-name
+
+# The name of the most recent submission, so status and progress follow the run
+# you actually started rather than whatever came before it.
+name_default() { cat "$LAST" 2>/dev/null || echo sac; }
+
+if [ -t 1 ]; then
+  B=$'\033[1m'; D=$'\033[2m'; R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; N=$'\033[0m'
+else
+  B=''; D=''; R=''; G=''; Y=''; N=''
+fi
+
+die()  { printf '%serror:%s %s\n' "$R" "$N" "$*" >&2; exit 1; }
+warn() { printf '%swarning:%s %s\n' "$Y" "$N" "$*" >&2; }
+
+have_venv() { [ -x "$PY" ]; }
+need_venv() { have_venv || die "no .venv. Run: ./ds setup"; }
+need_qsub() { command -v qsub >/dev/null 2>&1 || die "no qsub. Run this on the HPC login node."; }
+
+# --- small readers ----------------------------------------------------------
+
+# Total walltime of the running job, in minutes. ds submit sets the walltime on
+# the qsub command line, so the #PBS line in the job file is only a fallback.
+walltime_min() {
+  local w h m id
+  if id=$(job_rows | awk 'NR==1{print $1}') && [ -n "$id" ]; then
+    w=$(qstat -f "$id" 2>/dev/null |
+        sed -n 's/.*Resource_List\.walltime = \([0-9:]*\).*/\1/p' | head -1)
+  fi
+  [ -n "${w:-}" ] || w=$(sed -n 's/^#PBS -l walltime=\([0-9:]*\).*/\1/p' "$JOB" | head -1)
+  [ -n "$w" ] || return 1
+  IFS=: read -r h m _ <<<"$w"
+  echo $(( 10#$h * 60 + 10#$m ))
+}
+
+# One row per running job: id, name, state, elapsed.
+job_rows() {
+  command -v qstat >/dev/null 2>&1 || return 1
+  # -w stops the id and name being truncated with a trailing *, which qstat -f
+  # rejects as an illegally formed job identifier.
+  qstat -u "$USER" -w 2>/dev/null | grep -E '^[0-9]+\.' | awk '{print $1, $4, $10, $11}'
+}
+
+# Highest eta across the last progress line of every seed log, in minutes.
+max_eta_min() {
+  local name=${1:-$(name_default)}
+  local log line eta best=''
+  for log in runs/"${name}"_s*.log; do
+    [ -e "$log" ] || return 1
+    line=$(grep '^progress' "$log" 2>/dev/null | tail -1) || true
+    [ -n "$line" ] || continue
+    # A log from an older run would drag the eta to whatever it finished at.
+    [ $(( ($(date +%s) - $(stat -c %Y "$log")) / 60 )) -lt 10 ] || continue
+    eta=$(sed -n 's/.*eta \([0-9]*\)m.*/\1/p' <<<"$line")
+    [ -n "$eta" ] || continue
+    # A chained [ ] || [ ] && ... returns non-zero here and set -e would exit.
+    if [ -z "$best" ] || [ "$eta" -gt "$best" ]; then
+      best=$eta
+    fi
+  done
+  [ -n "$best" ] || return 1
+  echo "$best"
+}
+
+# --- commands ---------------------------------------------------------------
+
+cmd_setup() {
+  bash hpc/setup.sh
+}
+
+cmd_run() {  # local or interactive training
+  need_venv
+  local seeds=${1:-5} steps=${2:-500000} name=${3:-sac}
+  shift $(( $# < 3 ? $# : 3 ))
+  bash hpc/run_seeds.sh "$name" "$seeds" "$steps" "$@"
+}
+
+# Wall minutes one seed needs, plus a quarter. Seeds run in parallel on their
+# own core, so the count does not change the wall time. 86 steps/s is measured.
+walltime_for() {
+  local steps=$1 mins
+  mins=$(( steps * 125 / (86 * 60 * 100) ))
+  [ "$mins" -lt 30 ] && mins=30
+  printf '%02d:%02d:00' $(( mins / 60 )) $(( mins % 60 ))
+}
+
+cmd_submit() {
+  need_qsub
+  have_venv || warn "no .venv on this machine. The job fails unless you ran ./ds setup here."
+  local seeds=${1:-4} steps=${2:-2000000} name=${3:-sac} wall
+  shift $(( $# < 3 ? $# : 3 ))   # the rest are train options, e.g. --randomise --level 0.75
+  wall=$(walltime_for "$steps")
+  # Two runs under one name put their logs in one glob, and nothing downstream
+  # can separate them again.
+  if compgen -G "runs/${name}_s*.log" >/dev/null; then
+    warn "runs/${name}_s*.log already exists. Pick a new name, or the logs mix."
+  fi
+  mkdir -p runs && printf '%s\n' "$name" > "$LAST"
+  # Always rewrite, so a reused name never inherits an older run's options.
+  if [ $# -gt 0 ]; then printf '%s\n' "$@"; fi > "runs/${name}.args"
+  queue "$name" "$seeds" "$steps" "$wall"
+}
+
+# qsub the job for a run whose options are already in runs/<name>.args.
+queue() {
+  local name=$1 seeds=$2 steps=$3 wall=$4
+  # -l and -N on the command line beat the #PBS lines in the job file, so the
+  # walltime always matches the step count. ncpus must cover one core per seed.
+  qsub -N "hoop-$name" \
+       -l "ncpus=${seeds},mem=16GB,walltime=${wall}" \
+       -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
+       "$JOB"
+  printf '%s%s seeds, %s steps, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
+    "$D" "$seeds" "$steps" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
+}
+
+# Resubmit a run that was cut off. Each seed carries on from its last snapshot
+# in runs/<name>_s<seed>/resume/, with the same options and total step count,
+# and the walltime only covers the steps left for the slowest seed.
+cmd_resume() {
+  need_qsub
+  local name=${1:-$(name_default)} seeds=0 total=0 least=-1 state steps
+  while [ -e "runs/${name}_s${seeds}.log" ]; do
+    state="runs/${name}_s${seeds}/resume/state.json"
+    [ -f "$state" ] || die "no $state. That seed never reached a checkpoint, so start it again with ./ds submit."
+    steps=$(sed -n 's/.*"steps": \([0-9]*\).*/\1/p' "$state")
+    total=$(sed -n 's/.*"total": \([0-9]*\).*/\1/p' "$state")
+    if [ "$least" -lt 0 ] || [ "$steps" -lt "$least" ]; then least=$steps; fi
+    seeds=$((seeds + 1))
+  done
+  [ "$seeds" -gt 0 ] || die "no logs in runs/ for '$name'"
+  [ "$least" -lt "$total" ] || die "every seed of '$name' already reached $total steps"
+  touch "runs/${name}.args"
+  grep -qx -- --resume "runs/${name}.args" || echo --resume >> "runs/${name}.args"
+  printf '%s\n' "$name" > "$LAST"
+  printf '%sresuming from step %s of %s%s\n' "$D" "$least" "$total" "$N"
+  queue "$name" "$seeds" "$total" "$(walltime_for $(( total - least )))"
+}
+
+cmd_progress() {
+  bash hpc/progress.sh "${1:-$(name_default)}"
+}
+
+cmd_logs() {
+  local seed=${1:-0}
+  local name=${2:-$(name_default)}
+  local log="runs/${name}_s${seed}.log"
+  [ -e "$log" ] || die "no log at $log"
+  tail -f "$log"
+}
+
+cmd_test() {
+  need_venv
+  "$PY" -m pytest -q
+}
+
+cmd_cancel() {
+  need_qsub
+  local id=${1:-}
+  [ -n "$id" ] || die "usage: ./ds cancel <jobid>"
+  qdel "$id"
+}
+
+cmd_vpn() {
+  [ -x scripts/uts-vpn.sh ] || die "scripts/uts-vpn.sh is missing"
+  bash scripts/uts-vpn.sh "$@"
+}
+
+cmd_status() {
+  local rows total eta remaining elapsed_min h m
+  printf '%sjobs%s\n' "$B" "$N"
+  if rows=$(job_rows) && [ -n "$rows" ]; then
+    printf '  %s\n' "$rows"
+  elif command -v qstat >/dev/null 2>&1; then
+    printf '  %snone queued or running%s\n' "$D" "$N"
+  else
+    printf '  %sno qstat here, so this is not the HPC%s\n' "$D" "$N"
+  fi
+
+  printf '\n%sprogress%s\n' "$B" "$N"
+  if bash hpc/progress.sh "${1:-$(name_default)}" 2>/dev/null | sed 's/^/  /'; then :; else
+    printf '  %sno logs yet%s\n' "$D" "$N"
+  fi
+
+  # Compare the slowest seed against the walltime left, and say so plainly.
+  if eta=$(max_eta_min "${1:-$(name_default)}") && total=$(walltime_min); then
+    elapsed_min=0
+    if rows=$(job_rows) && [ -n "$rows" ]; then
+      # qstat prints HH:MM, qstat -w prints HH:MM:SS. Read three fields either
+      # way, or the seconds land in $m and the arithmetic sees "11:10".
+      IFS=: read -r h m _ <<<"$(awk 'NR==1{print $4}' <<<"$rows")"
+      if [[ ${h:-} =~ ^[0-9]+$ && ${m:-} =~ ^[0-9]+$ ]]; then
+        elapsed_min=$(( 10#$h * 60 + 10#$m ))
+      fi
+    fi
+    remaining=$(( total - elapsed_min ))
+    printf '\n%swalltime%s\n' "$B" "$N"
+    printf '  slowest seed needs %sm, %sm of %sm left\n' "$eta" "$remaining" "$total"
+    if [ "$eta" -gt "$remaining" ]; then
+      printf '  %sthe job runs out of walltime. Raise walltime in %s, or cut --steps.%s\n' "$R" "$JOB" "$N"
+    else
+      printf '  %sfits%s\n' "$G" "$N"
+    fi
+  fi
+}
+
+banner() {
+  local branch venv rows
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "no git")
+  if have_venv; then
+    venv="${G}ok${N}  $("$PY" --version 2>&1)"
+  else
+    venv="${Y}missing${N} - run ./ds setup"
+  fi
+  printf '\n%sDroneSoccer%s  %s%s%s\n' "$B" "$N" "$D" "$branch" "$N"
+  printf '  venv  %s\n' "$venv"
+  if rows=$(job_rows) && [ -n "$rows" ]; then
+    printf '  jobs  %s\n' "$(head -1 <<<"$rows")"
+  fi
+  cat <<EOF
+
+  ${B}setup${N}     build .venv, once per machine
+  ${B}run${N}       train here: ./ds run [seeds] [steps] [name] [train options]
+  ${B}submit${N}    qsub a job: ./ds submit [seeds] [steps] [name] [train options]
+  ${B}resume${N}    resubmit a cut-off run from its snapshots: ./ds resume [name]
+  ${B}status${N}    jobs, progress and walltime headroom
+  ${B}progress${N}  one line per seed
+  ${B}logs${N}      follow a seed: ./ds logs [seed]
+  ${B}test${N}      pytest
+  ${B}cancel${N}    qdel a job: ./ds cancel <jobid>
+  ${B}vpn${N}       connect the UTS VPN
+
+EOF
+}
+
+case "${1:-}" in
+  ''|-h|--help|help) banner ;;
+  setup|run|submit|resume|progress|status|logs|test|cancel|vpn)
+    cmd="$1"; shift; "cmd_$cmd" "$@" ;;
+  *) die "unknown command: $1  (run ./ds for the list)" ;;
+esac

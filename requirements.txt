@@ -1,0 +1,8 @@
+gymnasium
+numpy
+opencv-python
+stable-baselines3
+tensorboard
+matplotlib
+djitellopy
+pytest

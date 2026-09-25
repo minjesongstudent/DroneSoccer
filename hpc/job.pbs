@@ -1,0 +1,33 @@
+#!/bin/bash
+# Train N seeds in parallel on one node. Submit from the repo root:
+#   ./ds submit [seeds] [steps] [name] [train options...]
+# ds sets DS_SEEDS, DS_STEPS and DS_NAME, and computes the walltime from the
+# step count, so the -l and -N lines below are only defaults for a bare qsub.
+# Check with `./ds status <name>`. Output lands in runs/ and hoop-<name>.o<jobid>.
+# Outputs stay in home rather than /scratch: a few MB per seed, plus a ~700 MB
+# resume snapshot (runs/<name>_s<seed>/resume/) that ./ds resume needs.
+#
+# One seed runs at about 86 steps/s on one core, so 2M steps takes about
+# 6.5 hours. Seeds run in parallel, so the count does not change the walltime.
+# The first run broke through at 400k steps on one seed of five, which 500k
+# steps was too short to exploit.
+
+#PBS -N hoop-sac
+#PBS -l ncpus=4
+#PBS -l mem=16GB
+#PBS -l walltime=08:00:00
+#PBS -j oe
+
+# Uncomment to get an email when the job aborts, begins or ends.
+##PBS -m abe
+##PBS -M your.email@student.uts.edu.au
+
+cd ${PBS_O_WORKDIR}
+# Train options, one per line, saved by ds submit. A file rather than qsub -v,
+# which splits on commas and is fussy about spaces.
+EXTRA=()
+ARGS="runs/${DS_NAME:-sac}.args"
+if [ -f "$ARGS" ]; then
+    while IFS= read -r arg; do EXTRA+=("$arg"); done < "$ARGS"
+fi
+bash hpc/run_seeds.sh "${DS_NAME:-sac}" "${DS_SEEDS:-4}" "${DS_STEPS:-2000000}" ${EXTRA[@]+"${EXTRA[@]}"}
