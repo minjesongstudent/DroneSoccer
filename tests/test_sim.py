@@ -3,13 +3,13 @@ import pytest
 from gymnasium.utils.env_checker import check_env
 
 from src import contract
-from src.params import Cage, Camera, Drone, Hoop
-from src.sim import HoopEnv
+from src.params import Cage, Camera, Drone, Hoop, Randomise
+from src.sim import LAPS_MAX_STEPS, SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
 EXACT = Hoop(diameter_tolerance=0.0)
-U, V, MAJOR, RATIO, SIN, COS, VISIBLE = range(7)
+U, V, MAJOR, RATIO, SIN, COS, VISIBLE, MARKER = range(8)
 
 
 def make_env(**kwargs):
@@ -170,3 +170,134 @@ def test_real_cage_layouts_start_with_hoop_in_view():
 
 def test_gymnasium_api():
     check_env(HoopEnv(camera=Camera()), skip_render_check=True)
+
+
+# --- laps -------------------------------------------------------------------
+# Hoop at (6, 5, 1.5) with its back facing +x, so the front (and the marker)
+# faces a drone coming from x < 6.
+
+HOOP_AT, BACK = [6.0, 5.0, 1.5], [1.0, 0.0, 0.0]
+
+
+def laps_env(**kwargs):
+    return make_env(task="laps", **kwargs)
+
+
+def goto(env, x, y, z=1.5, max_steps=300):
+    """Fly to (x, y) facing +x with a proportional controller. Returns the last step."""
+    for _ in range(max_steps):
+        dx, dy, dz = x - env.pos[0], y - env.pos[1], z - env.pos[2]
+        step = env.step(np.clip([-3 * dy, 3 * dx, 3 * dz, 0.0], -1, 1))
+        if step[2] or step[3] or np.hypot(dx, dy) < 0.02:
+            return step
+    return step
+
+
+def test_lap_pass_scores_and_keeps_flying():
+    env = laps_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for _ in range(100):
+        _, reward, terminated, truncated, info = env.step([0.0, 1.0, 0.0, 0.0])
+        if info["outcome"] == "passed":
+            break
+    assert info["outcome"] == "passed" and reward > 20.0
+    assert not terminated and not truncated and info["passes"] == 1
+
+
+def test_back_through_the_ring_is_wrong_way():
+    env = laps_env()
+    env.place([7.0, 5.0, 1.5], np.pi, HOOP_AT, BACK)  # behind the hoop, facing it
+    assert fly(env, [0.0, 1.0, 0.0, 0.0]) == "wrong_way"
+
+
+def test_crossing_outside_the_ring_is_neutral():
+    env = laps_env()
+    env.place([7.0, 5.8, 1.5], np.pi, HOOP_AT, BACK)
+    for _ in range(40):  # 1.6 m at 0.4 m/s: well past the plane
+        _, _, terminated, truncated, info = env.step([0.0, 1.0, 0.0, 0.0])
+        assert not terminated and not truncated
+    assert env.pos[0] < 6.0 and info["passes"] == 0
+
+
+def test_a_full_lap_scores_twice():
+    env = laps_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for x, y in [(6.6, 5.0), (6.6, 5.9), (5.4, 5.9), (5.4, 5.0), (6.6, 5.0)]:
+        _, _, terminated, truncated, info = goto(env, x, y)
+        assert not terminated and not truncated, info["outcome"]
+    assert info["passes"] == 2
+
+
+def test_progress_targets_a_side_waypoint_from_behind():
+    env = laps_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    assert np.allclose(env._progress_target(np.array([5.5, 5.2, 1.5])), HOOP_AT)
+    gate = env._progress_target(np.array([6.5, 5.2, 1.5]))
+    assert np.allclose(gate, [6.0, 5.0 + EXACT.outer_diameter / 2 + SIDE_GAP, 1.5])
+
+
+@pytest.mark.parametrize("angle_deg, expected", [(0, 1), (60, 1), (75, 0), (180, 0)])
+def test_marker_is_seen_only_from_the_front(angle_deg, expected):
+    """Drone 1 m from the hoop at angle_deg off its front normal, facing the hoop."""
+    env = laps_env()
+    a = np.deg2rad(angle_deg)
+    drone = np.array(HOOP_AT) + [-np.cos(a), np.sin(a), 0.0]
+    env.place(drone, np.arctan2(-np.sin(a), np.cos(a)), HOOP_AT, BACK)
+    obs = env.observe()
+    assert obs[VISIBLE] == 1   # the hoop itself is in view every time
+    assert obs[MARKER] == expected
+
+
+def test_marker_needs_the_hoop():
+    assert contract.observe(np.zeros((2, 2)), (0.5, 0.4), marker=True)[MARKER] == 0
+
+
+def test_laps_run_to_the_cut_off():
+    env = laps_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for _ in range(LAPS_MAX_STEPS):
+        _, _, terminated, truncated, info = env.step([0.0, 0.0, 0.0, 0.0])
+        assert not terminated
+    assert truncated and info["outcome"] == "timeout"
+
+
+def test_pad_layouts_fit_the_real_cage():
+    env = HoopEnv(task="laps", camera=Camera())
+    for seed in range(300):
+        obs, _ = env.reset(seed=seed)
+        assert env.observation_space.contains(obs)
+        assert env._in_fence(env.pos)
+        assert (env.pos - env.hoop_centre) @ env.hoop_normal < 0   # starts in front
+        assert all(env._in_fence(g) for g in env._gates)           # room to go round
+        # Level 1 is the real start: take-off height, above a pad in a corner.
+        assert env.pos[2] == pytest.approx(env.drone.takeoff_height)
+        inset = env.pad.inset
+        assert {round(min(c, env.cage.length - c), 6) for c in env.pos[:2]} == {inset}
+
+
+def test_level_zero_starts_with_hoop_and_marker_in_view():
+    env = HoopEnv(task="laps", level=0.0, camera=Camera())
+    seen = []
+    for seed in range(200):
+        obs, _ = env.reset(seed=seed)
+        seen.append(obs[(contract.OBS_STACK - 1) * contract.OBS_DIM + MARKER])
+    assert np.mean(seen) > 0.95
+
+
+def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
+    env = HoopEnv(task="laps", randomise=True, camera=Camera())
+    r = Randomise()
+    delays = set()
+    for seed in range(50):
+        env.reset(seed=seed)
+        dyn = env.dyn
+        assert r.delay_steps[0] <= dyn.delay_steps <= r.delay_steps[1]
+        assert r.tau[0] <= dyn.tau <= r.tau[1]
+        delays.add(dyn.delay_steps)
+        env.step([0.0, 0.5, 0.0, 0.0])
+        assert env.dyn is dyn
+    assert delays == set(range(r.delay_steps[0], r.delay_steps[1] + 1))
+
+
+def test_laps_gymnasium_api():
+    check_env(HoopEnv(task="laps", randomise=True, camera=Camera()), skip_render_check=True)
