@@ -45,8 +45,7 @@ LAPS_MAX_STEPS = 600           # 60 s; a cut-off, not a failure: the real run go
 # spacing, a contact can be missed by at most ~0.1 mm.
 CENTRELINE_POINTS = 256
 
-# The real detector needs a decent arc in frame. Stand-in until B3 logs dropout.
-MIN_ARC_FRACTION = 0.25
+MIN_ARC_FRACTION = 0.25        # UNMEASURED: share of the hoop's edge the detector needs in frame, B3
 
 # Reward weights. MISSED must outweigh the progress a drone can bank by flying
 # past the hoop instead of through it (up to 12 over a 1.2 m approach).

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Train N seeds in parallel on one node. Submit from the repo root:
-#   ./ds submit [seeds] [steps] [name]
+#   ./ds submit [seeds] [steps] [name] [train options...]
 # ds sets DS_SEEDS, DS_STEPS and DS_NAME, and computes the walltime from the
 # step count, so the -l and -N lines below are only defaults for a bare qsub.
 # Check with `./ds status <name>`. Output lands in runs/ and hoop-<name>.o<jobid>.
@@ -22,4 +22,11 @@
 ##PBS -M your.email@student.uts.edu.au
 
 cd ${PBS_O_WORKDIR}
-bash hpc/run_seeds.sh "${DS_NAME:-sac}" "${DS_SEEDS:-4}" "${DS_STEPS:-2000000}"
+# Train options, one per line, saved by ds submit. A file rather than qsub -v,
+# which splits on commas and is fussy about spaces.
+EXTRA=()
+ARGS="runs/${DS_NAME:-sac}.args"
+if [ -f "$ARGS" ]; then
+    while IFS= read -r arg; do EXTRA+=("$arg"); done < "$ARGS"
+fi
+bash hpc/run_seeds.sh "${DS_NAME:-sac}" "${DS_SEEDS:-4}" "${DS_STEPS:-2000000}" ${EXTRA[@]+"${EXTRA[@]}"}
