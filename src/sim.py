@@ -108,6 +108,8 @@ class HoopEnv(gym.Env):
         phi = np.linspace(0.0, 2 * np.pi, CENTRELINE_POINTS, endpoint=False)
         self._cos_line, self._sin_line = np.cos(phi), np.sin(phi)
         self._marker_cos = np.cos(np.deg2rad(self.hoop.marker_max_angle_deg))
+        pitch = np.deg2rad(self.camera.pitch_deg)
+        self._cos_pitch, self._sin_pitch = np.cos(pitch), np.sin(pitch)
 
         # Half-sizes of the drone's collision box in the body frame (forward, left, up).
         d = self.drone
@@ -229,6 +231,13 @@ class HoopEnv(gym.Env):
         self._hanger_bottom = hoop_centre[2] + radius_v
         # The marker sits on the noodle's front face at 6 o'clock.
         self._marker = hoop_centre - self._line_v * self._axis_v - half_t * n
+        # What the camera projects each step: the outer edge, then the marker last.
+        outline = (hoop_centre + np.outer(self._cos_phi, self._hoop_h)
+                   + np.outer(self._sin_phi, self._hoop_v))
+        self._sight_points = np.vstack([outline, self._marker])
+        # No centreline point is further than this from the hoop centre, plus the
+        # reach of the drone's box and the noodle's half thickness. Beyond it, no hit.
+        self._hit_reach = max(self._line_h, self._line_v) + half_t + np.linalg.norm(self._half_box)
         # Side waypoints for the way round, at the hoop's height. Only those inside
         # the geofence count; a layout from place() may have none, so keep both then.
         gates = [hoop_centre + s * (radius_h + SIDE_GAP) * self._axis_h for s in (1, -1)]
@@ -328,6 +337,8 @@ class HoopEnv(gym.Env):
         return direction, inside, rel
 
     def _hit(self) -> bool:
+        if np.linalg.norm(self.pos - self.hoop_centre) > self._hit_reach:
+            return False   # too far away to touch: skip the 256-point check
         return bool((self._box_distance(self._centreline) < self.hoop.thickness / 2).any())
 
     def _hits_hanger(self) -> bool:
@@ -389,25 +400,25 @@ class HoopEnv(gym.Env):
     def _box_distance(self, pts):
         """Distance from each world point to the drone's collision box (0 inside it)."""
         c, s = np.cos(self.heading), np.sin(self.heading)
-        rel = pts - self.pos
-        body = np.stack([rel @ [c, s, 0.0], rel @ [-s, c, 0.0], rel[:, 2]], axis=1)
+        body = (pts - self.pos) @ np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
         return np.linalg.norm(np.maximum(np.abs(body) - self._half_box, 0.0), axis=1)
 
     # --- observation -----------------------------------------------------
 
     def observe(self) -> np.ndarray:
         """The eight numbers the camera would report in the current state."""
-        pts = (self.hoop_centre + np.outer(self._cos_phi, self._hoop_h)
-               + np.outer(self._sin_phi, self._hoop_v))
-        xn, yn, in_frame = self._project(pts)
-        if in_frame.mean() < MIN_ARC_FRACTION:
+        # One projection covers the outer edge and the marker, which is last.
+        cam_pos, cam_axes = self._camera_pose()
+        xn, yn, in_frame = self._project(self._sight_points, cam_pos, cam_axes)
+        edge = in_frame[:-1]
+        if edge.mean() < MIN_ARC_FRACTION:
             return contract.NOT_VISIBLE.copy()
-        return contract.observe(np.stack([xn, yn], axis=1)[in_frame], self.camera.half_extent,
-                                marker=self._marker_seen())
+        return contract.observe(np.stack([xn[:-1], yn[:-1]], axis=1)[edge], self.camera.half_extent,
+                                marker=self._marker_seen(cam_pos, in_frame[-1]))
 
-    def _project(self, pts):
+    def _project(self, pts, cam_pos, cam_axes):
         """Normalised image coordinates of world points, and which of them are in frame."""
-        cam = self._to_camera(pts)
+        cam = (pts - cam_pos) @ cam_axes
         z = cam[:, 2]
         in_front = z > 0.05
         z_safe = np.where(in_front, z, 1.0)
@@ -416,27 +427,23 @@ class HoopEnv(gym.Env):
         px, py = k.fx * xn + k.cx, k.fy * yn + k.cy
         return xn, yn, in_front & (px >= 0) & (px < k.width) & (py >= 0) & (py < k.height)
 
-    def _marker_seen(self) -> bool:
+    def _marker_seen(self, cam_pos, in_frame) -> bool:
         """In frame, and viewed from within marker_max_angle_deg of the hoop's front."""
-        to_camera = self._camera_pos() - self._marker
+        to_camera = cam_pos - self._marker
         facing = (to_camera @ -self.hoop_normal) / np.linalg.norm(to_camera)
-        return bool(facing >= self._marker_cos and self._project(self._marker[None])[2][0])
+        return bool(facing >= self._marker_cos and in_frame)
 
-    def _camera_pos(self):
-        fwd = np.array([np.cos(self.heading), np.sin(self.heading), 0.0])
-        return self.pos + self.camera.offset_forward * fwd
-
-    def _to_camera(self, pts):
-        """World points to the camera frame: x right, y down, z forward."""
+    def _camera_pose(self):
+        """The camera's position, and a matrix taking world offsets to the camera
+        frame (x right, y down, z forward): its columns are those axes in world coordinates."""
         c, s = np.cos(self.heading), np.sin(self.heading)
-        fwd = np.array([c, s, 0.0])
-        right = np.array([s, -c, 0.0])
-        up = np.array([0.0, 0.0, 1.0])
-        p = np.deg2rad(self.camera.pitch_deg)
-        optical = np.cos(p) * fwd - np.sin(p) * up
-        down = -np.sin(p) * fwd - np.cos(p) * up
-        rel = pts - self._camera_pos()
-        return np.stack([rel @ right, rel @ down, rel @ optical], axis=1)
+        cp, sp = self._cos_pitch, self._sin_pitch
+        pos = self.pos + self.camera.offset_forward * np.array([c, s, 0.0])
+        # right, down (-sp*forward - cp*up), optical (cp*forward - sp*up)
+        axes = np.array([[s, -sp * c, cp * c],
+                         [-c, -sp * s, cp * s],
+                         [0.0, -cp, -sp]])
+        return pos, axes
 
     def _policy_input(self):
         # _frames holds every step. OBS_LAGS picks the strided subset, oldest
