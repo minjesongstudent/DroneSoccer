@@ -228,6 +228,29 @@ def test_a_full_lap_scores_twice():
     assert info["passes"] == 2
 
 
+def test_route_records_the_way_round():
+    """Back to front outside the ring, at +y: the hoop's left, seen from the front."""
+    env = laps_env()
+    env.place([6.6, 5.9, 1.5], 0.0, HOOP_AT, BACK)
+    routes = [env.step([0.0, -1.0, 0.0, 0.0])[4]["route"] for _ in range(20)]
+    assert [r for r in routes if r] == ["left"]
+
+
+@pytest.mark.parametrize("y, z, expected", [
+    (5.0, 2.0, "hit"),       # straight over the top: into the hanger
+    (5.0, 1.0, "under"),     # below the hoop: open
+    (5.4, 2.0, "over"),      # over, but clear of the strip's side
+])
+def test_hanger_blocks_going_over_the_top(y, z, expected):
+    env = laps_env()
+    env.place([6.6, y, z], 0.0, HOOP_AT, BACK)   # behind the hoop, reversing towards the front
+    for _ in range(20):
+        _, _, terminated, _, info = env.step([0.0, -1.0, 0.0, 0.0])
+        if terminated or info["route"]:
+            break
+    assert (info["outcome"] if terminated else info["route"]) == expected
+
+
 def test_progress_targets_a_side_waypoint_from_behind():
     env = laps_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
@@ -301,3 +324,10 @@ def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
 
 def test_laps_gymnasium_api():
     check_env(HoopEnv(task="laps", randomise=True, camera=Camera()), skip_render_check=True)
+
+
+def test_hanger_can_be_left_out():
+    env = laps_env(hanger=False)
+    env.place([6.6, 5.0, 2.0], 0.0, HOOP_AT, BACK)
+    routes = [env.step([0.0, -1.0, 0.0, 0.0])[4]["route"] for _ in range(20)]
+    assert [r for r in routes if r] == ["over"]
