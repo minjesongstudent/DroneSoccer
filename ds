@@ -239,6 +239,33 @@ cmd_status() {
   fi
 }
 
+# Your jobs split into running and waiting, so a queued job is never mistaken
+# for one that is training. qstat -w columns: 4 name, 9 walltime asked for,
+# 10 state, 11 elapsed.
+cmd_queue() {
+  command -v qstat >/dev/null 2>&1 || die "no qstat. Run this on the HPC login node."
+  local all running waiting
+  all=$(qstat -u "$USER" -w 2>/dev/null | grep -E '^[0-9]+\.') || true
+  running=$(awk '$10=="R" || $10=="E"' <<<"$all")
+  waiting=$(awk '$10!="R" && $10!="E"' <<<"$all")
+
+  printf '%srunning%s\n' "$G$B" "$N"
+  if [ -n "$running" ]; then
+    awk '{printf "  %-20s %-24s elapsed %s of %s\n", $1, $4, $11, $9}' <<<"$running"
+  else
+    printf '  %snone%s\n' "$D" "$N"
+  fi
+
+  printf '\n%squeued%s\n' "$Y$B" "$N"
+  if [ -n "$waiting" ]; then
+    # Q waits for resources, H is held, W waits for its start time.
+    awk '{s=$10; r=(s=="Q")?"waiting":(s=="H")?"held":(s=="W")?"waiting for start time":"state " s;
+          printf "  %-20s %-24s %s, walltime %s\n", $1, $4, r, $9}' <<<"$waiting"
+  else
+    printf '  %snone%s\n' "$D" "$N"
+  fi
+}
+
 banner() {
   local branch venv rows
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "no git")
@@ -259,6 +286,7 @@ banner() {
   ${B}submit${N}    qsub a job: ./ds submit [seeds] [steps] [name] [train options]
   ${B}resume${N}    resubmit a cut-off run from its snapshots: ./ds resume [name]
   ${B}status${N}    jobs, progress and walltime headroom
+  ${B}queue${N}     your jobs, running and queued
   ${B}progress${N}  one line per seed
   ${B}logs${N}      follow a seed: ./ds logs [seed]
   ${B}test${N}      pytest
@@ -270,7 +298,7 @@ EOF
 
 case "${1:-}" in
   ''|-h|--help|help) banner ;;
-  setup|run|submit|resume|progress|status|logs|test|cancel|vpn)
+  setup|run|submit|resume|progress|status|queue|logs|test|cancel|vpn)
     cmd="$1"; shift; "cmd_$cmd" "$@" ;;
   *) die "unknown command: $1  (run ./ds for the list)" ;;
 esac
