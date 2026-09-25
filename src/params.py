@@ -39,6 +39,11 @@ class Hoop:
     # hides it from behind, which is how the policy tells front from back.
     marker_max_angle_deg: float = 70.0  # UNMEASURED: widest view off the hoop's front normal
                                         # that still shows it; check by eye from the side
+    # The hanger: the bar on top of the hoop and the straps up to the cage roof.
+    # Modelled as a thin strip in the hoop's plane from its top to the ceiling,
+    # so the drone cannot go round over the top. Laps only.
+    hanger_half_width: float = 0.2    # UNMEASURED: half the top bar's length; assumes the hoop
+                                      # hangs from the roof. Measure the bar with the tape
 
 
 @dataclass

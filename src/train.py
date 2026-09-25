@@ -6,8 +6,10 @@ Watch: tensorboard --logdir runs
     laps:  rollout/passes_per_min and curriculum/level are the numbers that matter
     hover: rollout/pass_rate
 
-Saves runs/<name>/model.zip, then evaluates it against the baseline on the
+Saves a checkpoint to runs/<name>/checkpoints/ every CHECKPOINT_EVERY steps and
+runs/<name>/model.zip at the end, then evaluates it against the baseline on the
 same episodes, then saves the training curves to runs/<name>/plots/.
+See what a checkpoint does: python -m src.replay --model runs/<name>/checkpoints/<file>.zip
 """
 from __future__ import annotations
 
@@ -18,7 +20,7 @@ from pathlib import Path
 
 import numpy as np
 from stable_baselines3 import SAC
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
 
 from src.evaluate import CRASHES, DEFAULT_EPISODES, baseline_for, load_policy, report, run_episodes
@@ -27,6 +29,7 @@ from src.plots import save_plots
 from src.sim import HoopEnv
 
 RUNS = ROOT / "runs"
+CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
 
 # Laps curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the
 # last LEVEL_WINDOW episodes lasted the full minute with at least LEVEL_PASSES passes.
@@ -108,7 +111,9 @@ def train(steps: int, name: str, seed: int, task: str, level: float, randomise: 
                 gamma=0.995 if task == "laps" else 0.98,
                 learning_starts=5_000,   # fill the buffer with random flying first
                 tensorboard_log=str(RUNS))
-    model.learn(total_timesteps=steps, callback=Progress(steps, task), tb_log_name=name)
+    checkpoints = CheckpointCallback(CHECKPOINT_EVERY, str(out / "checkpoints"), name_prefix="model")
+    model.learn(total_timesteps=steps, callback=[Progress(steps, task), checkpoints],
+                tb_log_name=name)
     model.save(out / "model")
     return out / "model.zip"
 

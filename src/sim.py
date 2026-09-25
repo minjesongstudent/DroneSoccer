@@ -77,7 +77,7 @@ class HoopEnv(gym.Env):
     metadata = {"render_modes": []}
 
     def __init__(self, task: str = "hover", level: float = 1.0, randomise: bool = False,
-                 yaw_enabled: bool = False, start_angle_deg: float = 10.0,
+                 hanger: bool = True, yaw_enabled: bool = False, start_angle_deg: float = 10.0,
                  cage: Cage | None = None, hoop: Hoop | None = None,
                  camera: Camera | None = None, drone: Drone | None = None,
                  pad: Pad | None = None, ranges: Randomise | None = None):
@@ -91,6 +91,7 @@ class HoopEnv(gym.Env):
         self.pad = pad or Pad()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
+        self.hanger = hanger   # laps only; off replays models trained before it existed
         # Laps needs yaw: the drone turns to find the hoop and to fly round it.
         self.yaw_enabled = yaw_enabled or task == "laps"
         self.max_steps = LAPS_MAX_STEPS if task == "laps" else MAX_STEPS
@@ -224,6 +225,8 @@ class HoopEnv(gym.Env):
         self._line_h, self._line_v = radius_h - half_t, radius_v - half_t
         self._centreline = (hoop_centre + np.outer(self._cos_line, self._line_h * self._axis_h)
                             + np.outer(self._sin_line, self._line_v * self._axis_v))
+        # The hanger strip runs from the top of the hoop's outer edge to the ceiling.
+        self._hanger_bottom = hoop_centre[2] + radius_v
         # The marker sits on the noodle's front face at 6 o'clock.
         self._marker = hoop_centre - self._line_v * self._axis_v - half_t * n
         # Side waypoints for the way round, at the hoop's height. Only those inside
@@ -244,6 +247,7 @@ class HoopEnv(gym.Env):
         self.yaw_rate = 0.0
         self.steps = 0
         self.passes = 0
+        self.route = None   # which way the drone last went round, for replay.py
         self._pending = deque([np.zeros(contract.ACTION_DIM, np.float32)] * self.dyn.delay_steps)
         self._frames = deque([self.observe()] * contract.FRAME_HISTORY,
                              maxlen=contract.FRAME_HISTORY)
@@ -304,10 +308,11 @@ class HoopEnv(gym.Env):
         return self.hoop_centre
 
     def _crossing(self, prev):
-        """None, or (direction, inside) if this step crossed the hoop's plane.
+        """None, or (direction, inside, rel) if this step crossed the hoop's plane.
 
         direction is +1 front to back, -1 back to front; inside means within the
-        noodle's centreline where the path met the plane.
+        noodle's centreline where the path met the plane, and rel is that point
+        relative to the hoop centre.
         """
         n, c = self.hoop_normal, self.hoop_centre
         along = (self.pos - c) @ n
@@ -320,10 +325,28 @@ class HoopEnv(gym.Env):
             return None
         rel = prev + (self.pos - prev) * (-before / (along - before)) - c
         inside = ((rel @ self._axis_h) / self._line_h) ** 2 + ((rel @ self._axis_v) / self._line_v) ** 2 < 1.0
-        return direction, inside
+        return direction, inside, rel
 
     def _hit(self) -> bool:
         return bool((self._box_distance(self._centreline) < self.hoop.thickness / 2).any())
+
+    def _hits_hanger(self) -> bool:
+        """Drone box against the hanger strip. Both are upright boxes turned only
+        in yaw, so a height check plus a 2D separating-axis test is exact."""
+        if not self.hanger or self.pos[2] + self.drone.height / 2 < self._hanger_bottom:
+            return False
+        c, s = np.cos(self.heading), np.sin(self.heading)
+        drone_axes = [np.array([c, s]), np.array([-s, c])]
+        drone_half = self._half_box[:2]
+        strip_axes = [self.hoop_normal[:2], self._axis_h[:2]]
+        strip_half = [self.hoop.thickness / 2, self.hoop.hanger_half_width]
+        gap = self.pos[:2] - self.hoop_centre[:2]
+        for axis in drone_axes + strip_axes:
+            reach = (sum(h * abs(a @ axis) for h, a in zip(drone_half, drone_axes))
+                     + sum(h * abs(a @ axis) for h, a in zip(strip_half, strip_axes)))
+            if abs(gap @ axis) > reach:
+                return False   # a separating axis: no contact
+        return True
 
     def _left_cage(self) -> bool:
         z = self.pos[2]
@@ -341,15 +364,27 @@ class HoopEnv(gym.Env):
 
     def _lap_outcome(self, prev) -> str:
         """Front to back through the ring scores; back through the ring is wrong_way.
-        Crossing the plane outside the ring is how the drone gets round, so it is neutral."""
-        if self._hit():
+        Crossing the plane outside the ring is how the drone gets round, so it is neutral.
+        The hanger counts as part of the hoop."""
+        self.route = None
+        if self._hit() or self._hits_hanger():
             return "hit"
         crossing = self._crossing(prev)
         if crossing is not None and crossing[1]:
             return "passed" if crossing[0] == 1 else "wrong_way"
+        if crossing is not None and crossing[0] == -1:
+            self.route = self._route(crossing[2])
         if self._left_cage():
             return "left_cage"
         return "running"
+
+    def _route(self, rel) -> str:
+        """Which way round, as seen from the front: left, right, over or under."""
+        h = (rel @ self._axis_h) / self._line_h   # axis_h points left, seen from the front
+        v = (rel @ self._axis_v) / self._line_v
+        if abs(v) > abs(h):
+            return "over" if v > 0 else "under"
+        return "left" if h > 0 else "right"
 
     def _box_distance(self, pts):
         """Distance from each world point to the drone's collision box (0 inside it)."""
@@ -410,7 +445,7 @@ class HoopEnv(gym.Env):
         return np.concatenate([*frames, *self._actions]).astype(np.float32)
 
     def _info(self, outcome):
-        return {"outcome": outcome, "passes": self.passes, "steps": self.steps,
+        return {"outcome": outcome, "passes": self.passes, "steps": self.steps, "route": self.route,
                 "level": self.level, "drone_pos": self.pos.copy(),
                 "heading": self.heading, "hoop_centre": self.hoop_centre.copy(),
                 "hoop_normal": self.hoop_normal.copy()}
