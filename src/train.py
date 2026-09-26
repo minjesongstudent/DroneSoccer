@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import time
 from collections import deque
 from pathlib import Path
@@ -30,7 +31,7 @@ from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
 
-from src import baseline
+from src import baseline, sim
 from src.evaluate import DEFAULT_EPISODES, load_policy, report, run_episodes
 from src.params import ROOT, Drone
 from src.plots import save_plots
@@ -150,8 +151,24 @@ class Snapshot(BaseCallback):
         print(f"snapshot at step {self.num_timesteps}", flush=True)
 
 
+def settings(**args) -> str:
+    """One `settings` line for the log: the run's options, every constant in the
+    MDP CONFIGURATION of sim.py and the constants here, and the git commit.
+    src.report reads it back, so a report shows what the run was trained with
+    even after sim.py is edited for the next experiment."""
+    constants = {k: v for scope in (vars(sim), globals()) for k, v in scope.items()
+                 if k.isupper() and isinstance(v, (int, float, str, tuple))}
+    git = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
+                         capture_output=True, text=True).stdout.strip() or "unknown"
+    pairs = [*args.items(), *constants.items(), ("git", git)]
+    return "settings " + " ".join(
+        f"{k}={','.join(map(str, v)) if isinstance(v, tuple) else v}" for k, v in pairs)
+
+
 def train(steps: int, name: str, seed: int, level: float, randomise: bool,
           resume: bool = False) -> Path:
+    print(settings(steps=steps, seed=seed, level=level, randomise=randomise, resume=resume),
+          flush=True)
     out = RUNS / name
     snapshot = out / "resume"
     if resume:

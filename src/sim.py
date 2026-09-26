@@ -9,6 +9,33 @@ recent actions). The true hoop position is used for reward and termination only.
 """
 from __future__ import annotations
 
+# ----- MDP CONFIGURATION (logged into trainingReports/ by every run) --------
+# reward per step = R_PROGRESS * metres closer to the target / PROGRESS_UNIT
+#                 - R_HIDDEN if the hoop is out of view
+#                 + R_PASS on a pass, - R_CRASH on a crash
+
+# Rewards
+R_PASS = 25.0
+R_CRASH = 40.0
+R_PROGRESS = 1.0
+PROGRESS_UNIT = 0.10           # metres
+R_HIDDEN = 0.02
+
+# Episode ends
+CRASHES = ("hit", "wrong_way", "left_cage")
+LAPS_MAX_STEPS = 600           # 60 s cut-off, not a failure
+
+# Start layout; the curriculum level blends from easy (0) to real (1)
+HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
+PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
+LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad, level 0 and 1
+CLEARANCE = 0.4                # free space in front of and behind the hoop
+SIDE_GAP = 0.35                # side waypoint's distance beyond the rim
+
+# Observation
+MIN_ARC_FRACTION = 0.25        # share of the hoop's edge the detector needs in frame
+# -----------------------------------------------------------------------------
+
 import dataclasses
 from collections import deque
 
@@ -18,45 +45,9 @@ import numpy as np
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Pad, Randomise, load_camera
 
-# Layout. The hoop goes anywhere with room to fly round it; its front faces
-# the pad. The curriculum level blends each start from easy (0) to real (1).
-HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
-PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
-LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad's line of sight, level 0 and 1.
-                               # Past ~78 degrees the detector cannot see the hoop at all.
-CLEARANCE = 0.4                # free space in front of and behind the hoop
-SIDE_GAP = 0.35                # the side waypoint's distance beyond the rim
-LAPS_MAX_STEPS = 600           # 60 s; a cut-off, not a failure: the real run goes on
-
 # Collision checks use this many points along the noodle's centreline. At ~5 mm
 # spacing, a contact can be missed by at most ~0.1 mm.
 CENTRELINE_POINTS = 256
-
-MIN_ARC_FRACTION = 0.25        # UNMEASURED: share of the hoop's edge the detector needs in frame, B3
-
-# Reward weights.
-# R_PROGRESS pays for closing the straight-line distance to the hoop centre, not
-# for closing the axial gap. Axial progress rated the rim and the centre alike,
-# so SAC charged the plane and hit. Distance to the centre falls fastest on the
-# line that passes through, which is the behaviour we want.
-# Behind the hoop the target is a side waypoint instead: distance to the
-# centre from behind would pay for flying back through the hole.
-PROGRESS_UNIT = 0.10           # metres
-R_PROGRESS = 1.0               # per PROGRESS_UNIT closer to the target
-# Per step the hoop is not visible. Kept small: going round the outside hides the
-# hoop, and at 0.1 a minute of lapping cost more than crashing out.
-R_HIDDEN = 0.02
-# There is no per-step time cost. With one, a 60 s episode cost -30 and a crash
-# only -10, so ending the episode early was the cheap way out. Passes (+25) are
-# what keep the drone from hovering, and the curriculum needs 2+ per minute.
-# A pass pays and the episode goes on. The crash endings (a hit, including the
-# hanger; back through the hole; crossing the geofence, Cage.margin inside the net)
-# cost more than a pass pays, so trading the rest of the minute for a quick pass
-# does not pay.
-R_PASS = 25.0
-R_CRASH = 40.0
-CRASHES = ("hit", "wrong_way", "left_cage")
-
 
 def _wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
