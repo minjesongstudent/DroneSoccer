@@ -4,7 +4,8 @@ from gymnasium.utils.env_checker import check_env
 
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Randomise
-from src.sim import LAPS_MAX_STEPS, R_CRASH, SIDE_GAP, HoopEnv
+from src.contract import LAPS_MAX_STEPS, R_CRASH, R_HIDDEN, R_PASS, R_STEP, R_WALL
+from src.sim import SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
@@ -152,10 +153,33 @@ def test_squashed_hoop_is_scored_as_seen(lateral, vertical, expected):
     assert first_event(env, [0.0, 1.0, 0.0, 0.0]) == expected
 
 
-def test_leaving_cage_ends_episode():
+def test_the_geofence_holds_the_drone_without_ending_the_episode():
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0])
-    assert fly(env, [0.0, 0.0, 1.0, 0.0]) == "left_cage"
+    ceiling = env.cage.height - env.cage.margin
+    for _ in range(200):
+        _, reward, terminated, truncated, info = env.step([0.0, 0.0, 1.0, 0.0])
+        if terminated or truncated:
+            break
+    assert not terminated and info["outcome"] == "running"
+    assert env.pos[2] == pytest.approx(ceiling)
+    assert info["wall_steps"] > 0
+    # Pressed into the ceiling: no progress, so only the time, the wall, and
+    # R_HIDDEN if the hoop has dropped out of the frame below.
+    assert -(R_WALL + R_STEP + R_HIDDEN) - 0.01 <= reward <= -(R_WALL + R_STEP) + 0.01
+
+
+def test_the_floor_and_every_wall_hold_too():
+    env = make_env()
+    for action, axis, expected in [([0.0, 0.0, -1.0, 0.0], 2, BIG.min_altitude),
+                                   ([0.0, 1.0, 0.0, 0.0], 0, BIG.length - BIG.margin),
+                                   ([1.0, 0.0, 0.0, 0.0], 1, BIG.margin)]:
+        # The hoop sits out of the way, so only the fence can stop the drone.
+        env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
+        for _ in range(300):
+            terminated = env.step(action)[2]
+            assert not terminated
+        assert env.pos[axis] == pytest.approx(expected)
 
 
 def test_hit_shortcut_agrees_with_the_full_check():
@@ -202,22 +226,29 @@ def test_lap_pass_scores_and_keeps_flying():
     assert not terminated and not truncated and info["passes"] == 1
 
 
-def test_a_crash_costs_more_than_a_pass_pays():
+def test_a_crash_costs_less_than_a_pass_pays():
+    """Otherwise the safest policy is to hover out of reach and never try."""
+    assert R_CRASH < R_PASS
     env = make_env()
-    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    env.place([5.0, 5.0 + 0.3, 1.5], 0.0, HOOP_AT, BACK)   # aimed at the rim
     for _ in range(100):
-        _, reward, terminated, _, info = env.step([0.0, 0.0, 1.0, 0.0])   # up, out of the cage
+        _, reward, terminated, _, info = env.step([0.0, 1.0, 0.0, 0.0])
         if terminated:
             break
-    assert info["outcome"] == "left_cage" and reward < -R_CRASH + 1.0
+    assert info["outcome"] == "hit" and reward < -R_CRASH + 1.0
 
 
-def test_waiting_out_the_minute_costs_nothing_with_the_hoop_in_view():
-    """No per-step time cost, so crashing is never the cheap way out of an episode."""
+def test_crashing_is_never_the_cheap_way_out_of_an_episode():
+    assert R_STEP * LAPS_MAX_STEPS < R_CRASH < R_PASS
+
+
+def test_hovering_the_whole_minute_costs_the_time_but_less_than_a_pass_pays():
+    """Hovering must never be the best option, and must still beat crashing."""
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     total = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
-    assert total == pytest.approx(0.0, abs=0.1)
+    assert total == pytest.approx(-R_STEP * LAPS_MAX_STEPS, abs=0.1)
+    assert total < 0.0 and -total < R_PASS * 2
 
 
 def test_back_through_the_ring_is_wrong_way():

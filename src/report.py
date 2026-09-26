@@ -42,7 +42,7 @@ LEVEL = re.compile(r"^level\s+([\d.]+) at step (\d+)")
 # Result columns, in this order when present. The first two are the headline
 # score: passes/min for the laps mission, passed for the older single-pass runs.
 COLUMNS = [("passes/min", "pass/min"), ("passed", "passed"), ("crashed", "crashed"),
-           ("hit", "hit"), ("wrong_way", "wrong"), ("left_cage", "left"),
+           ("wall", "wall"), ("hit", "hit"), ("wrong_way", "wrong"),
            ("missed", "missed"), ("timeout", "timeout")]
 
 

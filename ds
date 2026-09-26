@@ -92,11 +92,23 @@ cmd_run() {  # local or interactive training
   bash hpc/run_seeds.sh "$name" "$seeds" "$steps" "$@"
 }
 
+# A screening run: 2 seeds, 800k steps, 8 environments each. About 45 minutes.
+# It answers one question, whether the reward works, before a full run pays for it.
+# Judge it on two numbers only: `wall` under 20%, and `level` above 0.
+cmd_screen() {
+  local name=${1:?usage: ds screen <name> [train options]}
+  shift
+  cmd_submit 2 800000 "$name" --envs 8 "$@"
+}
+
 # Wall minutes one seed needs, plus a quarter. Seeds run in parallel on their
-# own core, so the count does not change the wall time. 86 steps/s is measured.
+# own cores, so the count does not change the wall time. 86 steps/s is measured
+# on one environment. Parallel environments speed a seed up, and the second
+# argument counts them. Half-linear, because the gradient steps do not shrink.
 walltime_for() {
-  local steps=$1 mins
+  local steps=$1 envs=${2:-1} mins
   mins=$(( steps * 125 / (86 * 60 * 100) ))
+  [ "$envs" -gt 1 ] && mins=$(( mins * 2 / envs ))
   [ "$mins" -lt 30 ] && mins=30
   printf '%02d:%02d:00' $(( mins / 60 )) $(( mins % 60 ))
 }
@@ -104,9 +116,8 @@ walltime_for() {
 cmd_submit() {
   need_qsub
   have_venv || warn "no .venv on this machine. The job fails unless you ran ./ds setup here."
-  local seeds=${1:-4} steps=${2:-2000000} name=${3:-sac} wall
+  local seeds=${1:-4} steps=${2:-2000000} name=${3:-sac}
   shift $(( $# < 3 ? $# : 3 ))   # the rest are train options, e.g. --randomise --level 0.75
-  wall=$(walltime_for "$steps")
   # Two runs under one name put their logs in one glob, and nothing downstream
   # can separate them again.
   if compgen -G "runs/${name}_s*.log" >/dev/null; then
@@ -115,20 +126,34 @@ cmd_submit() {
   mkdir -p runs && printf '%s\n' "$name" > "$LAST"
   # Always rewrite, so a reused name never inherits an older run's options.
   if [ $# -gt 0 ]; then printf '%s\n' "$@"; fi > "runs/${name}.args"
-  queue "$name" "$seeds" "$steps" "$wall"
+  queue "$name" "$seeds" "$steps" "$(walltime_for "$steps" "$(envs_for "$name")")"
+}
+
+# Cores one seed needs: one per --envs in runs/<name>.args, else one.
+envs_for() {
+  local name=$1 args="runs/$1.args" n=1 prev=""
+  if [ -f "$args" ]; then
+    while IFS= read -r arg; do
+      case "$prev" in --envs) n="$arg" ;; esac
+      case "$arg" in --envs=*) n="${arg#*=}" ;; esac
+      prev="$arg"
+    done < "$args"
+  fi
+  printf '%s' "$n"
 }
 
 # qsub the job for a run whose options are already in runs/<name>.args.
 queue() {
-  local name=$1 seeds=$2 steps=$3 wall=$4
+  local name=$1 seeds=$2 steps=$3 wall=$4 cpus
+  cpus=$(( seeds * $(envs_for "$name") ))
   # -l and -N on the command line beat the #PBS lines in the job file, so the
-  # walltime always matches the step count. ncpus must cover one core per seed.
+  # walltime always matches the step count. ncpus must cover every seed's envs.
   qsub -N "hoop-$name" \
-       -l "ncpus=${seeds},mem=16GB,walltime=${wall}" \
+       -l "ncpus=${cpus},mem=16GB,walltime=${wall}" \
        -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
        "$JOB"
-  printf '%s%s seeds, %s steps, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
-    "$D" "$seeds" "$steps" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
+  printf '%s%s seeds, %s steps, %s cores, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
+    "$D" "$seeds" "$steps" "$cpus" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
 }
 
 # Resubmit a run that was cut off. Each seed carries on from its last snapshot
@@ -151,7 +176,7 @@ cmd_resume() {
   grep -qx -- --resume "runs/${name}.args" || echo --resume >> "runs/${name}.args"
   printf '%s\n' "$name" > "$LAST"
   printf '%sresuming from step %s of %s%s\n' "$D" "$least" "$total" "$N"
-  queue "$name" "$seeds" "$total" "$(walltime_for $(( total - least )))"
+  queue "$name" "$seeds" "$total" "$(walltime_for $(( total - least )) "$(envs_for "$name")")"
 }
 
 cmd_progress() {
@@ -289,6 +314,7 @@ banner() {
   ${B}setup${N}     build .venv, once per machine
   ${B}run${N}       train here: ./ds run [seeds] [steps] [name] [train options]
   ${B}submit${N}    qsub a job: ./ds submit [seeds] [steps] [name] [train options]
+  ${B}screen${N}    cheap check of a reward change: ./ds screen <name> (2 seeds, 800k, 8 envs)
   ${B}resume${N}    resubmit a cut-off run from its snapshots: ./ds resume [name]
   ${B}status${N}    jobs, progress and walltime headroom
   ${B}queue${N}     your jobs, running and queued
@@ -304,7 +330,7 @@ EOF
 
 case "${1:-}" in
   ''|-h|--help|help) banner ;;
-  setup|run|submit|resume|progress|report|status|queue|logs|test|cancel|vpn)
+  setup|run|submit|screen|resume|progress|report|status|queue|logs|test|cancel|vpn)
     cmd="$1"; shift; "cmd_$cmd" "$@" ;;
   *) die "unknown command: $1  (run ./ds for the list)" ;;
 esac
