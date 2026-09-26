@@ -64,7 +64,7 @@ class Progress(BaseCallback):
     def _on_training_start(self) -> None:
         self.start = time.time()
         self.start_steps = self.num_timesteps   # non-zero after --resume
-        self.next_print = self.num_timesteps + self.every
+        self.printed = self.num_timesteps // self.every
         self.level = self.training_env.get_attr("level")[0]
 
     def _on_step(self) -> bool:
@@ -72,8 +72,10 @@ class Progress(BaseCallback):
             if done:
                 self.recent.append(info)
                 self._record()
-        if self.num_timesteps >= self.next_print:
-            self.next_print = self.num_timesteps + self.every
+        # N parallel envs raise the count by N, so an exact multiple may never
+        # come round. Fire on the step that crosses one instead.
+        if self.num_timesteps // self.every > self.printed:
+            self.printed = self.num_timesteps // self.every
             elapsed = time.time() - self.start
             done = max(1, self.num_timesteps - self.start_steps)
             eta = elapsed / done * (self.total - self.num_timesteps)
@@ -133,13 +135,13 @@ class Snapshot(BaseCallback):
     def __init__(self, folder: Path, total: int):
         super().__init__()
         self.folder, self.total = folder, total
-        self.next_save = None
+
+    def _on_training_start(self) -> None:
+        self.saved = self.num_timesteps // CHECKPOINT_EVERY
 
     def _on_step(self) -> bool:
-        if self.next_save is None:
-            self.next_save = self.num_timesteps + CHECKPOINT_EVERY
-        if self.num_timesteps >= self.next_save:
-            self.next_save = self.num_timesteps + CHECKPOINT_EVERY
+        if self.num_timesteps // CHECKPOINT_EVERY > self.saved:
+            self.saved = self.num_timesteps // CHECKPOINT_EVERY
             self.save()
         return True
 
