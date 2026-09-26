@@ -4,8 +4,10 @@
 #   bash hpc/run_seeds.sh <name> <n_seeds> [steps] [train options...]
 # Train options go to every seed, e.g. --randomise or --level 0.75.
 # Results: runs/<name>_s<seed>/model.zip, logs in runs/<name>_s<seed>.log
-# Once every seed has finished, only the best seed keeps its model.zip. Every
-# seed's checkpoints and resume snapshot are deleted; logs, eval.json and plots stay.
+# Once every seed has finished, only the best seed keeps its model.zip, which is
+# also copied to trainedModels/<name>.zip. Every seed's checkpoints and resume
+# snapshot are deleted; logs, eval.json and plots stay.
+# Either way it ends by writing trainingReports/<name>.txt (see src/report.py).
 # Exits non-zero if any seed fails, so the job shows as failed.
 set -euo pipefail
 
@@ -49,9 +51,13 @@ for seed in $(seq 0 $((SEEDS - 1))); do
 done
 grep -h '^baseline' runs/${NAME}_s*.log | head -1 || true
 
+# Settings, results and flags in one file; never fails the job.
+report() { .venv/bin/python -m src.report "$NAME" --seeds "$SEEDS" || true; }
+
 if [ "$failed" -gt 0 ]; then
     # Keep every snapshot: ./ds resume needs them all to carry the run on.
     echo "$failed of $SEEDS seeds failed, so nothing was deleted"
+    report
     exit 1
 fi
 
@@ -64,7 +70,11 @@ print(max(scores, key=lambda s: (scores[s]["ready"], scores[s]["passes_per_min"]
 PY
 )
 echo "best seed $best: keeping runs/${NAME}_s${best}/model.zip, deleting the rest"
+mkdir -p trainedModels
+cp "runs/${NAME}_s${best}/model.zip" "trainedModels/${NAME}.zip"
+echo "copied to trainedModels/${NAME}.zip"
 for seed in $(seq 0 $((SEEDS - 1))); do
     rm -rf "runs/${NAME}_s${seed}/checkpoints" "runs/${NAME}_s${seed}/resume"
     [ "$seed" = "$best" ] || rm -f "runs/${NAME}_s${seed}/model.zip"
 done
+report
