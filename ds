@@ -158,6 +158,11 @@ cmd_progress() {
   bash hpc/progress.sh "${1:-$(name_default)}"
 }
 
+cmd_report() {  # settings, results and flags; works on a running job too
+  need_venv
+  "$PY" -m src.report "${1:-$(name_default)}"
+}
+
 cmd_logs() {
   local seed=${1:-0}
   local name=${2:-$(name_default)}
@@ -288,6 +293,7 @@ banner() {
   ${B}status${N}    jobs, progress and walltime headroom
   ${B}queue${N}     your jobs, running and queued
   ${B}progress${N}  one line per seed
+  ${B}report${N}    settings, results and flags: ./ds report [name] (also in trainingReports/)
   ${B}logs${N}      follow a seed: ./ds logs [seed]
   ${B}test${N}      pytest
   ${B}cancel${N}    qdel a job: ./ds cancel <jobid>
@@ -298,7 +304,7 @@ EOF
 
 case "${1:-}" in
   ''|-h|--help|help) banner ;;
-  setup|run|submit|resume|progress|status|queue|logs|test|cancel|vpn)
+  setup|run|submit|resume|progress|report|status|queue|logs|test|cancel|vpn)
     cmd="$1"; shift; "cmd_$cmd" "$@" ;;
   *) die "unknown command: $1  (run ./ds for the list)" ;;
 esac
