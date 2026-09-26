@@ -3,7 +3,8 @@ from stable_baselines3.common.monitor import Monitor
 
 from src import train
 from src.params import Camera
-from src.sim import LAPS_MAX_STEPS, HoopEnv
+from src.contract import LAPS_MAX_STEPS
+from src.sim import HoopEnv
 
 
 def test_curriculum_raises_the_level(monkeypatch):
