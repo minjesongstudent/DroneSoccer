@@ -1,0 +1,4944 @@
+{
+  "created_utc": "2026-09-26T13:50:08.638724+00:00",
+  "device": "NVIDIA GeForce RTX 4070 Ti",
+  "threads": 1,
+  "learning_enabled": false,
+  "teacher_enabled": false,
+  "deterministic": true,
+  "seed_start": 4000000,
+  "single_pass_episodes": 100,
+  "full_task_episodes": 25,
+  "selection_rule": "maximize minimum centered/varied success; full-task success secondary; mean single-pass success then lower full-task crash rate break remaining ties",
+  "seed_note": "4M is an additional reserved selection range, disjoint from known demonstration seeds starting at 1M and fixed evaluation seeds starting at 3M. Training initially used seed 0 and resets advance its RNG. Individual historical episode seeds were not logged, so zero historical overlap is not formally proven. Selection results are no longer untouched test data.",
+  "candidates": [
+    {
+      "checkpoint": "models/c520k.zip",
+      "sha256": "b828515bbe67e4b9164cd30198832e1131043046b2c2c876a2aa326f9df3ab5c",
+      "step": 520000,
+      "suites": {
+        "centered": {
+          "episodes": 100,
+          "successful_episodes": 94,
+          "success_rate": 0.94,
+          "crashes": 6,
+          "crash_rate": 0.06,
+          "total_passes": 94,
+          "episodes_with_passes": 94,
+          "outcomes": {
+            "passed": 94,
+            "hit": 6
+          },
+          "mean_steps": 35.55,
+          "mean_reward": 28.060647207285584,
+          "elapsed_seconds": 3.687999999965541,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 21,
+              "reward": 31.824197195470333
+            },
+            {
+              "seed": 4000001,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 61,
+              "reward": 31.498500245041214
+            },
+            {
+              "seed": 4000002,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 48,
+              "reward": 31.7978469254449
+            },
+            {
+              "seed": 4000003,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.21483587473631
+            },
+            {
+              "seed": 4000004,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.53825491666794
+            },
+            {
+              "seed": 4000005,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.33865689765662
+            },
+            {
+              "seed": 4000006,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 59,
+              "reward": 31.70666690368671
+            },
+            {
+              "seed": 4000007,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.276328414678574
+            },
+            {
+              "seed": 4000008,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 41,
+              "reward": 31.022130395984277
+            },
+            {
+              "seed": 4000009,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.70853524655104
+            },
+            {
+              "seed": 4000010,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.880818985402584
+            },
+            {
+              "seed": 4000011,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.3277590200305
+            },
+            {
+              "seed": 4000012,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.274390898644924
+            },
+            {
+              "seed": 4000013,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 21,
+              "reward": 31.861228190362453
+            },
+            {
+              "seed": 4000014,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 53,
+              "reward": 31.397507425863296
+            },
+            {
+              "seed": 4000015,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.156053356826305
+            },
+            {
+              "seed": 4000016,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 59,
+              "reward": 31.7188286408782
+            },
+            {
+              "seed": 4000017,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.18908376246691
+            },
+            {
+              "seed": 4000018,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -35.25583387352526
+            },
+            {
+              "seed": 4000019,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.16178972274065
+            },
+            {
+              "seed": 4000020,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.13529218360782
+            },
+            {
+              "seed": 4000021,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 59,
+              "reward": 31.75146610965021
+            },
+            {
+              "seed": 4000022,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.03592129051685
+            },
+            {
+              "seed": 4000023,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.124404937028885
+            },
+            {
+              "seed": 4000024,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.56514348834753
+            },
+            {
+              "seed": 4000025,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 40,
+              "reward": 31.47606758773327
+            },
+            {
+              "seed": 4000026,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 40,
+              "reward": 31.2992663589539
+            },
+            {
+              "seed": 4000027,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.851100884377956
+            },
+            {
+              "seed": 4000028,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 31.54883314948529
+            },
+            {
+              "seed": 4000029,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.46832974255085
+            },
+            {
+              "seed": 4000030,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.3427579253912
+            },
+            {
+              "seed": 4000031,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 31.772803723812103
+            },
+            {
+              "seed": 4000032,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.45742891356349
+            },
+            {
+              "seed": 4000033,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.45670876652002
+            },
+            {
+              "seed": 4000034,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 48,
+              "reward": 32.239930619485676
+            },
+            {
+              "seed": 4000035,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.602612525224686
+            },
+            {
+              "seed": 4000036,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 40,
+              "reward": 32.29911520238966
+            },
+            {
+              "seed": 4000037,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.691154307685792
+            },
+            {
+              "seed": 4000038,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 45,
+              "reward": -33.95172575954348
+            },
+            {
+              "seed": 4000039,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.36885041743517
+            },
+            {
+              "seed": 4000040,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 60,
+              "reward": 32.21318948827684
+            },
+            {
+              "seed": 4000041,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.4615835249424
+            },
+            {
+              "seed": 4000042,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 31.8048429293558
+            },
+            {
+              "seed": 4000043,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 59,
+              "reward": 31.800712956115603
+            },
+            {
+              "seed": 4000044,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.094287261366844
+            },
+            {
+              "seed": 4000045,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 66,
+              "reward": 31.729020344559103
+            },
+            {
+              "seed": 4000046,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 31.761455956846476
+            },
+            {
+              "seed": 4000047,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.08408582210541
+            },
+            {
+              "seed": 4000048,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 21,
+              "reward": 31.86201886087656
+            },
+            {
+              "seed": 4000049,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.129819087684155
+            },
+            {
+              "seed": 4000050,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.03374892473221
+            },
+            {
+              "seed": 4000051,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.606063447892666
+            },
+            {
+              "seed": 4000052,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.47299686819315
+            },
+            {
+              "seed": 4000053,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 42,
+              "reward": 31.70410971902311
+            },
+            {
+              "seed": 4000054,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.50957161001861
+            },
+            {
+              "seed": 4000055,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 21,
+              "reward": 32.00381249934435
+            },
+            {
+              "seed": 4000056,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.37846851348877
+            },
+            {
+              "seed": 4000057,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.271364130079746
+            },
+            {
+              "seed": 4000058,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 64,
+              "reward": 31.588518128730357
+            },
+            {
+              "seed": 4000059,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 31.785035897046328
+            },
+            {
+              "seed": 4000060,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.519322007894516
+            },
+            {
+              "seed": 4000061,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 31.90676748007536
+            },
+            {
+              "seed": 4000062,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.73276346921921
+            },
+            {
+              "seed": 4000063,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 44,
+              "reward": 31.362271524965763
+            },
+            {
+              "seed": 4000064,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.748622052371502
+            },
+            {
+              "seed": 4000065,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.559496983885765
+            },
+            {
+              "seed": 4000066,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 42,
+              "reward": 32.25611964426935
+            },
+            {
+              "seed": 4000067,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.422157442197204
+            },
+            {
+              "seed": 4000068,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.489312425255775
+            },
+            {
+              "seed": 4000069,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 82,
+              "reward": 32.02332703396678
+            },
+            {
+              "seed": 4000070,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 58,
+              "reward": 31.698886864935048
+            },
+            {
+              "seed": 4000071,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 46,
+              "reward": -34.0525756046336
+            },
+            {
+              "seed": 4000072,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.15968640893698
+            },
+            {
+              "seed": 4000073,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 31.77169022988528
+            },
+            {
+              "seed": 4000074,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 31.842024268582463
+            },
+            {
+              "seed": 4000075,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.22131922841072
+            },
+            {
+              "seed": 4000076,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 41,
+              "reward": 32.06432347930968
+            },
+            {
+              "seed": 4000077,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 67,
+              "reward": -33.85872148536146
+            },
+            {
+              "seed": 4000078,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 31.793216590303928
+            },
+            {
+              "seed": 4000079,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 47,
+              "reward": 31.986645102500916
+            },
+            {
+              "seed": 4000080,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.780724957585335
+            },
+            {
+              "seed": 4000081,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 21,
+              "reward": 31.851800374686718
+            },
+            {
+              "seed": 4000082,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.155484065413475
+            },
+            {
+              "seed": 4000083,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 31.6067723990418
+            },
+            {
+              "seed": 4000084,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.54793319106102
+            },
+            {
+              "seed": 4000085,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.90178497135639
+            },
+            {
+              "seed": 4000086,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 42,
+              "reward": 31.81755806261208
+            },
+            {
+              "seed": 4000087,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.55317985266447
+            },
+            {
+              "seed": 4000088,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 41,
+              "reward": 31.57168445829302
+            },
+            {
+              "seed": 4000089,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.67289552092552
+            },
+            {
+              "seed": 4000090,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.62027242779732
+            },
+            {
+              "seed": 4000091,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 31.58799341879785
+            },
+            {
+              "seed": 4000092,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.63256870955229
+            },
+            {
+              "seed": 4000093,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 53,
+              "reward": -34.17789474397432
+            },
+            {
+              "seed": 4000094,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 46,
+              "reward": 31.370066829957068
+            },
+            {
+              "seed": 4000095,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 20,
+              "reward": 31.54008613526821
+            },
+            {
+              "seed": 4000096,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.06095688045025
+            },
+            {
+              "seed": 4000097,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 21,
+              "reward": 31.874875865876675
+            },
+            {
+              "seed": 4000098,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.69739742577076
+            },
+            {
+              "seed": 4000099,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 60,
+              "reward": 31.55476165516302
+            }
+          ]
+        },
+        "varied": {
+          "episodes": 100,
+          "successful_episodes": 80,
+          "success_rate": 0.8,
+          "crashes": 20,
+          "crash_rate": 0.2,
+          "total_passes": 80,
+          "episodes_with_passes": 80,
+          "outcomes": {
+            "hit": 20,
+            "passed": 80
+          },
+          "mean_steps": 36.84,
+          "mean_reward": 20.15148568654702,
+          "elapsed_seconds": 3.687000000034459,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 37,
+              "reward": -32.759842827916145
+            },
+            {
+              "seed": 4000001,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 31.7914558686316
+            },
+            {
+              "seed": 4000002,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 53,
+              "reward": 33.017834428697824
+            },
+            {
+              "seed": 4000003,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 50,
+              "reward": -31.614067722926848
+            },
+            {
+              "seed": 4000004,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.81931383907795
+            },
+            {
+              "seed": 4000005,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 31.664241530001163
+            },
+            {
+              "seed": 4000006,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 32.18998033669777
+            },
+            {
+              "seed": 4000007,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 51,
+              "reward": 34.18755945446901
+            },
+            {
+              "seed": 4000008,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 48,
+              "reward": 32.08332448580768
+            },
+            {
+              "seed": 4000009,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 36,
+              "reward": 34.932210844010115
+            },
+            {
+              "seed": 4000010,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 35.17129690758884
+            },
+            {
+              "seed": 4000011,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 33.92657741159201
+            },
+            {
+              "seed": 4000012,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 32,
+              "reward": 34.3183723911643
+            },
+            {
+              "seed": 4000013,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 33.545028153806925
+            },
+            {
+              "seed": 4000014,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 54,
+              "reward": 32.07969699334353
+            },
+            {
+              "seed": 4000015,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 46,
+              "reward": 33.90642872499302
+            },
+            {
+              "seed": 4000016,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 33.02260851114988
+            },
+            {
+              "seed": 4000017,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.38893313705921
+            },
+            {
+              "seed": 4000018,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 46,
+              "reward": 32.65551187237725
+            },
+            {
+              "seed": 4000019,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 34.15725678950548
+            },
+            {
+              "seed": 4000020,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 32.75495756044984
+            },
+            {
+              "seed": 4000021,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 32.64643281651661
+            },
+            {
+              "seed": 4000022,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 56,
+              "reward": 33.816821057815105
+            },
+            {
+              "seed": 4000023,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 34.2404078617692
+            },
+            {
+              "seed": 4000024,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 34.89928662031889
+            },
+            {
+              "seed": 4000025,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 55,
+              "reward": 31.84834550321102
+            },
+            {
+              "seed": 4000026,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 25,
+              "reward": -35.84892304055393
+            },
+            {
+              "seed": 4000027,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 34.84150847338424
+            },
+            {
+              "seed": 4000028,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 32.58158067334443
+            },
+            {
+              "seed": 4000029,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 34.58335018157959
+            },
+            {
+              "seed": 4000030,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 34.38510522246361
+            },
+            {
+              "seed": 4000031,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.09217157959938
+            },
+            {
+              "seed": 4000032,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 32.14839761637268
+            },
+            {
+              "seed": 4000033,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 53,
+              "reward": 34.51374558301177
+            },
+            {
+              "seed": 4000034,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 36,
+              "reward": -33.56757825636305
+            },
+            {
+              "seed": 4000035,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 26,
+              "reward": -32.623338758945465
+            },
+            {
+              "seed": 4000036,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.1736796349287
+            },
+            {
+              "seed": 4000037,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 32.96018012845889
+            },
+            {
+              "seed": 4000038,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 33.275726951658726
+            },
+            {
+              "seed": 4000039,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 43,
+              "reward": 34.085967630147934
+            },
+            {
+              "seed": 4000040,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 53,
+              "reward": 33.597135504707694
+            },
+            {
+              "seed": 4000041,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 34.32733819819987
+            },
+            {
+              "seed": 4000042,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 33.2969109043479
+            },
+            {
+              "seed": 4000043,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 32.59810454864055
+            },
+            {
+              "seed": 4000044,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -32.34675366571173
+            },
+            {
+              "seed": 4000045,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 48,
+              "reward": 32.216356859426014
+            },
+            {
+              "seed": 4000046,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 32.26923064887524
+            },
+            {
+              "seed": 4000047,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 33.59329837560654
+            },
+            {
+              "seed": 4000048,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 32.98702765721828
+            },
+            {
+              "seed": 4000049,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 33.30149073433131
+            },
+            {
+              "seed": 4000050,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.53942213207483
+            },
+            {
+              "seed": 4000051,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 36,
+              "reward": 35.05941979261115
+            },
+            {
+              "seed": 4000052,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -32.553161308169365
+            },
+            {
+              "seed": 4000053,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 33.07378838956356
+            },
+            {
+              "seed": 4000054,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.566131971776485
+            },
+            {
+              "seed": 4000055,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -32.5812081877375
+            },
+            {
+              "seed": 4000056,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 48,
+              "reward": -31.129013799130917
+            },
+            {
+              "seed": 4000057,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 49,
+              "reward": 34.43529123184271
+            },
+            {
+              "seed": 4000058,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 52,
+              "reward": 32.104223819449544
+            },
+            {
+              "seed": 4000059,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 36,
+              "reward": 33.09966157004237
+            },
+            {
+              "seed": 4000060,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 34.97857462614775
+            },
+            {
+              "seed": 4000061,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.19958136975765
+            },
+            {
+              "seed": 4000062,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 40,
+              "reward": 34.77172543853521
+            },
+            {
+              "seed": 4000063,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 32.0176140666008
+            },
+            {
+              "seed": 4000064,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 38,
+              "reward": -34.924071149900556
+            },
+            {
+              "seed": 4000065,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 34.897451274096966
+            },
+            {
+              "seed": 4000066,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 41,
+              "reward": 33.70561655797064
+            },
+            {
+              "seed": 4000067,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 32.12372301518917
+            },
+            {
+              "seed": 4000068,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 41,
+              "reward": 33.99737496115267
+            },
+            {
+              "seed": 4000069,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.4942334741354
+            },
+            {
+              "seed": 4000070,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 45,
+              "reward": -33.548178245313466
+            },
+            {
+              "seed": 4000071,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 33.15742344036698
+            },
+            {
+              "seed": 4000072,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.27231510588899
+            },
+            {
+              "seed": 4000073,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 50,
+              "reward": 32.865473894169554
+            },
+            {
+              "seed": 4000074,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 44,
+              "reward": 33.36165906954557
+            },
+            {
+              "seed": 4000075,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 33.466419752687216
+            },
+            {
+              "seed": 4000076,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 33.186817021574825
+            },
+            {
+              "seed": 4000077,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 52,
+              "reward": 33.025873391889036
+            },
+            {
+              "seed": 4000078,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.26612275838852
+            },
+            {
+              "seed": 4000079,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.24803492426872
+            },
+            {
+              "seed": 4000080,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 44,
+              "reward": 35.34773054718971
+            },
+            {
+              "seed": 4000081,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 73,
+              "reward": 33.13952775322832
+            },
+            {
+              "seed": 4000082,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 33.70508115080338
+            },
+            {
+              "seed": 4000083,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 42,
+              "reward": -34.51542132021859
+            },
+            {
+              "seed": 4000084,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 55,
+              "reward": 34.615742423178745
+            },
+            {
+              "seed": 4000085,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 42,
+              "reward": 35.19572288170457
+            },
+            {
+              "seed": 4000086,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 46,
+              "reward": 32.970458910102025
+            },
+            {
+              "seed": 4000087,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 47,
+              "reward": -31.714352757204324
+            },
+            {
+              "seed": 4000088,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 46,
+              "reward": 31.973947551101446
+            },
+            {
+              "seed": 4000089,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 58,
+              "reward": 34.84315884276293
+            },
+            {
+              "seed": 4000090,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 34.6607337067835
+            },
+            {
+              "seed": 4000091,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 32.85630053281784
+            },
+            {
+              "seed": 4000092,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 41,
+              "reward": 34.99152347445488
+            },
+            {
+              "seed": 4000093,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 25,
+              "reward": -33.115356747061014
+            },
+            {
+              "seed": 4000094,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 43,
+              "reward": -33.627825401723385
+            },
+            {
+              "seed": 4000095,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -34.670898005366325
+            },
+            {
+              "seed": 4000096,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 33.31696056947112
+            },
+            {
+              "seed": 4000097,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 36,
+              "reward": 32.76983230188489
+            },
+            {
+              "seed": 4000098,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 37,
+              "reward": -31.110257307067513
+            },
+            {
+              "seed": 4000099,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 36,
+              "reward": 32.558713641250506
+            }
+          ]
+        },
+        "full_task": {
+          "episodes": 25,
+          "successful_episodes": 0,
+          "success_rate": 0.0,
+          "crashes": 20,
+          "crash_rate": 0.8,
+          "total_passes": 4,
+          "episodes_with_passes": 4,
+          "outcomes": {
+            "left_cage": 15,
+            "timeout": 5,
+            "hit": 5
+          },
+          "mean_steps": 179.16,
+          "mean_reward": -25.98838419784297,
+          "elapsed_seconds": 4.437999999965541,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "left_cage",
+              "passes": 1,
+              "steps": 495,
+              "reward": -9.228672029450536
+            },
+            {
+              "seed": 4000001,
+              "outcome": "timeout",
+              "passes": 0,
+              "steps": 600,
+              "reward": -15.515937434509397
+            },
+            {
+              "seed": 4000002,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 10,
+              "reward": -38.56198634952307
+            },
+            {
+              "seed": 4000003,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 8,
+              "reward": -39.8069196594879
+            },
+            {
+              "seed": 4000004,
+              "outcome": "timeout",
+              "passes": 0,
+              "steps": 600,
+              "reward": -1.1626657686429098
+            },
+            {
+              "seed": 4000005,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 16,
+              "reward": -38.45714647625573
+            },
+            {
+              "seed": 4000006,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 63,
+              "reward": -34.14829946751706
+            },
+            {
+              "seed": 4000007,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 52,
+              "reward": -25.213004648685455
+            },
+            {
+              "seed": 4000008,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 8,
+              "reward": -39.790476254187524
+            },
+            {
+              "seed": 4000009,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 11,
+              "reward": -41.254291012883186
+            },
+            {
+              "seed": 4000010,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 5,
+              "reward": -39.8630631249398
+            },
+            {
+              "seed": 4000011,
+              "outcome": "timeout",
+              "passes": 1,
+              "steps": 600,
+              "reward": 37.849160204415966
+            },
+            {
+              "seed": 4000012,
+              "outcome": "timeout",
+              "passes": 1,
+              "steps": 600,
+              "reward": 29.17599585559219
+            },
+            {
+              "seed": 4000013,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 10,
+              "reward": -39.56481500109658
+            },
+            {
+              "seed": 4000014,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 10,
+              "reward": -39.54252626746893
+            },
+            {
+              "seed": 4000015,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -32.49942648410797
+            },
+            {
+              "seed": 4000016,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -29.902679532766342
+            },
+            {
+              "seed": 4000017,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 7,
+              "reward": -40.03051930107176
+            },
+            {
+              "seed": 4000018,
+              "outcome": "timeout",
+              "passes": 0,
+              "steps": 600,
+              "reward": -15.680305889807642
+            },
+            {
+              "seed": 4000019,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 8,
+              "reward": -38.697862818837166
+            },
+            {
+              "seed": 4000020,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 4,
+              "reward": -40.30608234740794
+            },
+            {
+              "seed": 4000021,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 5,
+              "reward": -40.867793545126915
+            },
+            {
+              "seed": 4000022,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 118,
+              "reward": -26.285761549370363
+            },
+            {
+              "seed": 4000023,
+              "outcome": "left_cage",
+              "passes": 1,
+              "steps": 577,
+              "reward": -9.029218973591924
+            },
+            {
+              "seed": 4000024,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 12,
+              "reward": -41.32530706934631
+            }
+          ]
+        }
+      },
+      "unchanged_training_steps": 520000,
+      "unchanged_gradient_updates": 520000,
+      "minimum_single_pass_success": 0.8
+    },
+    {
+      "checkpoint": "models/c670k.zip",
+      "sha256": "50a002be96d186ffbe44cbf37f1fce88c6a16d22aa179ffdd55b3688f0318410",
+      "step": 670000,
+      "suites": {
+        "centered": {
+          "episodes": 100,
+          "successful_episodes": 60,
+          "success_rate": 0.6,
+          "crashes": 40,
+          "crash_rate": 0.4,
+          "total_passes": 60,
+          "episodes_with_passes": 60,
+          "outcomes": {
+            "hit": 40,
+            "passed": 60
+          },
+          "mean_steps": 30.51,
+          "mean_reward": 5.22460768783305,
+          "elapsed_seconds": 2.952999999979511,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -34.422518365085125
+            },
+            {
+              "seed": 4000001,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 41,
+              "reward": -35.391104959417135
+            },
+            {
+              "seed": 4000002,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.7404556395486
+            },
+            {
+              "seed": 4000003,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.411517545580864
+            },
+            {
+              "seed": 4000004,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.57424958795309
+            },
+            {
+              "seed": 4000005,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -35.99172007385641
+            },
+            {
+              "seed": 4000006,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 45,
+              "reward": 31.27696830732748
+            },
+            {
+              "seed": 4000007,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.450414679944515
+            },
+            {
+              "seed": 4000008,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -35.535297906026244
+            },
+            {
+              "seed": 4000009,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.50143636763096
+            },
+            {
+              "seed": 4000010,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -33.446000054478645
+            },
+            {
+              "seed": 4000011,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.018808372318745
+            },
+            {
+              "seed": 4000012,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 32,
+              "reward": 32.37926326692104
+            },
+            {
+              "seed": 4000013,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 31.787868551909924
+            },
+            {
+              "seed": 4000014,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.39172458089888
+            },
+            {
+              "seed": 4000015,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -35.040718257427216
+            },
+            {
+              "seed": 4000016,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 54,
+              "reward": 31.76415255665779
+            },
+            {
+              "seed": 4000017,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.158221781253815
+            },
+            {
+              "seed": 4000018,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.38134554028511
+            },
+            {
+              "seed": 4000019,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.24376768618822
+            },
+            {
+              "seed": 4000020,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 31.767699534073472
+            },
+            {
+              "seed": 4000021,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 45,
+              "reward": -34.30815850093495
+            },
+            {
+              "seed": 4000022,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 15,
+              "reward": -35.232568487524986
+            },
+            {
+              "seed": 4000023,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -33.91601502895355
+            },
+            {
+              "seed": 4000024,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 32.65158577263355
+            },
+            {
+              "seed": 4000025,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 31.490513917058706
+            },
+            {
+              "seed": 4000026,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 31.520845538005233
+            },
+            {
+              "seed": 4000027,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.54340531677008
+            },
+            {
+              "seed": 4000028,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.888812109304126
+            },
+            {
+              "seed": 4000029,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.63492449373007
+            },
+            {
+              "seed": 4000030,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 16,
+              "reward": -34.8965262696147
+            },
+            {
+              "seed": 4000031,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 31.82078141346574
+            },
+            {
+              "seed": 4000032,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 31.265417786315084
+            },
+            {
+              "seed": 4000033,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 32.41647157073021
+            },
+            {
+              "seed": 4000034,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 37,
+              "reward": -34.96961992874276
+            },
+            {
+              "seed": 4000035,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.39607476443052
+            },
+            {
+              "seed": 4000036,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 32.15267390757799
+            },
+            {
+              "seed": 4000037,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 59,
+              "reward": 31.76359324454097
+            },
+            {
+              "seed": 4000038,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 38,
+              "reward": 31.70243681035936
+            },
+            {
+              "seed": 4000039,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.30869669467211
+            },
+            {
+              "seed": 4000040,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 43,
+              "reward": -33.77741719596088
+            },
+            {
+              "seed": 4000041,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.300243355333805
+            },
+            {
+              "seed": 4000042,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 31.886460656300187
+            },
+            {
+              "seed": 4000043,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 32,
+              "reward": -35.853044566407334
+            },
+            {
+              "seed": 4000044,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.137104481458664
+            },
+            {
+              "seed": 4000045,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -36.01562625914812
+            },
+            {
+              "seed": 4000046,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 32,
+              "reward": -35.83664853870869
+            },
+            {
+              "seed": 4000047,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -34.07466012984514
+            },
+            {
+              "seed": 4000048,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 32,
+              "reward": 31.815120324492455
+            },
+            {
+              "seed": 4000049,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 31.671067479997873
+            },
+            {
+              "seed": 4000050,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.06154542416334
+            },
+            {
+              "seed": 4000051,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.65547965466976
+            },
+            {
+              "seed": 4000052,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.63231533020735
+            },
+            {
+              "seed": 4000053,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -34.84828629903495
+            },
+            {
+              "seed": 4000054,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 28,
+              "reward": -36.019279995933175
+            },
+            {
+              "seed": 4000055,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.93609028309584
+            },
+            {
+              "seed": 4000056,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -33.94089528918266
+            },
+            {
+              "seed": 4000057,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.37618048489094
+            },
+            {
+              "seed": 4000058,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 60,
+              "reward": 31.340122207533568
+            },
+            {
+              "seed": 4000059,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 31.876537080854177
+            },
+            {
+              "seed": 4000060,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.464068338274956
+            },
+            {
+              "seed": 4000061,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 31.497046403586864
+            },
+            {
+              "seed": 4000062,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.54196507483721
+            },
+            {
+              "seed": 4000063,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -35.745133601652924
+            },
+            {
+              "seed": 4000064,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -34.852400206029415
+            },
+            {
+              "seed": 4000065,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.70666214823723
+            },
+            {
+              "seed": 4000066,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -34.913273848593235
+            },
+            {
+              "seed": 4000067,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 31.471606355160475
+            },
+            {
+              "seed": 4000068,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.18629736453295
+            },
+            {
+              "seed": 4000069,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 55,
+              "reward": -35.176342624472454
+            },
+            {
+              "seed": 4000070,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 44,
+              "reward": 31.499225610867143
+            },
+            {
+              "seed": 4000071,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -34.861052352935076
+            },
+            {
+              "seed": 4000072,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.581942439079285
+            },
+            {
+              "seed": 4000073,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 38,
+              "reward": -35.223133285631775
+            },
+            {
+              "seed": 4000074,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.46369783394039
+            },
+            {
+              "seed": 4000075,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 31.872160367667675
+            },
+            {
+              "seed": 4000076,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 36,
+              "reward": 31.78873088210821
+            },
+            {
+              "seed": 4000077,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 56,
+              "reward": 31.578452116809785
+            },
+            {
+              "seed": 4000078,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -34.936383239983115
+            },
+            {
+              "seed": 4000079,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -35.80150526226498
+            },
+            {
+              "seed": 4000080,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -33.09732675552368
+            },
+            {
+              "seed": 4000081,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 31.768880281597376
+            },
+            {
+              "seed": 4000082,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 32.006249751895666
+            },
+            {
+              "seed": 4000083,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 43,
+              "reward": 31.65969193726778
+            },
+            {
+              "seed": 4000084,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 16,
+              "reward": -35.016839161515236
+            },
+            {
+              "seed": 4000085,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.87028232961893
+            },
+            {
+              "seed": 4000086,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -35.33970545977354
+            },
+            {
+              "seed": 4000087,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.32777923345566
+            },
+            {
+              "seed": 4000088,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 44,
+              "reward": 30.819571799598634
+            },
+            {
+              "seed": 4000089,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 16,
+              "reward": -35.03845139592886
+            },
+            {
+              "seed": 4000090,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -34.508773289620876
+            },
+            {
+              "seed": 4000091,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 31.52973210811615
+            },
+            {
+              "seed": 4000092,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -32.97832877933979
+            },
+            {
+              "seed": 4000093,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -35.79280002042651
+            },
+            {
+              "seed": 4000094,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 32,
+              "reward": -36.270363360410556
+            },
+            {
+              "seed": 4000095,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 31.4834411367774
+            },
+            {
+              "seed": 4000096,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.26339904218912
+            },
+            {
+              "seed": 4000097,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 31.804417291656137
+            },
+            {
+              "seed": 4000098,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.57186134904623
+            },
+            {
+              "seed": 4000099,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 43,
+              "reward": 31.52939349692315
+            }
+          ]
+        },
+        "varied": {
+          "episodes": 100,
+          "successful_episodes": 31,
+          "success_rate": 0.31,
+          "crashes": 67,
+          "crash_rate": 0.67,
+          "total_passes": 31,
+          "episodes_with_passes": 31,
+          "outcomes": {
+            "passed": 31,
+            "hit": 67,
+            "timeout": 2
+          },
+          "mean_steps": 32.38,
+          "mean_reward": -12.555261727441176,
+          "elapsed_seconds": 3.187000000034459,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 32.79179956950247
+            },
+            {
+              "seed": 4000001,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 32,
+              "reward": -34.78428953513503
+            },
+            {
+              "seed": 4000002,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 39,
+              "reward": -34.11844373168424
+            },
+            {
+              "seed": 4000003,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 28,
+              "reward": -33.08890786021948
+            },
+            {
+              "seed": 4000004,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 34.76750373095274
+            },
+            {
+              "seed": 4000005,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -35.762400448322296
+            },
+            {
+              "seed": 4000006,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 32.0490680038929
+            },
+            {
+              "seed": 4000007,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 34.25692696124315
+            },
+            {
+              "seed": 4000008,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -35.75959461182356
+            },
+            {
+              "seed": 4000009,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 38,
+              "reward": -32.1460318826139
+            },
+            {
+              "seed": 4000010,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -33.12946982681751
+            },
+            {
+              "seed": 4000011,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 34.15491942316294
+            },
+            {
+              "seed": 4000012,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.242120288312435
+            },
+            {
+              "seed": 4000013,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 33.446261283010244
+            },
+            {
+              "seed": 4000014,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -36.08757919445634
+            },
+            {
+              "seed": 4000015,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 72,
+              "reward": 33.744655556976795
+            },
+            {
+              "seed": 4000016,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.129962511360645
+            },
+            {
+              "seed": 4000017,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -34.60491641610861
+            },
+            {
+              "seed": 4000018,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 38,
+              "reward": -35.97738550417125
+            },
+            {
+              "seed": 4000019,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.37575928866863
+            },
+            {
+              "seed": 4000020,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 27,
+              "reward": -35.994390869513154
+            },
+            {
+              "seed": 4000021,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.117813900113106
+            },
+            {
+              "seed": 4000022,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 43,
+              "reward": -33.2836671655532
+            },
+            {
+              "seed": 4000023,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -32.65994614362717
+            },
+            {
+              "seed": 4000024,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 35.06206951290369
+            },
+            {
+              "seed": 4000025,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -35.35044437646866
+            },
+            {
+              "seed": 4000026,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -36.069369634613395
+            },
+            {
+              "seed": 4000027,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -32.77196266502142
+            },
+            {
+              "seed": 4000028,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.66284644888947
+            },
+            {
+              "seed": 4000029,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -33.155209109187126
+            },
+            {
+              "seed": 4000030,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.189318373799324
+            },
+            {
+              "seed": 4000031,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 26,
+              "reward": -32.98779934644699
+            },
+            {
+              "seed": 4000032,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 32.368589263409376
+            },
+            {
+              "seed": 4000033,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 72,
+              "reward": 34.18030260829255
+            },
+            {
+              "seed": 4000034,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 28,
+              "reward": -33.93867250904441
+            },
+            {
+              "seed": 4000035,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.368807047605515
+            },
+            {
+              "seed": 4000036,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -34.131109811365604
+            },
+            {
+              "seed": 4000037,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 33.02370458096266
+            },
+            {
+              "seed": 4000038,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.045505449175835
+            },
+            {
+              "seed": 4000039,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -33.42468336224556
+            },
+            {
+              "seed": 4000040,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 28,
+              "reward": -32.419712816830724
+            },
+            {
+              "seed": 4000041,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -33.6819481626153
+            },
+            {
+              "seed": 4000042,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -33.74256984144449
+            },
+            {
+              "seed": 4000043,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -34.694193944334984
+            },
+            {
+              "seed": 4000044,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -34.17754627065733
+            },
+            {
+              "seed": 4000045,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -35.07730905339122
+            },
+            {
+              "seed": 4000046,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -35.471045807003975
+            },
+            {
+              "seed": 4000047,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -34.06060519814491
+            },
+            {
+              "seed": 4000048,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -34.53292779251933
+            },
+            {
+              "seed": 4000049,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -35.089650612324476
+            },
+            {
+              "seed": 4000050,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.46346312016249
+            },
+            {
+              "seed": 4000051,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 27,
+              "reward": -32.32625720649958
+            },
+            {
+              "seed": 4000052,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -32.774591855704784
+            },
+            {
+              "seed": 4000053,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 32.910389609634876
+            },
+            {
+              "seed": 4000054,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -35.3560806363821
+            },
+            {
+              "seed": 4000055,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 33.668447844684124
+            },
+            {
+              "seed": 4000056,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -32.97587240487337
+            },
+            {
+              "seed": 4000057,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -31.40869390964508
+            },
+            {
+              "seed": 4000058,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 65,
+              "reward": 31.613135666120797
+            },
+            {
+              "seed": 4000059,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 112,
+              "reward": -35.337273091077805
+            },
+            {
+              "seed": 4000060,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -32.687187135219574
+            },
+            {
+              "seed": 4000061,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.48526471853256
+            },
+            {
+              "seed": 4000062,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -32.591944970190525
+            },
+            {
+              "seed": 4000063,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.35637545119971
+            },
+            {
+              "seed": 4000064,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -35.44036470539868
+            },
+            {
+              "seed": 4000065,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 34.999118626117706
+            },
+            {
+              "seed": 4000066,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 103,
+              "reward": -34.167195217567496
+            },
+            {
+              "seed": 4000067,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -35.764742113649845
+            },
+            {
+              "seed": 4000068,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -33.85713855922222
+            },
+            {
+              "seed": 4000069,
+              "outcome": "timeout",
+              "passes": 0,
+              "steps": 150,
+              "reward": -5.1184534464227305
+            },
+            {
+              "seed": 4000070,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 32.68188254907727
+            },
+            {
+              "seed": 4000071,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 25,
+              "reward": -35.12585737556219
+            },
+            {
+              "seed": 4000072,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.45309941470623
+            },
+            {
+              "seed": 4000073,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.864864744246006
+            },
+            {
+              "seed": 4000074,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 32.91566398367286
+            },
+            {
+              "seed": 4000075,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -32.291609950363636
+            },
+            {
+              "seed": 4000076,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -34.723982440307736
+            },
+            {
+              "seed": 4000077,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 26,
+              "reward": -34.296313980128616
+            },
+            {
+              "seed": 4000078,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 33.371864050626755
+            },
+            {
+              "seed": 4000079,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -34.591055393218994
+            },
+            {
+              "seed": 4000080,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 26,
+              "reward": -31.30318496376276
+            },
+            {
+              "seed": 4000081,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -34.9279575869441
+            },
+            {
+              "seed": 4000082,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -34.32570802047849
+            },
+            {
+              "seed": 4000083,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.34451616182923
+            },
+            {
+              "seed": 4000084,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 91,
+              "reward": 34.614621162530966
+            },
+            {
+              "seed": 4000085,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 66,
+              "reward": -32.571771358605474
+            },
+            {
+              "seed": 4000086,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -34.40103924041614
+            },
+            {
+              "seed": 4000087,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 40,
+              "reward": -32.446084203897044
+            },
+            {
+              "seed": 4000088,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 31.855863980017602
+            },
+            {
+              "seed": 4000089,
+              "outcome": "timeout",
+              "passes": 0,
+              "steps": 150,
+              "reward": -3.9093917124664586
+            },
+            {
+              "seed": 4000090,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 34.36638032644987
+            },
+            {
+              "seed": 4000091,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 16,
+              "reward": -34.889828994870186
+            },
+            {
+              "seed": 4000092,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 35.231997691094875
+            },
+            {
+              "seed": 4000093,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.54914700239897
+            },
+            {
+              "seed": 4000094,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -36.00626604631543
+            },
+            {
+              "seed": 4000095,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.82012154906988
+            },
+            {
+              "seed": 4000096,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.4857719168067
+            },
+            {
+              "seed": 4000097,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -34.8899125829339
+            },
+            {
+              "seed": 4000098,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 34.87334019690752
+            },
+            {
+              "seed": 4000099,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.605748265981674
+            }
+          ]
+        },
+        "full_task": {
+          "episodes": 25,
+          "successful_episodes": 0,
+          "success_rate": 0.0,
+          "crashes": 24,
+          "crash_rate": 0.96,
+          "total_passes": 3,
+          "episodes_with_passes": 3,
+          "outcomes": {
+            "timeout": 1,
+            "left_cage": 17,
+            "hit": 7
+          },
+          "mean_steps": 72.64,
+          "mean_reward": -31.077616262214004,
+          "elapsed_seconds": 1.827999999979511,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "timeout",
+              "passes": 0,
+              "steps": 600,
+              "reward": 9.573579640986013
+            },
+            {
+              "seed": 4000001,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 72,
+              "reward": -39.21199107542634
+            },
+            {
+              "seed": 4000002,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 57,
+              "reward": -39.39968112949282
+            },
+            {
+              "seed": 4000003,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 55,
+              "reward": -42.04614268429577
+            },
+            {
+              "seed": 4000004,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 20,
+              "reward": -41.691665481776
+            },
+            {
+              "seed": 4000005,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 14,
+              "reward": -38.3831507191062
+            },
+            {
+              "seed": 4000006,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 37,
+              "reward": -41.06401258986443
+            },
+            {
+              "seed": 4000007,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 6,
+              "reward": -40.2705374599318
+            },
+            {
+              "seed": 4000008,
+              "outcome": "hit",
+              "passes": 1,
+              "steps": 155,
+              "reward": 6.643608782498632
+            },
+            {
+              "seed": 4000009,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 21,
+              "reward": -37.7699098396115
+            },
+            {
+              "seed": 4000010,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 29,
+              "reward": -37.09032577369362
+            },
+            {
+              "seed": 4000011,
+              "outcome": "hit",
+              "passes": 1,
+              "steps": 190,
+              "reward": 6.710632841251936
+            },
+            {
+              "seed": 4000012,
+              "outcome": "hit",
+              "passes": 1,
+              "steps": 40,
+              "reward": -1.5516346991062164
+            },
+            {
+              "seed": 4000013,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 180,
+              "reward": -28.159369873115793
+            },
+            {
+              "seed": 4000014,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 8,
+              "reward": -39.85812385799363
+            },
+            {
+              "seed": 4000015,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 25,
+              "reward": -31.505177915096283
+            },
+            {
+              "seed": 4000016,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 50,
+              "reward": -29.010950965806842
+            },
+            {
+              "seed": 4000017,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 5,
+              "reward": -40.183245312422514
+            },
+            {
+              "seed": 4000018,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 13,
+              "reward": -40.27885714173317
+            },
+            {
+              "seed": 4000019,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 11,
+              "reward": -38.266667541116476
+            },
+            {
+              "seed": 4000020,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 4,
+              "reward": -40.71389236301184
+            },
+            {
+              "seed": 4000021,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 19,
+              "reward": -41.03084503184073
+            },
+            {
+              "seed": 4000022,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 108,
+              "reward": -26.47312489664182
+            },
+            {
+              "seed": 4000023,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 4,
+              "reward": -40.68108481913805
+            },
+            {
+              "seed": 4000024,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 93,
+              "reward": -45.22783664986491
+            }
+          ]
+        }
+      },
+      "unchanged_training_steps": 670000,
+      "unchanged_gradient_updates": 670000,
+      "minimum_single_pass_success": 0.31
+    },
+    {
+      "checkpoint": "models/c1000k.zip",
+      "sha256": "ece1ea08cf83f4e1a2aee6c09230f6adb1f04936f1a789951762d4d0734fc9cd",
+      "step": 1000000,
+      "suites": {
+        "centered": {
+          "episodes": 100,
+          "successful_episodes": 53,
+          "success_rate": 0.53,
+          "crashes": 47,
+          "crash_rate": 0.47,
+          "total_passes": 53,
+          "episodes_with_passes": 53,
+          "outcomes": {
+            "hit": 47,
+            "passed": 53
+          },
+          "mean_steps": 37.67,
+          "mean_reward": 0.438212538217922,
+          "elapsed_seconds": 3.827999999979511,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 15,
+              "reward": -35.88186348974705
+            },
+            {
+              "seed": 4000001,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 30.994346817024052
+            },
+            {
+              "seed": 4000002,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.63393946510041
+            },
+            {
+              "seed": 4000003,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 32.06806194782257
+            },
+            {
+              "seed": 4000004,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.69086331129074
+            },
+            {
+              "seed": 4000005,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 61,
+              "reward": 30.98368369229138
+            },
+            {
+              "seed": 4000006,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.04824564223236
+            },
+            {
+              "seed": 4000007,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 31.978351354599
+            },
+            {
+              "seed": 4000008,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 57,
+              "reward": -34.916857284493744
+            },
+            {
+              "seed": 4000009,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.52355930954218
+            },
+            {
+              "seed": 4000010,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 32.72982330620289
+            },
+            {
+              "seed": 4000011,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.65304947644472
+            },
+            {
+              "seed": 4000012,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 32.25200364738703
+            },
+            {
+              "seed": 4000013,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 16,
+              "reward": -35.242086455225945
+            },
+            {
+              "seed": 4000014,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 48,
+              "reward": -36.504837344400585
+            },
+            {
+              "seed": 4000015,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 32.09554650634527
+            },
+            {
+              "seed": 4000016,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 66,
+              "reward": 31.515792591962963
+            },
+            {
+              "seed": 4000017,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 14,
+              "reward": -35.766020596027374
+            },
+            {
+              "seed": 4000018,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 36,
+              "reward": -36.45336387678981
+            },
+            {
+              "seed": 4000019,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.182225063443184
+            },
+            {
+              "seed": 4000020,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -36.39859604462981
+            },
+            {
+              "seed": 4000021,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 51,
+              "reward": -34.61157997697592
+            },
+            {
+              "seed": 4000022,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 31.89946971833706
+            },
+            {
+              "seed": 4000023,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.058126375079155
+            },
+            {
+              "seed": 4000024,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.629501812160015
+            },
+            {
+              "seed": 4000025,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 37,
+              "reward": -36.47105320170522
+            },
+            {
+              "seed": 4000026,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 46,
+              "reward": -36.487175229005516
+            },
+            {
+              "seed": 4000027,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.5999044328928
+            },
+            {
+              "seed": 4000028,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 57,
+              "reward": 31.521804518881254
+            },
+            {
+              "seed": 4000029,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.531431302428246
+            },
+            {
+              "seed": 4000030,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -35.08223454654217
+            },
+            {
+              "seed": 4000031,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -34.30910547077656
+            },
+            {
+              "seed": 4000032,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 36,
+              "reward": -36.54790655290708
+            },
+            {
+              "seed": 4000033,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 32.19952533394098
+            },
+            {
+              "seed": 4000034,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 56,
+              "reward": 32.21892656269483
+            },
+            {
+              "seed": 4000035,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -33.94997185468674
+            },
+            {
+              "seed": 4000036,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -36.03465019306168
+            },
+            {
+              "seed": 4000037,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 58,
+              "reward": 31.62769005051814
+            },
+            {
+              "seed": 4000038,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 31.66155912540853
+            },
+            {
+              "seed": 4000039,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 32.24583151191473
+            },
+            {
+              "seed": 4000040,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 72,
+              "reward": -34.21928028948605
+            },
+            {
+              "seed": 4000041,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 15,
+              "reward": -35.44591208547354
+            },
+            {
+              "seed": 4000042,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 55,
+              "reward": -34.126629626262
+            },
+            {
+              "seed": 4000043,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 50,
+              "reward": -35.61375895515084
+            },
+            {
+              "seed": 4000044,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 16,
+              "reward": -35.146991580724716
+            },
+            {
+              "seed": 4000045,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.29963706387207
+            },
+            {
+              "seed": 4000046,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 59,
+              "reward": 31.725432668812573
+            },
+            {
+              "seed": 4000047,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -33.740187875926495
+            },
+            {
+              "seed": 4000048,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.53424721956253
+            },
+            {
+              "seed": 4000049,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 31.98020528256893
+            },
+            {
+              "seed": 4000050,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.37549538910389
+            },
+            {
+              "seed": 4000051,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.81222093105316
+            },
+            {
+              "seed": 4000052,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.400212965905666
+            },
+            {
+              "seed": 4000053,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 60,
+              "reward": 31.28724153712392
+            },
+            {
+              "seed": 4000054,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -36.35911176074296
+            },
+            {
+              "seed": 4000055,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 31.92606071382761
+            },
+            {
+              "seed": 4000056,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 32.38870230317116
+            },
+            {
+              "seed": 4000057,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 26,
+              "reward": 32.30317283421755
+            },
+            {
+              "seed": 4000058,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 61,
+              "reward": 31.50323395198211
+            },
+            {
+              "seed": 4000059,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 60,
+              "reward": 31.731349797802977
+            },
+            {
+              "seed": 4000060,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.572041533887386
+            },
+            {
+              "seed": 4000061,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -36.33854702860117
+            },
+            {
+              "seed": 4000062,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.71331316977739
+            },
+            {
+              "seed": 4000063,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 64,
+              "reward": 31.256202452001162
+            },
+            {
+              "seed": 4000064,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 39,
+              "reward": -36.59008675441146
+            },
+            {
+              "seed": 4000065,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -32.97905671596527
+            },
+            {
+              "seed": 4000066,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 61,
+              "reward": 32.024433423997834
+            },
+            {
+              "seed": 4000067,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 36,
+              "reward": -36.68078922480345
+            },
+            {
+              "seed": 4000068,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 32.21079182624817
+            },
+            {
+              "seed": 4000069,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 77,
+              "reward": -34.036615564255044
+            },
+            {
+              "seed": 4000070,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 50,
+              "reward": -35.30333570507355
+            },
+            {
+              "seed": 4000071,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 76,
+              "reward": -34.203838983899914
+            },
+            {
+              "seed": 4000072,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 32.352589055895805
+            },
+            {
+              "seed": 4000073,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 53,
+              "reward": -35.19373558706138
+            },
+            {
+              "seed": 4000074,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 57,
+              "reward": -34.5866651982069
+            },
+            {
+              "seed": 4000075,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -34.75482764840126
+            },
+            {
+              "seed": 4000076,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 75,
+              "reward": 31.35558745637536
+            },
+            {
+              "seed": 4000077,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 31.50119793455815
+            },
+            {
+              "seed": 4000078,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.71140513708815
+            },
+            {
+              "seed": 4000079,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 61,
+              "reward": 31.534892470925115
+            },
+            {
+              "seed": 4000080,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.693163618445396
+            },
+            {
+              "seed": 4000081,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 31.78270549327135
+            },
+            {
+              "seed": 4000082,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 31.777652613818645
+            },
+            {
+              "seed": 4000083,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 56,
+              "reward": 31.226240634394344
+            },
+            {
+              "seed": 4000084,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 34,
+              "reward": -33.726527349092066
+            },
+            {
+              "seed": 4000085,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.6791590154171
+            },
+            {
+              "seed": 4000086,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 52,
+              "reward": -34.68581058271229
+            },
+            {
+              "seed": 4000087,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 32.3156457208097
+            },
+            {
+              "seed": 4000088,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 40,
+              "reward": -36.93230700492859
+            },
+            {
+              "seed": 4000089,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.754347547888756
+            },
+            {
+              "seed": 4000090,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.356263391673565
+            },
+            {
+              "seed": 4000091,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 48,
+              "reward": -35.96145624201745
+            },
+            {
+              "seed": 4000092,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.57317392528057
+            },
+            {
+              "seed": 4000093,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 58,
+              "reward": 31.57666801288724
+            },
+            {
+              "seed": 4000094,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 53,
+              "reward": -35.075987871037796
+            },
+            {
+              "seed": 4000095,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 14,
+              "reward": -36.02599015831947
+            },
+            {
+              "seed": 4000096,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 22,
+              "reward": 31.93540682643652
+            },
+            {
+              "seed": 4000097,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 23,
+              "reward": 31.545055523514748
+            },
+            {
+              "seed": 4000098,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -33.401831060647964
+            },
+            {
+              "seed": 4000099,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 63,
+              "reward": 31.299126079655252
+            }
+          ]
+        },
+        "varied": {
+          "episodes": 100,
+          "successful_episodes": 36,
+          "success_rate": 0.36,
+          "crashes": 64,
+          "crash_rate": 0.64,
+          "total_passes": 36,
+          "episodes_with_passes": 36,
+          "outcomes": {
+            "hit": 63,
+            "passed": 36,
+            "left_cage": 1
+          },
+          "mean_steps": 30.6,
+          "mean_reward": -9.708848768408934,
+          "elapsed_seconds": 2.905999999959022,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -35.0504812351428
+            },
+            {
+              "seed": 4000001,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 40,
+              "reward": 31.819204652681947
+            },
+            {
+              "seed": 4000002,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -35.05609426437877
+            },
+            {
+              "seed": 4000003,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -33.64075784679153
+            },
+            {
+              "seed": 4000004,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 34.930302530527115
+            },
+            {
+              "seed": 4000005,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -35.66709270328283
+            },
+            {
+              "seed": 4000006,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 21,
+              "reward": -35.45607686415315
+            },
+            {
+              "seed": 4000007,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 27,
+              "reward": -33.233449786901474
+            },
+            {
+              "seed": 4000008,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 45,
+              "reward": -36.206781751592644
+            },
+            {
+              "seed": 4000009,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 27,
+              "reward": -32.55436724424362
+            },
+            {
+              "seed": 4000010,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 35.255675211548805
+            },
+            {
+              "seed": 4000011,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 33.73230165243149
+            },
+            {
+              "seed": 4000012,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 27,
+              "reward": -33.42966277524829
+            },
+            {
+              "seed": 4000013,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -34.12773643434048
+            },
+            {
+              "seed": 4000014,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 38,
+              "reward": -36.01607173867524
+            },
+            {
+              "seed": 4000015,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 42,
+              "reward": 33.93764064554125
+            },
+            {
+              "seed": 4000016,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 30,
+              "reward": 32.79804342985153
+            },
+            {
+              "seed": 4000017,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 32,
+              "reward": 33.28822649642825
+            },
+            {
+              "seed": 4000018,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 53,
+              "reward": -42.84803837607615
+            },
+            {
+              "seed": 4000019,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.142885342240334
+            },
+            {
+              "seed": 4000020,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 47,
+              "reward": 32.700110636651516
+            },
+            {
+              "seed": 4000021,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -34.08913761563599
+            },
+            {
+              "seed": 4000022,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 32,
+              "reward": -33.89813382923603
+            },
+            {
+              "seed": 4000023,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 33.856765396893024
+            },
+            {
+              "seed": 4000024,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 33,
+              "reward": 34.77397020161152
+            },
+            {
+              "seed": 4000025,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.57622238248587
+            },
+            {
+              "seed": 4000026,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 38,
+              "reward": -35.707732347160345
+            },
+            {
+              "seed": 4000027,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -31.33068299666047
+            },
+            {
+              "seed": 4000028,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -34.34664148231968
+            },
+            {
+              "seed": 4000029,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 32,
+              "reward": 34.53276816755533
+            },
+            {
+              "seed": 4000030,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.10717090219259
+            },
+            {
+              "seed": 4000031,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 32.79298208653927
+            },
+            {
+              "seed": 4000032,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -35.591347691603005
+            },
+            {
+              "seed": 4000033,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 46,
+              "reward": -32.16394664160907
+            },
+            {
+              "seed": 4000034,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -33.436318933963776
+            },
+            {
+              "seed": 4000035,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.82483673095703
+            },
+            {
+              "seed": 4000036,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 33.872917145490646
+            },
+            {
+              "seed": 4000037,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -34.38391952961683
+            },
+            {
+              "seed": 4000038,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.09586992114782
+            },
+            {
+              "seed": 4000039,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 39,
+              "reward": 34.296394421719015
+            },
+            {
+              "seed": 4000040,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -34.086085349321365
+            },
+            {
+              "seed": 4000041,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 37,
+              "reward": 34.088154753670096
+            },
+            {
+              "seed": 4000042,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -33.8439452201128
+            },
+            {
+              "seed": 4000043,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -34.74016410857439
+            },
+            {
+              "seed": 4000044,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -34.2337672538124
+            },
+            {
+              "seed": 4000045,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 62,
+              "reward": 31.808688135817647
+            },
+            {
+              "seed": 4000046,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 17,
+              "reward": -34.865457244217396
+            },
+            {
+              "seed": 4000047,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -34.1814237087965
+            },
+            {
+              "seed": 4000048,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -34.428975742310286
+            },
+            {
+              "seed": 4000049,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 25,
+              "reward": -32.591466672718525
+            },
+            {
+              "seed": 4000050,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 33.67912957817316
+            },
+            {
+              "seed": 4000051,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -31.317953273653984
+            },
+            {
+              "seed": 4000052,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 34.437896616756916
+            },
+            {
+              "seed": 4000053,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 25,
+              "reward": 33.084245070815086
+            },
+            {
+              "seed": 4000054,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 20,
+              "reward": -34.39577392488718
+            },
+            {
+              "seed": 4000055,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.56416342407465
+            },
+            {
+              "seed": 4000056,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -32.24840495362878
+            },
+            {
+              "seed": 4000057,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -33.32858023539302
+            },
+            {
+              "seed": 4000058,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 67,
+              "reward": 31.90874658431858
+            },
+            {
+              "seed": 4000059,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 25,
+              "reward": -34.15852011740208
+            },
+            {
+              "seed": 4000060,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.92773976176977
+            },
+            {
+              "seed": 4000061,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 31,
+              "reward": 32.73703555390239
+            },
+            {
+              "seed": 4000062,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 29,
+              "reward": 34.86172819137573
+            },
+            {
+              "seed": 4000063,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 33,
+              "reward": -35.58104548975825
+            },
+            {
+              "seed": 4000064,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 27,
+              "reward": -35.003714095801115
+            },
+            {
+              "seed": 4000065,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 34.83501026779413
+            },
+            {
+              "seed": 4000066,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 43,
+              "reward": -32.6592879537493
+            },
+            {
+              "seed": 4000067,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -35.21849808096886
+            },
+            {
+              "seed": 4000068,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 26,
+              "reward": -33.540832705795765
+            },
+            {
+              "seed": 4000069,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -34.15844442695379
+            },
+            {
+              "seed": 4000070,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -34.70400083810091
+            },
+            {
+              "seed": 4000071,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 32,
+              "reward": 33.1167926043272
+            },
+            {
+              "seed": 4000072,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 34.1675688624382
+            },
+            {
+              "seed": 4000073,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 32.8751375132706
+            },
+            {
+              "seed": 4000074,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 23,
+              "reward": -34.020554691553116
+            },
+            {
+              "seed": 4000075,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 22,
+              "reward": -33.878531850874424
+            },
+            {
+              "seed": 4000076,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 48,
+              "reward": -33.11454062908888
+            },
+            {
+              "seed": 4000077,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 32,
+              "reward": -34.65862346440554
+            },
+            {
+              "seed": 4000078,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 27,
+              "reward": 33.506501600146294
+            },
+            {
+              "seed": 4000079,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 28,
+              "reward": 33.02755876630545
+            },
+            {
+              "seed": 4000080,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -31.633542604744434
+            },
+            {
+              "seed": 4000081,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -34.12519235908985
+            },
+            {
+              "seed": 4000082,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 28,
+              "reward": -34.25561706721783
+            },
+            {
+              "seed": 4000083,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 30,
+              "reward": -34.940207361243665
+            },
+            {
+              "seed": 4000084,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -31.302949380129576
+            },
+            {
+              "seed": 4000085,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 31,
+              "reward": -31.204201832413673
+            },
+            {
+              "seed": 4000086,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 29,
+              "reward": -35.00672194175422
+            },
+            {
+              "seed": 4000087,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 36,
+              "reward": -32.717712953686714
+            },
+            {
+              "seed": 4000088,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 37,
+              "reward": -36.191011779010296
+            },
+            {
+              "seed": 4000089,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 40,
+              "reward": -32.44336303137243
+            },
+            {
+              "seed": 4000090,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -32.7198468670249
+            },
+            {
+              "seed": 4000091,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 19,
+              "reward": -34.78345453739166
+            },
+            {
+              "seed": 4000092,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 34,
+              "reward": 34.75349275767803
+            },
+            {
+              "seed": 4000093,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 18,
+              "reward": -34.5003922060132
+            },
+            {
+              "seed": 4000094,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 50,
+              "reward": -35.68852098379284
+            },
+            {
+              "seed": 4000095,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 24,
+              "reward": 32.326284527778625
+            },
+            {
+              "seed": 4000096,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 35,
+              "reward": -32.242721263319254
+            },
+            {
+              "seed": 4000097,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 42,
+              "reward": 32.63005250412971
+            },
+            {
+              "seed": 4000098,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 24,
+              "reward": -32.41250751912594
+            },
+            {
+              "seed": 4000099,
+              "outcome": "passed",
+              "passes": 1,
+              "steps": 35,
+              "reward": 32.434375274926424
+            }
+          ]
+        },
+        "full_task": {
+          "episodes": 25,
+          "successful_episodes": 0,
+          "success_rate": 0.0,
+          "crashes": 25,
+          "crash_rate": 1.0,
+          "total_passes": 3,
+          "episodes_with_passes": 3,
+          "outcomes": {
+            "hit": 12,
+            "left_cage": 13
+          },
+          "mean_steps": 57.28,
+          "mean_reward": -30.98357367556251,
+          "elapsed_seconds": 1.3440000000409782,
+          "records": [
+            {
+              "seed": 4000000,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 57,
+              "reward": -24.507262639701366
+            },
+            {
+              "seed": 4000001,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 74,
+              "reward": -40.079131809063256
+            },
+            {
+              "seed": 4000002,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 126,
+              "reward": -38.25634144525975
+            },
+            {
+              "seed": 4000003,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 52,
+              "reward": -29.59395377524197
+            },
+            {
+              "seed": 4000004,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 11,
+              "reward": -40.35380060970783
+            },
+            {
+              "seed": 4000005,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 24,
+              "reward": -35.16465599089861
+            },
+            {
+              "seed": 4000006,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 86,
+              "reward": -35.8463500123471
+            },
+            {
+              "seed": 4000007,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 48,
+              "reward": -25.815531350672245
+            },
+            {
+              "seed": 4000008,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 6,
+              "reward": -39.54492850601673
+            },
+            {
+              "seed": 4000009,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 156,
+              "reward": -39.856630129390396
+            },
+            {
+              "seed": 4000010,
+              "outcome": "left_cage",
+              "passes": 1,
+              "steps": 131,
+              "reward": -2.7455041082575917
+            },
+            {
+              "seed": 4000011,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 55,
+              "reward": -27.062974739819765
+            },
+            {
+              "seed": 4000012,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 37,
+              "reward": -27.7936569750309
+            },
+            {
+              "seed": 4000013,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 74,
+              "reward": -34.02224385831505
+            },
+            {
+              "seed": 4000014,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 10,
+              "reward": -39.87578225345351
+            },
+            {
+              "seed": 4000015,
+              "outcome": "hit",
+              "passes": 1,
+              "steps": 128,
+              "reward": 3.595408692024648
+            },
+            {
+              "seed": 4000016,
+              "outcome": "hit",
+              "passes": 0,
+              "steps": 36,
+              "reward": -28.667475387454033
+            },
+            {
+              "seed": 4000017,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 4,
+              "reward": -41.0135979950428
+            },
+            {
+              "seed": 4000018,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 74,
+              "reward": -39.59879869222641
+            },
+            {
+              "seed": 4000019,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 18,
+              "reward": -37.06371466629207
+            },
+            {
+              "seed": 4000020,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 4,
+              "reward": -40.79005632549524
+            },
+            {
+              "seed": 4000021,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 8,
+              "reward": -41.27264892682433
+            },
+            {
+              "seed": 4000022,
+              "outcome": "hit",
+              "passes": 1,
+              "steps": 182,
+              "reward": 7.588647993237828
+            },
+            {
+              "seed": 4000023,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 15,
+              "reward": -40.57333891838789
+            },
+            {
+              "seed": 4000024,
+              "outcome": "left_cage",
+              "passes": 0,
+              "steps": 16,
+              "reward": -36.2750194594264
+            }
+          ]
+        }
+      },
+      "unchanged_training_steps": 1000000,
+      "unchanged_gradient_updates": 1000000,
+      "minimum_single_pass_success": 0.36
+    }
+  ],
+  "selected_step": 520000,
+  "selected_checkpoint": "models/c520k.zip",
+  "ranking_steps": [
+    520000,
+    1000000,
+    670000
+  ],
+  "elapsed_seconds": 29.344000000040978
+}

@@ -1,0 +1,43 @@
+{
+  "format": 1,
+  "publication_date": "2026-09-27",
+  "models": [
+    {
+      "path": "models/c520k.zip",
+      "experiment": "C",
+      "online_steps": 520000,
+      "original_sha256": "b828515bbe67e4b9164cd30198832e1131043046b2c2c876a2aa326f9df3ab5c",
+      "published_sha256": "8d85cc9b80541442e21b3669d8b67ab876e52387253d948a700e8f8f1755d6a2",
+      "non_metadata_entries_unchanged": true,
+      "run_seed": 0
+    },
+    {
+      "path": "models/c670k.zip",
+      "experiment": "C",
+      "online_steps": 670000,
+      "original_sha256": "50a002be96d186ffbe44cbf37f1fce88c6a16d22aa179ffdd55b3688f0318410",
+      "published_sha256": "177f25e381fd95e11ed2383b4a961ef4ff3fd8bc73031267f37226f350e86987",
+      "non_metadata_entries_unchanged": true,
+      "run_seed": 0
+    },
+    {
+      "path": "models/c1000k.zip",
+      "experiment": "C",
+      "online_steps": 1000000,
+      "original_sha256": "ece1ea08cf83f4e1a2aee6c09230f6adb1f04936f1a789951762d4d0734fc9cd",
+      "published_sha256": "feaa251fba50c7c5ad2a8390413a2fdc3379566265b637cfcdb1400a9d4faf7d",
+      "non_metadata_entries_unchanged": true,
+      "run_seed": 0
+    },
+    {
+      "path": "models/unified-110000.zip",
+      "experiment": "Unified",
+      "online_steps": 110000,
+      "original_sha256": "5504ed0e61d27b29b22f8a205b8d839d16f7a39d723c43dad7f9f5ae3d8e7789",
+      "published_sha256": "e956dfbf91276bf6d3f1447178fe6c2982572a442656414412e5739ba21c3872",
+      "non_metadata_entries_unchanged": true,
+      "run_seed": 7
+    }
+  ],
+  "note": "Training-output directory metadata removed; all weight/archive entries except data preserved byte-for-byte. No replay buffers are included."
+}

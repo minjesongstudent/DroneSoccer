@@ -1,0 +1,94 @@
+{
+  "version": 3,
+  "seed": 7,
+  "device": "cuda",
+  "threads": 1,
+  "reward_version": "single-pass-clearance-v1",
+  "experiment": "Unified training",
+  "unified_version": "one-policy-mixed-starts-v1",
+  "source_checkpoint": "models/c520k.zip",
+  "source_sha256": "b828515bbe67e4b9164cd30198832e1131043046b2c2c876a2aa326f9df3ab5c",
+  "source_history": {
+    "steps": 520000,
+    "updates": 520000,
+    "imitation_updates": 49999
+  },
+  "start_focus_stage": 4,
+  "initial_training_mix": [
+    {
+      "stage": 0,
+      "name": "Close aligned pass",
+      "probability": 0.05
+    },
+    {
+      "stage": 1,
+      "name": "Near aligned pass",
+      "probability": 0.05
+    },
+    {
+      "stage": 2,
+      "name": "Centered pass",
+      "probability": 0.15000000000000002
+    },
+    {
+      "stage": 3,
+      "name": "Varied approach",
+      "probability": 0.15000000000000002
+    },
+    {
+      "stage": 4,
+      "name": "Laps from the front",
+      "probability": 0.6
+    }
+  ],
+  "mixture": "60% current starting layouts; 40% earlier layouts; current task rewards and dynamics",
+  "new_demonstrations": 0,
+  "new_imitation_updates": 0,
+  "replay_refill_transitions": 1000,
+  "learning_starts": 0,
+  "buffer_size": 100000,
+  "eval_every": 10000,
+  "eval_episodes": 25,
+  "geometry": {
+    "cage": {
+      "length": 2.05,
+      "width": 2.05,
+      "height": 2.05,
+      "margin": 0.15,
+      "min_altitude": 0.3
+    },
+    "drone": {
+      "width": 0.2,
+      "height": 0.035,
+      "length": 0.2,
+      "max_speed": 0.4,
+      "max_yaw_rate_deg": 60.0,
+      "tau": 0.3,
+      "delay_steps": 0,
+      "dt": 0.1,
+      "takeoff_height": 0.8
+    },
+    "hoop": {
+      "outer_diameter": 0.45,
+      "diameter_tolerance": 0.03,
+      "thickness": 0.065,
+      "n_points": 32,
+      "marker_max_angle_deg": 70.0,
+      "hanger_half_width": 0.2
+    },
+    "camera": {
+      "width": 960,
+      "height": 720,
+      "fx": 920.0,
+      "fy": 920.0,
+      "cx": 480.0,
+      "cy": 360.0,
+      "pitch_deg": 0.0,
+      "offset_forward": 0.05
+    },
+    "pad": {
+      "inset": 0.25,
+      "heading_error_deg": 15.0
+    }
+  }
+}

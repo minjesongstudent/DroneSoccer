@@ -1,0 +1,1202 @@
+[
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 49,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 41,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 210,
+    "first_pass": 50
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 49,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 135,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 29,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 70,
+    "first_pass": 57
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 9,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 41,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 44,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 205,
+    "first_pass": 47
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 79,
+    "first_pass": 35
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 53,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 74,
+    "first_pass": 54
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 83,
+    "first_pass": 41
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 73,
+    "first_pass": 32
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 67,
+    "first_pass": 52
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 36,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 37,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 40,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 9,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 37,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 40,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 25,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 142,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 34,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 43,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 42,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 198,
+    "first_pass": 39
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 9,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 37,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 129,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 62,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 76,
+    "first_pass": 57
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 9,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 34,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 61,
+    "first_pass": 47
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 294,
+    "first_pass": 135
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 38,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 5,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 12,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 2,
+    "steps": 365,
+    "first_pass": 44
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 13,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 78,
+    "first_pass": 37
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 45,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 39,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 130,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 35,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 44,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 24,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 54,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 12,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 207,
+    "first_pass": 49
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 9,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 54,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 24,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 2,
+    "steps": 327,
+    "first_pass": 144
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 58,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 46,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 33,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 14,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 60,
+    "first_pass": 40
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 57,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 43,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 81,
+    "first_pass": 38
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 45,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 148,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 25,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 28,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 47,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 69,
+    "first_pass": 31
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 209,
+    "first_pass": 52
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 74,
+    "first_pass": 56
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 32,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 37,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 45,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 30,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 27,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 9,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 73,
+    "first_pass": 31
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 14,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 2,
+    "steps": 360,
+    "first_pass": 40
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 27,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 2,
+    "steps": 451,
+    "first_pass": 129
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 2,
+    "steps": 351,
+    "first_pass": 31
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 60,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 12,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 40,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 145,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 2,
+    "steps": 461,
+    "first_pass": 140
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 127,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 207,
+    "first_pass": 48
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 12,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 73,
+    "first_pass": 31
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 46,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 41,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 21,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 72,
+    "first_pass": 53
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 57,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 55,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 40,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 44,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 149,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 36,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 26,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 11,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 1,
+    "steps": 304,
+    "first_pass": 144
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 67,
+    "first_pass": 45
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 39,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 63,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 73,
+    "first_pass": 57
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 51,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 37,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 31,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 7,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 46,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 47,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 36,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 11,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 70,
+    "first_pass": 60
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 1,
+    "steps": 74,
+    "first_pass": 36
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 44,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 70,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 10,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 37,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "timeout",
+    "passes": 0,
+    "steps": 600,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 6,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 8,
+    "first_pass": null
+  },
+  {
+    "outcome": "left_cage",
+    "passes": 0,
+    "steps": 63,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 22,
+    "first_pass": null
+  },
+  {
+    "outcome": "hit",
+    "passes": 0,
+    "steps": 21,
+    "first_pass": null
+  }
+]
