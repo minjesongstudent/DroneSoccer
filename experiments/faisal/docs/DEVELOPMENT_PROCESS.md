@@ -99,3 +99,7 @@ Resume files preserve model, optimizer, replay, curriculum and counters. A disk 
 ## Revision context
 
 The experiment began from `22c9543b144fadbbc228c329c72565279daaa7a1`. Publication was prepared on upstream revision `64a641c`, with the standalone implementation isolated under `experiments/faisal/` to retain newer upstream changes. The historical 71-input benchmark used compatible simulator revision `0ff7b7a`; it is separate from the current implementation.
+
+## Latest optimization work
+
+The [optimized experiment](../optimized/README.md) preserves the subsequent reward corrections, return-practice trials, memory/critic diagnostics and the stopped metric-ring15k trial. See its [development process](../optimized/DEVELOPMENT_PROCESS.md) and [results](../optimized/RESULTS.md) for the current status. Repeated laps remain unsolved.

@@ -1,0 +1,8 @@
+{
+  "tests_passed": 455,
+  "seconds": 57.02,
+  "existing_warnings": 2,
+  "proposal_audit": "local-artifact/anchor-proposal-audit.json",
+  "session_id": 94824,
+  "independent_acceptance_seeds_used": false
+}

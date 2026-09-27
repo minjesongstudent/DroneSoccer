@@ -92,3 +92,7 @@ The next useful comparisons should measure retained centered/varied passing, ret
 Recorded development verification for the unified implementation was **144 passing tests**, with two non-failing warnings about infinite observation-space bounds. Tests verify software behavior, not real-world accuracy or successful physical deployment.
 
 Physical validation remains limited by estimated camera intrinsics, response time, foam thickness, hanger geometry and collision envelope. The simulated front marker needs a matching physical feature or a revised observation design. No claim is made that a policy trained with these approximations is ready for autonomous flight.
+
+## Latest optimization work
+
+The [optimized experiment](../optimized/README.md) preserves the subsequent reward corrections, return-practice trials, memory/critic diagnostics and the stopped metric-ring15k trial. See its [development process](../optimized/DEVELOPMENT_PROCESS.md) and [results](../optimized/RESULTS.md) for the current status. Repeated laps remain unsolved.

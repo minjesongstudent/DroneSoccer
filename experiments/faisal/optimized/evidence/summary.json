@@ -1,0 +1,72 @@
+[
+  {
+    "run": "anchor-repair-20260927",
+    "step": 20000,
+    "centered": 24,
+    "varied": 21,
+    "new_passes": 0,
+    "safe_returns": 0,
+    "crashes": 27,
+    "full": 0
+  },
+  {
+    "run": "front-memory-20260927",
+    "step": 20000,
+    "centered": 24,
+    "varied": 22,
+    "new_passes": 0,
+    "safe_returns": 0,
+    "crashes": 11,
+    "full": 0
+  },
+  {
+    "run": "metric-ring-20260927",
+    "step": 15000,
+    "centered": 24,
+    "varied": 23,
+    "new_passes": 0,
+    "safe_returns": 2,
+    "crashes": 32,
+    "full": 0
+  },
+  {
+    "run": "recent-retrace-20260927",
+    "step": 20000,
+    "centered": 24,
+    "varied": 22,
+    "new_passes": 0,
+    "safe_returns": 0,
+    "crashes": 0,
+    "full": 0
+  },
+  {
+    "run": "reset-lessons-20260927",
+    "step": 20000,
+    "centered": 24,
+    "varied": 23,
+    "new_passes": 0,
+    "safe_returns": 0,
+    "crashes": 0,
+    "full": 0
+  },
+  {
+    "run": "return-practice-overnight-20260927",
+    "step": 20000,
+    "centered": 24,
+    "varied": 23,
+    "new_passes": 0,
+    "safe_returns": 0,
+    "crashes": 25,
+    "full": 0
+  },
+  {
+    "run": "return-retrace-20260927",
+    "step": 20000,
+    "centered": 24,
+    "varied": 22,
+    "new_passes": 0,
+    "safe_returns": 0,
+    "crashes": 24,
+    "full": 0
+  }
+]

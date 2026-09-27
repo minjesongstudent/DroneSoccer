@@ -1,0 +1,39 @@
+{
+  "summary": {
+    "deterministic": {
+      "outcomes": {
+        "left_cage": 25
+      },
+      "blind_samples": 1378,
+      "error_quantiles": [
+        0.002755395803246243,
+        0.022531033581722964,
+        0.03519127390909445,
+        0.036080898863009137
+      ],
+      "terminal_postpass_flights": 25,
+      "mean_q": -10.935509281158447,
+      "mean_sample_soft_return": -34.61181960983308,
+      "mean_q_minus_return": 23.676310328674628
+    },
+    "stochastic": {
+      "outcomes": {
+        "left_cage": 24,
+        "timeout": 1
+      },
+      "blind_samples": 1455,
+      "error_quantiles": [
+        0.002366211588181381,
+        0.020831674081187742,
+        0.03525830741120669,
+        0.03604371657299796
+      ],
+      "terminal_postpass_flights": 24,
+      "mean_q": -11.652667959531149,
+      "mean_sample_soft_return": -31.967891475282258,
+      "mean_q_minus_return": 20.31522351575111
+    }
+  },
+  "verified_no_learning": true,
+  "limitations": "Deterministic tails are not SAC policy values; stochastic single trajectories are noisy, terminal-selected; timeout tails excluded."
+}

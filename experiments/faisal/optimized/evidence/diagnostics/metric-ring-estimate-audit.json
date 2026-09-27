@@ -1,0 +1,424 @@
+{
+  "summary": [
+    {
+      "model": "initial",
+      "stage": 4,
+      "blind_samples": 131,
+      "source_flights": 6,
+      "error_m_quantiles": [
+        0.020362155851365898,
+        0.032260120434581915,
+        0.03226018248428401
+      ]
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "blind_samples": 52,
+      "source_flights": 2,
+      "error_m_quantiles": [
+        0.03195892312817496,
+        0.031959044137127204,
+        0.03195910557542154
+      ]
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "blind_samples": 20,
+      "source_flights": 1,
+      "error_m_quantiles": [
+        0.0492193767547728,
+        0.05143622764501173,
+        0.051749276387658236
+      ]
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "blind_samples": 70,
+      "source_flights": 5,
+      "error_m_quantiles": [
+        0.020255517415376647,
+        0.026026279552926725,
+        0.032370109647743575
+      ]
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "blind_samples": 13,
+      "source_flights": 1,
+      "error_m_quantiles": [
+        0.02886834801198229,
+        0.02886840215933759,
+        0.02886841519905154
+      ]
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "blind_samples": 17,
+      "source_flights": 1,
+      "error_m_quantiles": [
+        0.036248049254135675,
+        0.04030111133631511,
+        0.04269435528613449
+      ]
+    }
+  ],
+  "flights": [
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000000,
+      "passes": 1,
+      "outcome": "timeout"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000001,
+      "passes": 1,
+      "outcome": "timeout"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000002,
+      "passes": 1,
+      "outcome": "timeout"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000003,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000004,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000005,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000006,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 4,
+      "seed": 2000007,
+      "passes": 1,
+      "outcome": "timeout"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000000,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000001,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000002,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000003,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000004,
+      "passes": 1,
+      "outcome": "timeout"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000005,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000006,
+      "passes": 1,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 5,
+      "seed": 2000007,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000000,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000001,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000002,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000003,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000004,
+      "passes": 1,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000005,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000006,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "initial",
+      "stage": 6,
+      "seed": 2000007,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000000,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000001,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000002,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000003,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000004,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000005,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000006,
+      "passes": 1,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 4,
+      "seed": 2000007,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000000,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000001,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000002,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000003,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000004,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000005,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000006,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 5,
+      "seed": 2000007,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000000,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000001,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000002,
+      "passes": 0,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000003,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000004,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000005,
+      "passes": 0,
+      "outcome": "left_cage"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000006,
+      "passes": 1,
+      "outcome": "hit"
+    },
+    {
+      "model": "20k",
+      "stage": 6,
+      "seed": 2000007,
+      "passes": 0,
+      "outcome": "left_cage"
+    }
+  ],
+  "verified_no_learning": true,
+  "estimate_used_by_actor": false,
+  "fixed_nominal_diameter": 0.45,
+  "fixed_nominal_camera": {
+    "width": 960,
+    "height": 720,
+    "fx": 920.0,
+    "fy": 920.0,
+    "cx": 480.0,
+    "cy": 360.0,
+    "pitch_deg": 0.0,
+    "offset_forward": 0.05
+  },
+  "source_snapshot": "local-artifact/source_snapshot",
+  "script_sha256": "b90a041447c9a762f367c0e6429e6161924e42527987c226450b0752ffa5af53",
+  "limitations": "Weak-perspective position only, no ring normal or unseen walls. Nominal calibration; delayed/randomized dynamics evaluated separately. No real-flight accuracy claim."
+}

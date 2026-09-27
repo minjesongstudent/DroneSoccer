@@ -1,0 +1,24 @@
+{
+  "verified_no_learning": true,
+  "full_mission_test": false,
+  "source_snapshot": "local-artifact/source_snapshot",
+  "summary": {
+    "initial": {
+      "outcomes": {
+        "timeout": 24,
+        "left_cage": 1
+      },
+      "first_passes": 25,
+      "postpass_hit_steps": [],
+      "hit_last_steps": []
+    },
+    "15k": {
+      "outcomes": {
+        "left_cage": 25
+      },
+      "first_passes": 25,
+      "postpass_hit_steps": [],
+      "hit_last_steps": []
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
 Drone soccer control, simulation and reinforcement-learning experiments.
 
+- [Latest optimized experiments](experiments/faisal/optimized/README.md): current code, seven trial histories, failed checkpoints and next steps.
 - [Faisal's local GPU experiment](experiments/faisal/README.md): standalone simulator, one live training policy, saved models and reproducible evaluation.
 - [Development process](experiments/faisal/docs/DEVELOPMENT_PROCESS.md): the steps from the initial baseline through the A/B/C experiments and unified training.
 - [Results and limitations](experiments/faisal/docs/RESULTS.md): measured outcomes and the current interim snapshot.

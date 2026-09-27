@@ -1,0 +1,141 @@
+{
+  "version": 3,
+  "seed": 7,
+  "device": "cuda",
+  "threads": 1,
+  "reward_version": "lap-remaining-route-potential-v3",
+  "experiment": "Unified training",
+  "unified_version": "recent-and-all-lap-soft-retrace-v1",
+  "asymmetric_critic": false,
+  "retrace_critic": true,
+  "trace_length": 8,
+  "trace_lambda": 0.95,
+  "retrace_target_version": "finite-soft-retrace-residual-v1",
+  "retrace_replay_version": "task-balanced-soft-retrace-sequences-v1",
+  "actor_uses_simulator_context": false,
+  "recent_retrace": true,
+  "recent_sampling_version": "recent-and-all-lap-soft-retrace-v1",
+  "recent_lap_count": 2048,
+  "observation_version": "camera-command-memory-and-requested-task-v1",
+  "observation_dim": 100,
+  "source_checkpoint": "local-artifact/best_model.zip",
+  "source_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+  "source_reward_version": "lap-remaining-route-potential-v3",
+  "source_history": {
+    "steps": 10000,
+    "updates": 5001,
+    "imitation_updates": 0,
+    "transfer": "actor_only",
+    "fresh_critics": true,
+    "fresh_optimizers": true,
+    "entropy_coefficient": 0.012956607155501842,
+    "entropy_mode": "fixed_at_source_value",
+    "source_observation_dim": 100,
+    "observation_dim": 100,
+    "source_has_frozen_reference": true,
+    "replay_refill_transitions": 5000,
+    "critic_calibration_updates": 5000,
+    "actor_learning_rate": 3e-05,
+    "critic_learning_rate": 0.0003,
+    "source_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+    "policy_update_rule": "recent-and-all-lap-soft-retrace-v1",
+    "reference": "original_frozen_reference_from_source_checkpoint",
+    "anchor_coefficient": 10.0,
+    "anchor_max_batch_mean_kl": 0.1,
+    "anchor_mask": "single-pass task, current front visible, or front seen within 1.8 seconds",
+    "replay_sampling": "50% all single-pass; 25% all lap; 25% latest2048 lap insertions",
+    "new_demonstrations": 0,
+    "trace_length": 8,
+    "trace_lambda": 0.95,
+    "retrace_target_version": "finite-soft-retrace-residual-v1",
+    "retrace_replay_version": "task-balanced-soft-retrace-sequences-v1",
+    "behavior_density_version": "joint-squashed-gaussian-with-pre-tanh-sample-v1",
+    "behavior_density": "exact collected pre-tanh sample and squashed joint log density",
+    "critic_observation_dim": 100,
+    "actor_receives_privileged_context": false,
+    "recent_sampling_version": "recent-and-all-lap-soft-retrace-v1",
+    "recent_lap_count": 2048
+  },
+  "start_focus_stage": 4,
+  "initial_training_mix": [
+    {
+      "stage": 2,
+      "name": "Centered pass",
+      "probability": 0.2
+    },
+    {
+      "stage": 3,
+      "name": "Varied approach",
+      "probability": 0.2
+    },
+    {
+      "stage": 4,
+      "name": "Laps from the front",
+      "probability": 0.2
+    },
+    {
+      "stage": 5,
+      "name": "Laps from corners",
+      "probability": 0.2
+    },
+    {
+      "stage": null,
+      "name": "Authentic mid-flight return",
+      "probability": 0.2
+    }
+  ],
+  "mixture": "40% single-pass; 20% front laps; 20% corner laps; 20% authentic return continuations",
+  "return_library": "local-artifact/train-v1",
+  "return_validation": "local-artifact/development-v1",
+  "return_library_sha256": "c20cc7c7735d3b364f7b532398a6a86055a488c31131e8692df81c4c371debc8",
+  "return_validation_sha256": "75cd6dd4ec79b8c92523ac3f51b90bcff35a96ec464ccb428fdbe36e7aff2973",
+  "new_demonstrations": 0,
+  "new_imitation_updates": 0,
+  "replay_refill_transitions": 5000,
+  "learning_starts": 0,
+  "buffer_size": 100000,
+  "eval_every": 5000,
+  "eval_episodes": 25,
+  "geometry": {
+    "cage": {
+      "length": 2.05,
+      "width": 2.05,
+      "height": 2.05,
+      "margin": 0.15,
+      "min_altitude": 0.3
+    },
+    "drone": {
+      "width": 0.2,
+      "height": 0.035,
+      "length": 0.2,
+      "max_speed": 0.4,
+      "max_yaw_rate_deg": 60.0,
+      "tau": 0.3,
+      "delay_steps": 0,
+      "dt": 0.1,
+      "takeoff_height": 0.8
+    },
+    "hoop": {
+      "outer_diameter": 0.45,
+      "diameter_tolerance": 0.03,
+      "thickness": 0.065,
+      "n_points": 32,
+      "marker_max_angle_deg": 70.0,
+      "hanger_half_width": 0.2
+    },
+    "camera": {
+      "width": 960,
+      "height": 720,
+      "fx": 920.0,
+      "fy": 920.0,
+      "cx": 480.0,
+      "cy": 360.0,
+      "pitch_deg": 0.0,
+      "offset_forward": 0.05
+    },
+    "pad": {
+      "inset": 0.25,
+      "heading_error_deg": 15.0
+    }
+  }
+}

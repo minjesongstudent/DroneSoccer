@@ -113,3 +113,7 @@ crossing; separate clean-pass tests require the full body to clear.
 
 Geometry and camera assumptions are documented in the development process and
 tagged in `src/params.py`. The inherited [MIT license](../../LICENSE) applies.
+
+## Latest optimization work
+
+The [optimized experiment](optimized/README.md) preserves the subsequent reward corrections, return-practice trials, memory/critic diagnostics and the stopped metric-ring15k trial. See its [development process](optimized/DEVELOPMENT_PROCESS.md) and [results](optimized/RESULTS.md) for the current status. Repeated laps remain unsolved.
