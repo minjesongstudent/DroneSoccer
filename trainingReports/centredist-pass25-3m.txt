@@ -1,0 +1,19 @@
+centredist-pass25-3m
+job -   git ?   seeds 4   steps 3,000,000
+written 2026-09-26 17:06
+
+SETTINGS
+args      (none)
+          settings not logged (run predates the settings line)
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status      passed      hit     left   missed  timeout  1st pass  level      steps   time
+0     done         91.6%     6.4%     2.0%     0.0%     0.0%         -      -      3000k   581m
+1     done         71.6%    26.8%     1.4%     0.2%     0.0%         -      -      3000k   570m
+2*    done         94.8%     4.6%     0.4%     0.2%     0.0%         -      -      3000k   581m
+3     done         78.8%    20.2%     1.0%     0.0%     0.0%         -      -      3000k   567m
+base               82.4%    17.0%     0.6%     0.0%     0.0%         -
+best      seed 2
+
+FLAGS
+  none
