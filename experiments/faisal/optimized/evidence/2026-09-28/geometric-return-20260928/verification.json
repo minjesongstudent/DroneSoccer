@@ -1,0 +1,13 @@
+{
+  "tests_passed": 490,
+  "warnings": 2,
+  "test_seconds": 70.05,
+  "physical_baseline_records_exact": true,
+  "reset_baseline_exact": true,
+  "allowed_changes": [
+    "returned_to_front",
+    "returned_to_side",
+    "reward"
+  ],
+  "device": "NVIDIA GeForce RTX 4070 Ti"
+}

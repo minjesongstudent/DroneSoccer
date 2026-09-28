@@ -1,0 +1,142 @@
+[
+  {
+    "seed": 640000,
+    "stage": 2,
+    "steps": 62,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640001,
+    "stage": 3,
+    "steps": 42,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640002,
+    "stage": 2,
+    "steps": 21,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640003,
+    "stage": 3,
+    "steps": 54,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640004,
+    "stage": 2,
+    "steps": 44,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640005,
+    "stage": 3,
+    "steps": 47,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640006,
+    "stage": 2,
+    "steps": 42,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640007,
+    "stage": 3,
+    "steps": 33,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640008,
+    "stage": 2,
+    "steps": 79,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640009,
+    "stage": 3,
+    "steps": 57,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640010,
+    "stage": 2,
+    "steps": 40,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640011,
+    "stage": 3,
+    "steps": 39,
+    "outcome": "hit",
+    "passes": 0
+  },
+  {
+    "seed": 640012,
+    "stage": 2,
+    "steps": 23,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640013,
+    "stage": 3,
+    "steps": 29,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640014,
+    "stage": 2,
+    "steps": 24,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640015,
+    "stage": 3,
+    "steps": 27,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640016,
+    "stage": 2,
+    "steps": 60,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640017,
+    "stage": 3,
+    "steps": 43,
+    "outcome": "hit",
+    "passes": 0
+  },
+  {
+    "seed": 640018,
+    "stage": 2,
+    "steps": 22,
+    "outcome": "passed",
+    "passes": 1
+  },
+  {
+    "seed": 640019,
+    "stage": 3,
+    "steps": 30,
+    "outcome": "passed",
+    "passes": 1
+  }
+]

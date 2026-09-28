@@ -1,0 +1,22 @@
+{
+  "version": "finite-episode-bounded-step-v2",
+  "source_sha256": "881f9d8a09deff88340a046915f24e2d9d2cbad553fc7dd2fad95e83a65135e0",
+  "device": "NVIDIA GeForce RTX 4070 Ti",
+  "maximum_batches": 3,
+  "episodes_per_batch": 96,
+  "maximum_steps_per_batch": 21600,
+  "mixture": "40% weight on nine FIT near-pass starts;20% centered lesson2;20% varied lesson3;20% full lesson4; eight rollouts/group",
+  "objective": "Finite complete episode discounted reward plus entropy; practice200,single150,full600,zero terminal tail, no SAC Q gradients",
+  "actor_lr": 3e-06,
+  "epochs": 4,
+  "minibatch": 512,
+  "clip": 0.1,
+  "mean_kl": 0.001,
+  "max_kl": 0.02,
+  "guard": "Same whole-epoch KL/surrogate guards; at most4 half-LR retries from identical actor/optimizer/RNG before stopping",
+  "baseline": "same-group leave-one-episode-out timewise return mean, no value critic",
+  "stop": "no accepted epoch; centered<21/25 or varied<23/25; any fixed lap crash or return crash above source; at3batches stop regardless",
+  "progress": ">=5/50 gain new-pass or safe-return successes; never claim full mission acceptance",
+  "reserved_check": "never used during this trial",
+  "final_7M_used": false
+}

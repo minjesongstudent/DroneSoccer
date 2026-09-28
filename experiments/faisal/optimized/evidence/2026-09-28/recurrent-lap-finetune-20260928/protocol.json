@@ -1,0 +1,24 @@
+{
+  "method": "RecurrentPPO RL after supervised learned-policy initialization",
+  "source": "D:\\DroneSoccerData\\runs\\recurrent-learned-transfer-20260928\\model_update_300.zip",
+  "sha256": "ce37c42826e7cee961b202e298c0d7eb6e4c42dffd8f3e89aabe90154592d2e6",
+  "device": "NVIDIA GeForce RTX 4070 Ti",
+  "seed": 42,
+  "max_steps": 65536,
+  "critic_only_steps": 8192,
+  "mixture": "25% centered single,25% varied single,50% front full-lap natural episode starts",
+  "checks": [
+    0,
+    8192,
+    16384,
+    32768,
+    65536
+  ],
+  "lr": 3e-05,
+  "clip": 0.1,
+  "target_kl": 0.003,
+  "retention": "Stop if centered<22/25 or varied<20/25 after policy updates",
+  "progress": "Stop at32768 if zero full successes and zero front returns across all full suites",
+  "unchanged": "119publicobs,physics,rewards,fullbodyclearance,600step fullmission criteria",
+  "independent7M": false
+}

@@ -1,0 +1,971 @@
+{
+  "schema_version": 1,
+  "config": {
+    "max_retention_drop": 0.12,
+    "min_centered_success": 0.7,
+    "min_varied_success": 0.6,
+    "severe_regression_drop": 0.2,
+    "severe_regression_patience": 3,
+    "regression_warmup_steps": 20000,
+    "stagnation_steps": 100000,
+    "candidate_full_success": 0.8,
+    "candidate_delayed_success": 0.8,
+    "candidate_centered_success": 0.85,
+    "candidate_varied_success": 0.8,
+    "candidate_patience": 3
+  },
+  "history": [
+    {
+      "step": 0,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96,
+          "crash_rate": 0.04
+        },
+        "varied_approach": {
+          "success_rate": 0.92,
+          "crash_rate": 0.08
+        },
+        "full_task": {
+          "success_rate": 0.0,
+          "crash_rate": 0.88
+        },
+        "full_task_delay_200ms": {
+          "success_rate": 0.0,
+          "crash_rate": 1.0
+        },
+        "lesson": {
+          "success_rate": 0.0,
+          "crash_rate": 0.16
+        }
+      },
+      "episodes_per_suite": 25,
+      "seed_start": 5000000,
+      "policy_mode": "deterministic",
+      "protocols": {
+        "original_centered": {
+          "id": "completion-original_centered-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 0,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "varied_approach": {
+          "id": "completion-varied_approach-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 1,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task": {
+          "id": "completion-full_task-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task_delay_200ms": {
+          "id": "completion-full_task_delay_200ms-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 2,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 5000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96,
+          "crash_rate": 0.04
+        },
+        "varied_approach": {
+          "success_rate": 0.92,
+          "crash_rate": 0.08
+        },
+        "full_task": {
+          "success_rate": 0.0,
+          "crash_rate": 0.88
+        },
+        "full_task_delay_200ms": {
+          "success_rate": 0.0,
+          "crash_rate": 1.0
+        },
+        "lesson": {
+          "success_rate": 0.0,
+          "crash_rate": 0.16
+        }
+      },
+      "episodes_per_suite": 25,
+      "seed_start": 5000000,
+      "policy_mode": "deterministic",
+      "protocols": {
+        "original_centered": {
+          "id": "completion-original_centered-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 0,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "varied_approach": {
+          "id": "completion-varied_approach-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 1,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task": {
+          "id": "completion-full_task-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task_delay_200ms": {
+          "id": "completion-full_task_delay_200ms-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 2,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 10000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96,
+          "crash_rate": 0.04
+        },
+        "varied_approach": {
+          "success_rate": 0.88,
+          "crash_rate": 0.12
+        },
+        "full_task": {
+          "success_rate": 0.0,
+          "crash_rate": 0.92
+        },
+        "full_task_delay_200ms": {
+          "success_rate": 0.0,
+          "crash_rate": 1.0
+        },
+        "lesson": {
+          "success_rate": 0.0,
+          "crash_rate": 0.24
+        }
+      },
+      "episodes_per_suite": 25,
+      "seed_start": 5000000,
+      "policy_mode": "deterministic",
+      "protocols": {
+        "original_centered": {
+          "id": "completion-original_centered-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 0,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "varied_approach": {
+          "id": "completion-varied_approach-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 1,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task": {
+          "id": "completion-full_task-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task_delay_200ms": {
+          "id": "completion-full_task_delay_200ms-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 2,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 15000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 1.0,
+          "crash_rate": 0.0
+        },
+        "varied_approach": {
+          "success_rate": 0.92,
+          "crash_rate": 0.08
+        },
+        "full_task": {
+          "success_rate": 0.0,
+          "crash_rate": 0.88
+        },
+        "full_task_delay_200ms": {
+          "success_rate": 0.0,
+          "crash_rate": 0.92
+        },
+        "lesson": {
+          "success_rate": 0.0,
+          "crash_rate": 0.36
+        }
+      },
+      "episodes_per_suite": 25,
+      "seed_start": 5000000,
+      "policy_mode": "deterministic",
+      "protocols": {
+        "original_centered": {
+          "id": "completion-original_centered-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 0,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "varied_approach": {
+          "id": "completion-varied_approach-v1",
+          "environment": "LessonEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": 1,
+          "max_steps": 150,
+          "success": "passed",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task": {
+          "id": "completion-full_task-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 0,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        },
+        "full_task_delay_200ms": {
+          "id": "completion-full_task_delay_200ms-v1",
+          "environment": "HoopEnv",
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "stage": null,
+          "max_steps": 600,
+          "success": "timeout and passes >= 2",
+          "deterministic": true,
+          "geometry": {
+            "cage": {
+              "length": 2.05,
+              "width": 2.05,
+              "height": 2.05,
+              "margin": 0.15,
+              "min_altitude": 0.3
+            },
+            "drone": {
+              "width": 0.2,
+              "height": 0.035,
+              "length": 0.2,
+              "max_speed": 0.4,
+              "max_yaw_rate_deg": 60.0,
+              "tau": 0.3,
+              "delay_steps": 2,
+              "dt": 0.1,
+              "takeoff_height": 0.8
+            },
+            "hoop": {
+              "outer_diameter": 0.45,
+              "diameter_tolerance": 0.03,
+              "thickness": 0.065,
+              "n_points": 32,
+              "marker_max_angle_deg": 70.0,
+              "hanger_half_width": 0.2
+            },
+            "camera": {
+              "width": 960,
+              "height": 720,
+              "fx": 920.0,
+              "fy": 920.0,
+              "cx": 480.0,
+              "cy": 360.0,
+              "pitch_deg": 0.0,
+              "offset_forward": 0.05
+            },
+            "pad": {
+              "inset": 0.25,
+              "heading_error_deg": 15.0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

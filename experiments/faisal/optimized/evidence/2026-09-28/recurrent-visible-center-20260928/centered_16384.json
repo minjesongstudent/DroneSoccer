@@ -1,0 +1,182 @@
+{
+  "step": 16384,
+  "episodes": 25,
+  "successes": 0,
+  "rows": [
+    {
+      "seed": 9300000,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 100,
+      "reward": -36.82468885881826
+    },
+    {
+      "seed": 9300001,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 106,
+      "reward": -36.59412733837962
+    },
+    {
+      "seed": 9300002,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 110,
+      "reward": -36.33677538204938
+    },
+    {
+      "seed": 9300003,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 118,
+      "reward": -36.09773776540533
+    },
+    {
+      "seed": 9300004,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 109,
+      "reward": -36.27123918477446
+    },
+    {
+      "seed": 9300005,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 90,
+      "reward": -37.060916296206415
+    },
+    {
+      "seed": 9300006,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 113,
+      "reward": -36.583828249014914
+    },
+    {
+      "seed": 9300007,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 91,
+      "reward": -37.02504244586453
+    },
+    {
+      "seed": 9300008,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 111,
+      "reward": -36.140314305666834
+    },
+    {
+      "seed": 9300009,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 111,
+      "reward": -36.21406501578167
+    },
+    {
+      "seed": 9300010,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 110,
+      "reward": -36.16601026058197
+    },
+    {
+      "seed": 9300011,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 95,
+      "reward": -36.93180320598185
+    },
+    {
+      "seed": 9300012,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 103,
+      "reward": -36.49221121240407
+    },
+    {
+      "seed": 9300013,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 98,
+      "reward": -36.61226250231266
+    },
+    {
+      "seed": 9300014,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 116,
+      "reward": -36.06608197512105
+    },
+    {
+      "seed": 9300015,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 93,
+      "reward": -37.018763861618936
+    },
+    {
+      "seed": 9300016,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 116,
+      "reward": -36.454976794309914
+    },
+    {
+      "seed": 9300017,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 93,
+      "reward": -37.20969341881573
+    },
+    {
+      "seed": 9300018,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 107,
+      "reward": -36.385508940089494
+    },
+    {
+      "seed": 9300019,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 116,
+      "reward": -36.086505809333175
+    },
+    {
+      "seed": 9300020,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 98,
+      "reward": -36.89613415999338
+    },
+    {
+      "seed": 9300021,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 100,
+      "reward": -36.849924818612635
+    },
+    {
+      "seed": 9300022,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 112,
+      "reward": -36.546077799052
+    },
+    {
+      "seed": 9300023,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 111,
+      "reward": -36.240976062603295
+    },
+    {
+      "seed": 9300024,
+      "outcome": "hit",
+      "passes": 0,
+      "steps": 91,
+      "reward": -37.30990007566288
+    }
+  ]
+}

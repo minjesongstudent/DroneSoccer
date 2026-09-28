@@ -1,0 +1,22 @@
+[
+  {
+    "file": "recurrent-basic-transfer-300.zip",
+    "source": "recurrent-learned-transfer-20260928/model_update_300.zip",
+    "sha256": "ce37c42826e7cee961b202e298c0d7eb6e4c42dffd8f3e89aabe90154592d2e6"
+  },
+  {
+    "file": "recurrent-lap-rl-32768.zip",
+    "source": "recurrent-lap-finetune-20260928/model_32768.zip",
+    "sha256": "01e980f74f7f9508be17d8ceab6b9f9c69d3240f0efe1ab2968f0eabd5bf1912"
+  },
+  {
+    "file": "recurrent-lap-transfer-300.zip",
+    "source": "recurrent-lap-transfer-20260928/model_update_300.zip",
+    "sha256": "e5214205d83a3fa4a434857ce19604a31e36eee138434005e4b4e3eb9afdf9f6"
+  },
+  {
+    "file": "recurrent-lap-transfer-500.zip",
+    "source": "recurrent-lap-transfer-20260928/model_update_500.zip",
+    "sha256": "20d68c6757482bd041990d12f0b53253200f2ad8278b2f7eb34ef665fd257a75"
+  }
+]

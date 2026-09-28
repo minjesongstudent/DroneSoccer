@@ -1,0 +1,32 @@
+{"steps": 2048, "episodes": 8, "outcomes": {"timeout": 8}}
+{"steps": 4096, "episodes": 24, "outcomes": {"timeout": 24}}
+{"steps": 6144, "episodes": 40, "outcomes": {"timeout": 40}}
+{"steps": 8192, "episodes": 48, "outcomes": {"timeout": 48}}
+{"steps": 10240, "episodes": 64, "outcomes": {"timeout": 64}}
+{"steps": 12288, "episodes": 80, "outcomes": {"timeout": 75, "hit": 5}}
+{"steps": 14336, "episodes": 94, "outcomes": {"timeout": 86, "hit": 8}}
+{"steps": 16384, "episodes": 107, "outcomes": {"timeout": 94, "hit": 13}}
+{"steps": 18432, "episodes": 124, "outcomes": {"timeout": 100, "hit": 24}}
+{"steps": 20480, "episodes": 140, "outcomes": {"timeout": 104, "hit": 36}}
+{"steps": 22528, "episodes": 155, "outcomes": {"timeout": 113, "hit": 42}}
+{"steps": 24576, "episodes": 169, "outcomes": {"timeout": 122, "hit": 47}}
+{"steps": 26624, "episodes": 183, "outcomes": {"timeout": 134, "hit": 49}}
+{"steps": 28672, "episodes": 196, "outcomes": {"timeout": 146, "hit": 50}}
+{"steps": 30720, "episodes": 210, "outcomes": {"timeout": 160, "hit": 50}}
+{"steps": 32768, "episodes": 224, "outcomes": {"timeout": 174, "hit": 50}}
+{"steps": 34816, "episodes": 238, "outcomes": {"timeout": 188, "hit": 50}}
+{"steps": 36864, "episodes": 251, "outcomes": {"timeout": 201, "hit": 50}}
+{"steps": 38912, "episodes": 266, "outcomes": {"timeout": 216, "hit": 50}}
+{"steps": 40960, "episodes": 279, "outcomes": {"timeout": 229, "hit": 50}}
+{"steps": 43008, "episodes": 292, "outcomes": {"timeout": 242, "hit": 50}}
+{"steps": 45056, "episodes": 306, "outcomes": {"timeout": 256, "hit": 50}}
+{"steps": 47104, "episodes": 320, "outcomes": {"timeout": 270, "hit": 50}}
+{"steps": 49152, "episodes": 333, "outcomes": {"timeout": 283, "hit": 50}}
+{"steps": 51200, "episodes": 346, "outcomes": {"timeout": 296, "hit": 50}}
+{"steps": 53248, "episodes": 361, "outcomes": {"timeout": 310, "hit": 51}}
+{"steps": 55296, "episodes": 376, "outcomes": {"timeout": 325, "hit": 51}}
+{"steps": 57344, "episodes": 388, "outcomes": {"timeout": 337, "hit": 51}}
+{"steps": 59392, "episodes": 402, "outcomes": {"timeout": 351, "hit": 51}}
+{"steps": 61440, "episodes": 416, "outcomes": {"timeout": 365, "hit": 51}}
+{"steps": 63488, "episodes": 429, "outcomes": {"timeout": 378, "hit": 51}}
+{"steps": 65536, "episodes": 442, "outcomes": {"timeout": 391, "hit": 51}}

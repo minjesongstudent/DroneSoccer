@@ -67,6 +67,8 @@ class MetricRingSAC(RecentRetraceSAC):
         try:
             with zipfile.ZipFile(source) as archive:
                 data=json.loads(archive.read('data'))
+                if cls is MetricRingSAC and data.get('geometric_reward_version') is not None:
+                    raise ValueError('Geometric checkpoint requires its explicit policy class')
                 if cls is MetricRingSAC and data.get('repair_version') is not None:
                     raise ValueError('Repair checkpoint requires its explicit policy class')
                 if data.get('metric_policy_version')!=VERSION:

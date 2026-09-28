@@ -78,9 +78,9 @@ def stopped_selector():
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA live integration')
-@pytest.mark.parametrize('asymmetric,retrace,recent,front,resets,repair,metric', [(False,False,False,False,False,False,False),(True,False,False,False,False,False,False),(False,True,False,False,False,False,False),(False,True,True,False,False,False,False),(False,True,True,True,False,False,False),(False,True,True,True,True,False,False),(False,True,True,True,True,True,False),(False,True,True,True,True,False,True)])
+@pytest.mark.parametrize('asymmetric,retrace,recent,front,resets,repair,metric,coverage,geometric,balanced,balanced_repair,source_anchor,standard_source', [(False, False, False, False, False, False, False, False, False, False, False, False, False), (True, False, False, False, False, False, False, False, False, False, False, False, False), (False, True, False, False, False, False, False, False, False, False, False, False, False), (False, True, True, False, False, False, False, False, False, False, False, False, False), (False, True, True, True, False, False, False, False, False, False, False, False, False), (False, True, True, True, True, False, False, False, False, False, False, False, False), (False, True, True, True, True, True, False, False, False, False, False, False, False), (False, True, True, True, True, False, True, False, False, False, False, False, False), (False, True, True, True, True, False, True, True, False, False, False, False, False), (False, True, True, True, True, False, True, True, True, False, False, False, False), (False, True, True, True, True, False, True, True, True, True, False, False, False), (False, True, True, True, True, False, True, True, True, True, True, False, False), (False, True, True, True, True, False, True, True, True, True, False, True, False), (False, True, True, True, True, False, True, True, True, False, False, True, True)])
 def test_cuda_return_run_preserves_histories_and_resumes_actor_reference_replay_selector(
-        artifacts, tmp_path, monkeypatch, asymmetric, retrace, recent, front, resets, repair, metric):
+        artifacts, tmp_path, monkeypatch, asymmetric, retrace, recent, front, resets, repair, metric, coverage, geometric, balanced, balanced_repair, source_anchor, standard_source):
     torch.set_num_threads(1)
     if resets:
         from src import return_reset_curriculum
@@ -94,6 +94,9 @@ def test_cuda_return_run_preserves_histories_and_resumes_actor_reference_replay_
     if metric:
         from src.metric_return_library import MetricReturnLibrary
         library_class=MetricReturnLibrary
+    if geometric:
+        from src.geometric_library import GeometricReturnLibrary
+        library_class=GeometricReturnLibrary
     bank = library_class(artifacts['train'])
     assert bank.manifest['split'] == 'train'
     assert set(bank.phases) == {'return_side', 'return_front'}
@@ -130,8 +133,11 @@ def test_cuda_return_run_preserves_histories_and_resumes_actor_reference_replay_
                            source_config=artifacts['config'], buffer_size=128, eval_episodes=1,
                            return_library=artifacts['train'], return_validation=artifacts['development'],
                            runs_dir=runs_dir, asymmetric_critic=asymmetric, retrace_critic=retrace,
-                           recent_retrace=recent, front_memory=front, reset_lessons=resets, repair_anchor=repair, metric_ring=metric)
+                           recent_retrace=recent, front_memory=front, reset_lessons=resets, repair_anchor=repair, metric_ring=metric, reset_coverage=coverage, geometric_return=geometric, balanced_anchor=balanced, balanced_repair=balanced_repair, source_anchor=source_anchor, standard_source=standard_source)
     assert session.out == runs_dir/'return-smoke'
+    if balanced:
+        from src.balanced_anchor_policy import BalancedAnchorSAC
+        assert issubclass(session.model_class, BalancedAnchorSAC)
     session.return_selector = ReturnSkillSelector(ReturnSelectionConfig(episodes=2, improvement_episodes=1))
     thread = threading.Thread(target=session.run, daemon=True)
     thread.start()
@@ -162,6 +168,7 @@ def test_cuda_return_run_preserves_histories_and_resumes_actor_reference_replay_
     assert session.state['total_passes'] == credited
     config_path = session.out/'config.json'
     config = json.loads(config_path.read_text())
+    assert bool(config.get('balanced_anchor',False)) is balanced
     assert config['asymmetric_critic'] is asymmetric
     assert config['retrace_critic'] is retrace
     if asymmetric or retrace:
@@ -172,7 +179,7 @@ def test_cuda_return_run_preserves_histories_and_resumes_actor_reference_replay_
     restored = live.Session(32, 'return-smoke', resume=True, buffer_size=128, runs_dir=runs_dir)
     if resets:
         from src.return_reset_curriculum import ResetMixture
-        env=Monitor(ResetMixture(restored.reset_scheduler,metric_ring=metric))
+        env=Monitor(ResetMixture(restored.reset_scheduler,metric_ring=metric,coverage=coverage,geometric_return=geometric))
     else:
         env = Monitor(ReturnMixtureEnv(bank, observation_wrapper=restored.observation_wrapper))
     if asymmetric:
@@ -185,6 +192,46 @@ def test_cuda_return_run_preserves_histories_and_resumes_actor_reference_replay_
         assert restored.reset_scheduler.state()==session.reset_scheduler.state()
         assert env.unwrapped is not None
         assert restored.reset_lessons
+    assert restored.geometric_return is geometric
+    assert restored.balanced_anchor is balanced
+    assert restored.balanced_repair is balanced_repair
+    assert restored.source_anchor is source_anchor
+    assert restored.standard_source is standard_source
+    if standard_source:
+        from src.standard_source_policy import StandardSourceSAC
+        from src.source_anchor_policy import SourceAnchorSAC
+        assert isinstance(restored.model,StandardSourceSAC)
+        assert config['gradient_balancing_active'] is False
+        with pytest.raises(ValueError,match="Standard source contract"):
+            live.Session(32, 'return-smoke', resume=True, runs_dir=runs_dir, standard_source=False)
+        with pytest.raises(ValueError,match="explicit policy class"):
+            SourceAnchorSAC.load(session.out/'model.zip',device='cuda')
+
+    if source_anchor:
+        assert_state_dict_equal(restored.model.source_anchor_actor.state_dict(),session.model.source_anchor_actor.state_dict())
+        with pytest.raises(ValueError,match="Standard source requires source reference" if standard_source else "Source anchor contract"):
+            live.Session(32, 'return-smoke', resume=True, runs_dir=runs_dir, source_anchor=False)
+
+    if balanced_repair:
+        from src.balanced_repair_policy import BalancedRepairSAC
+        from src.balanced_anchor_policy import BalancedAnchorSAC
+        assert isinstance(restored.model,BalancedRepairSAC)
+        with pytest.raises(ValueError,match="Balanced repair contract"):
+            live.Session(32, 'return-smoke', resume=True, runs_dir=runs_dir, balanced_repair=False)
+        with pytest.raises(ValueError,match="explicit policy class"):
+            BalancedAnchorSAC.load(session.out/'model.zip',device='cuda')
+
+    if balanced:
+        with pytest.raises(ValueError,match="Source anchor requires gradient balance" if source_anchor else "Balanced repair requires gradient balance" if balanced_repair else "Balanced anchor contract"):
+            live.Session(32, 'return-smoke', resume=True, runs_dir=runs_dir, balanced_anchor=False)
+
+    if geometric:
+        from src.metric_policy import MetricRingSAC
+        with pytest.raises(ValueError,match="explicit policy class"):
+            MetricRingSAC.load(session.out/"model.zip",device="cuda")
+        with pytest.raises(ValueError,match="Standard source retains geometric reward contract" if standard_source else "Balanced anchor retains geometric return" if balanced else "Geometric reward contract"):
+            live.Session(32,"return-smoke",resume=True,buffer_size=128,runs_dir=runs_dir,geometric_return=False)
+    assert restored.reset_coverage is coverage
     assert restored.metric_ring is metric
     assert restored.repair_anchor is repair
     if repair:

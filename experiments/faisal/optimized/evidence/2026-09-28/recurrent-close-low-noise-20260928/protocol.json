@@ -1,0 +1,20 @@
+{
+  "algorithm": "RecurrentPPO",
+  "device": "NVIDIA GeForce RTX 4070 Ti",
+  "seed": 41,
+  "max_steps": 65536,
+  "controlled_change": "Close-only baseline with initial Gaussian standard deviation0.2 instead of1.0; all other optimizer/environment settings unchanged",
+  "initial_log_std": -1.6094379124341003,
+  "rewards_and_geometry": "unchanged",
+  "public_observations": 119,
+  "scripted_actions": false,
+  "checkpoints": [
+    0,
+    16384,
+    32768,
+    65536
+  ],
+  "close_development_seeds": "9300000..9300024",
+  "fixed_evaluation": "unchanged five suites25episodes; no independent7M used",
+  "decision": "Stop at64k; no automatic promotion or extension. Assess close-learning before advancing curriculum."
+}

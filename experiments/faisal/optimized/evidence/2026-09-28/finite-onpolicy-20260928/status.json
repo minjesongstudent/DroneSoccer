@@ -1,0 +1,8 @@
+{
+  "mode": "stopped",
+  "reason": "no_accepted_epoch",
+  "steps": 13935,
+  "development_progress": false,
+  "mission_accepted": false,
+  "reserved_rollouts": 0
+}

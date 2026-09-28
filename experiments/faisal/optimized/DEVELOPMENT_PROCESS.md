@@ -1,4 +1,8 @@
-# Development process through the metric-ring trial
+# Development process
+
+The current continuation through28 September is in [Latest progress](LATEST_PROGRESS.md). It covers failed experiments, observation diagnosis, recurrent initialization and the latest measured outcomes.
+
+## Earlier process through the metric-ring trial
 
 ## Starting point
 

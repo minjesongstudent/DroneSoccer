@@ -12,9 +12,13 @@ from src.curriculum import REWARD_VERSION
 VALIDATION_SEED_START = 5_000_000
 
 
-def evaluate(model, stage, episodes=25, progress=None, seed_start=VALIDATION_SEED_START, front_memory=False, metric_ring=False):
+def evaluate(model, stage, episodes=25, progress=None, seed_start=VALIDATION_SEED_START, front_memory=False, metric_ring=False, geometric_return=False, episode_reset=None):
     if episodes <= 0:
         raise ValueError('Evaluation requires at least one episode')
+    if geometric_return:metric_ring=True
+    reward_version=REWARD_VERSION
+    if geometric_return:
+        from src.return_geometry import GeometricReturnProgress,VERSION as reward_version
     if metric_ring:front_memory=True
     observation_version = OBSERVATION_VERSION
     if front_memory:
@@ -30,7 +34,7 @@ def evaluate(model, stage, episodes=25, progress=None, seed_start=VALIDATION_SEE
               ('full_task_delay_200ms', HoopEnv(level=1.0, drone=Drone(delay_steps=2)))]
     report = {'step': model.num_timesteps, 'stage': stage,
               'episodes_per_suite': episodes, 'seed_start': seed_start,
-              'observation_version': observation_version, 'reward_version': REWARD_VERSION,
+              'observation_version': observation_version, 'reward_version': reward_version,
               'policy_mode': 'deterministic', 'suites': {}, 'protocols': {}}
     for name, base_env in suites:
         single = name in ('original_centered', 'varied_approach') or (name == 'lesson' and stage < 4)
@@ -38,9 +42,10 @@ def evaluate(model, stage, episodes=25, progress=None, seed_start=VALIDATION_SEE
         if front_memory:
             env = FrontMemoryObservation(env)
         if metric_ring:env=MetricRingObservation(env)
+        if geometric_return:env=GeometricReturnProgress(env)
         report['protocols'][name] = {
             'id': f'completion-{name}-v1', 'environment': type(base_env).__name__,
-            'reward_version': REWARD_VERSION, 'observation_version': observation_version,
+            'reward_version': reward_version, 'observation_version': observation_version,
             'stage': stage if name == 'lesson' else 0 if name == 'original_centered' else 1 if name == 'varied_approach' else None,
             'max_steps': 150 if single else 600,
             'success': 'passed' if single else 'timeout and passes >= 2',
@@ -52,6 +57,8 @@ def evaluate(model, stage, episodes=25, progress=None, seed_start=VALIDATION_SEE
         try:
             for i in range(episodes):
                 obs, _ = env.reset(seed=seed_start+i)
+                if episode_reset is not None:
+                    episode_reset()
                 phases_after_pass = set()
                 while True:
                     obs, _, term, trunc, info = env.step(model.predict(obs, deterministic=True)[0])

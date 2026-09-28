@@ -53,7 +53,7 @@ class Session:
     def __init__(self, steps, name, resume=False, eval_every=10000, eval_episodes=25,
                  buffer_size=100000, learning_starts=0, source_checkpoint=None, source_config=None,
                  return_library=None, return_validation=None, runs_dir=None, asymmetric_critic=None,
-                 retrace_critic=None, recent_retrace=None, front_memory=None, reset_lessons=None, repair_anchor=None, metric_ring=None):
+                 retrace_critic=None, recent_retrace=None, front_memory=None, reset_lessons=None, repair_anchor=None, metric_ring=None, reset_coverage=None, geometric_return=None, balanced_anchor=None, balanced_repair=None, source_anchor=None, standard_source=None):
         if Path(name).name != name or name in ('.', '..'):
             raise ValueError('Run name must be a single directory name')
         if buffer_size < REFILL_TRANSITIONS:
@@ -68,6 +68,54 @@ class Session:
         self.asymmetric_critic = saved_asymmetry if asymmetric_critic is None else bool(asymmetric_critic)
         saved_retrace = bool(previous_config.get('retrace_critic', False))
         saved_recent = bool(previous_config.get('recent_retrace', False))
+        saved_standard_source=bool(previous_config.get('standard_source',False))
+        if resume and standard_source is not None and bool(standard_source)!=saved_standard_source:
+            raise ValueError('Standard source contract cannot change on resume')
+        self.standard_source=saved_standard_source if standard_source is None else bool(standard_source)
+        if self.standard_source:
+            if source_anchor is False:raise ValueError('Standard source requires source reference')
+            if balanced_anchor is True:raise ValueError('Standard source disables gradient balancing')
+            source_anchor=True
+            balanced_anchor=False
+            if geometric_return is False:raise ValueError('Standard source retains geometric reward contract')
+            geometric_return=True
+        saved_source_anchor=bool(previous_config.get('source_anchor',False))
+        if resume and source_anchor is not None and bool(source_anchor)!=saved_source_anchor:
+            raise ValueError('Source anchor contract cannot change on resume')
+        self.source_anchor=saved_source_anchor if source_anchor is None else bool(source_anchor)
+        if self.source_anchor:
+            if not self.standard_source and balanced_anchor is False:raise ValueError('Source anchor requires gradient balance')
+            if balanced_repair or previous_config.get('balanced_repair',False):raise ValueError('Source anchor retains absolute KL acceptance')
+            if not self.standard_source:balanced_anchor=True
+        saved_balanced_repair=bool(previous_config.get('balanced_repair',False))
+        if resume and balanced_repair is not None and bool(balanced_repair)!=saved_balanced_repair:
+            raise ValueError('Balanced repair contract cannot change on resume')
+        self.balanced_repair=saved_balanced_repair if balanced_repair is None else bool(balanced_repair)
+        if self.balanced_repair:
+            if balanced_anchor is False:raise ValueError('Balanced repair requires gradient balance')
+            balanced_anchor=True
+        saved_balance=bool(previous_config.get('balanced_anchor',False))
+        if resume and balanced_anchor is not None and bool(balanced_anchor)!=saved_balance:
+            raise ValueError('Balanced anchor contract cannot change on resume')
+        self.balanced_anchor=saved_balance if balanced_anchor is None else bool(balanced_anchor)
+        if self.balanced_anchor:
+            if geometric_return is False:raise ValueError('Balanced anchor retains geometric return')
+            geometric_return=True
+        saved_geo=bool(previous_config.get('geometric_return',False))
+        if resume and geometric_return is not None and bool(geometric_return)!=saved_geo:
+            raise ValueError('Geometric reward contract cannot change on resume')
+        self.geometric_return=saved_geo if geometric_return is None else bool(geometric_return)
+        self.reward_version=REWARD_VERSION
+        if self.geometric_return:
+            if reset_coverage is False:raise ValueError('Geometric trial retains reset coverage')
+            reset_coverage=True
+        saved_coverage=bool(previous_config.get('reset_coverage',False))
+        if resume and reset_coverage is not None and bool(reset_coverage)!=saved_coverage:
+            raise ValueError('Reset coverage contract cannot change on resume')
+        self.reset_coverage=saved_coverage if reset_coverage is None else bool(reset_coverage)
+        if self.reset_coverage:
+            if metric_ring is False:raise ValueError('Coverage trial retains metric policy')
+            metric_ring=True
         saved_metric=bool(previous_config.get('metric_ring',False))
         if resume and metric_ring is not None and bool(metric_ring)!=saved_metric:
             raise ValueError('Metric ring contract cannot change on resume')
@@ -153,6 +201,39 @@ class Session:
             self.observation_wrapper=lambda env:MetricRingObservation(FrontMemoryObservation(env))
             self.observation_version,self.observation_dim=metric_observation_version,119
             self.critic_config.update(metric_ring=True,metric_policy_version=metric_version,ring_estimate_version=estimate_version)
+        if self.reset_coverage:
+            from src.return_reset_curriculum import COVERAGE_VERSION
+            self.critic_config.update(reset_coverage=True,reset_coverage_version=COVERAGE_VERSION)
+        if self.geometric_return:
+            from src.geometric_policy import GeometricSAC,start_from_checkpoint as geo_transfer
+            from src.geometric_library import GeometricReturnLibrary
+            from src.return_geometry import GeometricReturnProgress,VERSION as geo_version
+            previous_wrapper=self.observation_wrapper
+            self.observation_wrapper=lambda env:GeometricReturnProgress(previous_wrapper(env))
+            self.model_class,self.transfer_actor,self.training_version=GeometricSAC,geo_transfer,geo_version
+            self.library_class=GeometricReturnLibrary
+            self.reward_version=geo_version
+            self.critic_config.update(geometric_return=True,geometric_reward_version=geo_version)
+        if self.balanced_anchor:
+            from src.balanced_anchor_policy import BalancedAnchorSAC, start_from_checkpoint as balance_transfer, VERSION as balance_version
+            self.model_class,self.transfer_actor=BalancedAnchorSAC,balance_transfer
+            self.critic_config.update(balanced_anchor=True,balanced_anchor_version=balance_version)
+        if self.balanced_repair:
+            from src.balanced_repair_policy import BalancedRepairSAC,start_from_checkpoint as balanced_repair_transfer,VERSION as balanced_repair_version
+            self.model_class,self.transfer_actor=BalancedRepairSAC,balanced_repair_transfer
+            self.critic_config.update(balanced_repair=True,balanced_repair_version=balanced_repair_version,anchor_repair_minimum_fraction=.01)
+        if self.source_anchor:
+            from src.source_anchor_policy import SourceAnchorSAC,start_from_checkpoint as source_anchor_transfer,VERSION as source_anchor_version
+            self.model_class,self.transfer_actor=SourceAnchorSAC,source_anchor_transfer
+            self.critic_config.update(source_anchor=True,source_anchor_version=source_anchor_version,active_retention_reference='verified source actor',original_reference_preserved=True,original_reference_used_for_penalty=False)
+        if self.standard_source:
+            from src.standard_source_policy import StandardSourceSAC,start_from_checkpoint as standard_source_transfer,VERSION as standard_source_version
+            self.model_class,self.transfer_actor=StandardSourceSAC,standard_source_transfer
+            self.critic_config.update(standard_source=True,standard_source_version=standard_source_version,anchor_gradient_mode='standard',gradient_balancing_active=False)
+
+
+
+
         self.reset_scheduler=None
         self.reset_env=None
         if self.reset_lessons:
@@ -185,7 +266,7 @@ class Session:
         self.state = {'mode': 'Starting', 'steps': 0, 'target': steps,
                       'folder': str(self.out), 'device': 'CUDA', 'history': [],
                       'total_passes': 0, 'episodes': 0, 'stage': 4, 'lesson': STAGES[4],
-                      'experiment': 'Unified training', 'reward_version': REWARD_VERSION,
+                      'experiment': 'Unified training', 'reward_version': self.reward_version,
                       'unified_version': self.training_version, **self.critic_config,
                       'training_mix': self.training_mix(),
                       'source_checkpoint_steps': 0, 'imitation_updates': 0}
@@ -194,6 +275,8 @@ class Session:
         self.model = None
 
     def training_mix(self):
+        if self.reset_coverage:
+            return [{'name':'Centered single pass','probability':.2},{'name':'Varied single pass','probability':.2},{'name':'Complete front-start flight','probability':.2}]+[{'name':f'Fresh return lesson {k}','probability':.4/6} for k in range(6)]
         if self.reset_lessons:
             level=self.reset_scheduler.level
             return [{'name':'Centered single pass','probability':.2},
@@ -299,7 +382,7 @@ class Session:
                 default = False if key in ('asymmetric_critic', 'retrace_critic') else None
                 if config.get(key, default) != value:
                     raise ValueError('Critic context contract differs or update rule changed; use a fresh run.')
-        if config.get('reward_version') != REWARD_VERSION:
+        if config.get('reward_version') != self.reward_version:
             raise ValueError('Reward version differs; start a fresh run and replay buffer.')
         if config.get('observation_version') != self.observation_version:
             raise ValueError('Observation version differs; use a fresh run.')
@@ -345,7 +428,7 @@ class Session:
     def run_evaluation(self):
         self.update(mode='Evaluating', phase='Held-out checkpoint evaluation')
         result = evaluate(self.model, self.curriculum.stage, self.eval_episodes,
-                          lambda suite, n, total: self.update(eval_progress=f'{suite}: {n}/{total}'), **({'metric_ring': True} if self.metric_ring else {'front_memory': True} if self.front_memory else {}))
+                          lambda suite, n, total: self.update(eval_progress=f'{suite}: {n}/{total}'), **({'geometric_return': True} if self.geometric_return else {'metric_ring': True} if self.metric_ring else {'front_memory': True} if self.front_memory else {}))
         if self.return_validation:
             from src.return_evaluation import evaluate_return_practice
             suite, protocol = evaluate_return_practice(self.model, self.library_class(self.return_validation),
@@ -354,7 +437,7 @@ class Session:
             result['protocols']['return_practice'] = protocol
         if self.reset_lessons:
             from src.return_reset_curriculum import evaluate_reset_lessons
-            lessons=evaluate_reset_lessons(self.model,metric_ring=self.metric_ring,progress=lambda level,n,total:self.update(eval_progress=f'Reset lesson {level}: {n}/{total}'))
+            lessons=evaluate_reset_lessons(self.model,metric_ring=self.metric_ring,geometric_return=self.geometric_return,progress=lambda level,n,total:self.update(eval_progress=f'Reset lesson {level}: {n}/{total}'))
             decision=self.reset_scheduler.observe(lessons,result['suites']['original_centered']['success_rate'],result['suites']['varied_approach']['success_rate'])
             lesson_folder=self.out/'reset-evaluations';lesson_folder.mkdir(exist_ok=True)
             atomic_json(lesson_folder/f'{self.model.num_timesteps}.json',lessons)
@@ -416,7 +499,7 @@ class Session:
                                'return_validation_sha256': validation_bank.bank_sha256}
                 if self.reset_lessons:
                     from src.return_reset_curriculum import ResetMixture
-                    self.reset_env=ResetMixture(self.reset_scheduler,metric_ring=self.metric_ring)
+                    self.reset_env=ResetMixture(self.reset_scheduler,metric_ring=self.metric_ring,coverage=self.reset_coverage,geometric_return=self.geometric_return)
                     env=Monitor(self.reset_env)
                 else:
                     env = Monitor(ReturnMixtureEnv(train_bank, observation_wrapper=self.observation_wrapper))
@@ -461,21 +544,21 @@ class Session:
                                     ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
                 for filename in ('README.md', 'requirements.txt', 'LAB_CHECK.md', 'RETURN_TRIAL.md',
                                  'RETURN_PRACTICE_TRIAL.md', 'ASYMMETRIC_CRITIC_TRIAL.md', 'RETRACE_TRIAL.md', 'RECENT_RETRACE_TRIAL.md',
-                                 'FRONT_MEMORY_TRIAL.md', 'RETURN_RESET_TRIAL.md', 'ANCHOR_REPAIR_TRIAL.md', 'METRIC_RING_TRIAL.md', 'OVERNIGHT_HANDOFF.md', 'pytest.ini'):
+                                 'FRONT_MEMORY_TRIAL.md', 'RETURN_RESET_TRIAL.md', 'ANCHOR_REPAIR_TRIAL.md', 'METRIC_RING_TRIAL.md', 'RESET_COVERAGE_TRIAL.md', 'GEOMETRIC_RETURN_TRIAL.md', 'BALANCED_ANCHOR_TRIAL.md', 'BALANCED_REPAIR_TRIAL.md', 'SOURCE_ANCHOR_TRIAL.md', 'STANDARD_SOURCE_TRIAL.md', 'OVERNIGHT_HANDOFF.md', 'pytest.ini'):
                     if (ROOT/filename).exists():
                         shutil.copy2(ROOT/filename, snapshot/filename)
                 self.update(source_checkpoint_steps=source['steps'], source_checkpoint=str(self.source_checkpoint),
                             source_sha256=source_hash, source_history=source)
                 atomic_json(self.out/'config.json', {
                     'version': 3, 'seed': 7, 'device': 'cuda', 'threads': 1,
-                    'reward_version': REWARD_VERSION, 'experiment': 'Unified training',
+                    'reward_version': self.reward_version, 'experiment': 'Unified training',
                     'unified_version': self.training_version, **self.critic_config,
                     'observation_version': self.observation_version, 'observation_dim': self.observation_dim,
                     'source_checkpoint': str(self.source_checkpoint), 'source_sha256': source_hash,
                     'source_reward_version': source_config.get('reward_version'),
                     'source_history': source, 'start_focus_stage': 4,
                     'initial_training_mix': self.training_mix(),
-                    'mixture': ('40% single-pass;20% full flights;20% current reset lesson;20% earlier reset lessons' if self.reset_lessons else
+                    'mixture': ('40% single-pass;20% full flights;40% uniform six reset lessons' if self.reset_coverage else '40% single-pass;20% full flights;20% current reset lesson;20% earlier reset lessons' if self.reset_lessons else
                                 '40% single-pass; 20% front laps; 20% corner laps; 20% authentic return continuations'
                                 if self.return_library else '40% complete single-pass tasks; 40% front laps; 20% corner laps initially'),
                     **bank_config,
@@ -540,7 +623,7 @@ class Session:
         self.update(mode='Evaluating', phase='Independent completion test on 100 fresh layouts per suite')
         candidate = self.model_class.load(self.out/'best_model.zip', device='cuda')
         results = evaluate(candidate, self.curriculum.stage, episodes=100, seed_start=7_000_000,
-                           **({'metric_ring': True} if self.metric_ring else {'front_memory': True} if self.front_memory else {}),
+                           **({'geometric_return': True} if self.geometric_return else {'metric_ring': True} if self.metric_ring else {'front_memory': True} if self.front_memory else {}),
                            progress=lambda suite, n, total: self.update(eval_progress=f'Fresh {suite}: {n}/{total}'))
         gates = {'original_centered': .85, 'varied_approach': .80,
                  'full_task': .80, 'full_task_delay_200ms': .80}
@@ -722,6 +805,12 @@ if __name__ == '__main__':
     critic.add_argument('--reset-lessons', action='store_true', default=None, help='Fresh return reset curriculum with fixed lesson validation')
     critic.add_argument('--repair-anchor', action='store_true', default=None, help='Permit monotonic repair of already excessive reference KL; retain reset lessons')
     critic.add_argument('--metric-ring', action='store_true', default=None, help='Append camera-derived approximate ring centre; retain original anchor and reset curriculum')
+    critic.add_argument('--reset-coverage', action='store_true', default=None, help='Metric policy with uniform sampling across all six fresh reset lessons')
+    critic.add_argument('--standard-source', action='store_true', default=None, help='Source reference with standard weighted retention penalty, no gradient balancing')
+    critic.add_argument('--source-anchor', action='store_true', default=None, help='Retain verified source actor; archive original reference separately')
+    critic.add_argument('--balanced-repair', action='store_true', default=None, help='Gradient balance plus monotonic repair of infeasible reference KL')
+    critic.add_argument('--balanced-anchor', action='store_true', default=None, help='Bound anchor gradient norm by RL gradient; preserve hard reference gate')
+    critic.add_argument('--geometric-return', action='store_true', default=None, help='Recognize outside return after full front clearance; retain reset coverage')
     args = parser.parse_args()
     if args.steps <= 0:
         parser.error('--steps must be positive')
@@ -734,4 +823,4 @@ if __name__ == '__main__':
                   source_checkpoint=args.source_checkpoint, source_config=args.source_config,
                   return_library=args.return_library, return_validation=args.return_validation,
                   runs_dir=args.runs_dir, asymmetric_critic=args.asymmetric_critic,
-                  retrace_critic=args.retrace_critic, recent_retrace=args.recent_retrace, front_memory=args.front_memory, reset_lessons=args.reset_lessons, repair_anchor=args.repair_anchor, metric_ring=args.metric_ring), args.port)
+                  retrace_critic=args.retrace_critic, recent_retrace=args.recent_retrace, front_memory=args.front_memory, reset_lessons=args.reset_lessons, repair_anchor=args.repair_anchor, metric_ring=args.metric_ring, reset_coverage=args.reset_coverage, geometric_return=args.geometric_return, balanced_anchor=args.balanced_anchor, balanced_repair=args.balanced_repair, source_anchor=args.source_anchor, standard_source=args.standard_source), args.port)

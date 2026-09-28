@@ -1,3 +1,7 @@
+# Current results
+
+See [Latest progress and results](LATEST_PROGRESS.md) for the28 September recurrent experiments. Full mission success remains0/25; no simulation or physical completion is claimed.
+
 # Measured experiment results
 
 Final saved validation for each bounded trial. Passing suites use25 episodes; return development uses50. Full-task success remains0/25 throughout.

@@ -1,3 +1,5 @@
+Latest update: [recurrent experiments and measured results,28 September](optimized/LATEST_PROGRESS.md). Reliable repeated laps remain unsolved.
+
 # Local GPU ring-flight experiment
 
 One SAC policy trains in a 2.05 m enclosure with a hanging ring. A browser viewer

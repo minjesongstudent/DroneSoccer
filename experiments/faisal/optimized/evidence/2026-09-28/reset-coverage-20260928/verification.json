@@ -1,0 +1,9 @@
+{
+  "tests_passed": 482,
+  "warnings": 2,
+  "test_seconds": 73.88,
+  "baseline_suite_records_exact": true,
+  "baseline_reset_records_exact": true,
+  "control": "metric-ring-20260927",
+  "device": "NVIDIA GeForce RTX 4070 Ti"
+}

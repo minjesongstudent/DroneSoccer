@@ -1,0 +1,152 @@
+{
+  "version": 3,
+  "seed": 7,
+  "device": "cuda",
+  "threads": 1,
+  "reward_version": "lap-remaining-route-potential-v3",
+  "experiment": "Unified training",
+  "unified_version": "metric-ring-recent-retrace-v1",
+  "asymmetric_critic": false,
+  "retrace_critic": true,
+  "trace_length": 8,
+  "trace_lambda": 0.95,
+  "retrace_target_version": "finite-soft-retrace-residual-v1",
+  "retrace_replay_version": "task-balanced-soft-retrace-sequences-v1",
+  "actor_uses_simulator_context": false,
+  "recent_retrace": true,
+  "recent_sampling_version": "recent-and-all-lap-soft-retrace-v1",
+  "recent_lap_count": 2048,
+  "front_memory": true,
+  "front_policy_version": "front-memory-recent-retrace-v1",
+  "metric_ring": true,
+  "metric_policy_version": "metric-ring-recent-retrace-v1",
+  "ring_estimate_version": "public-approximate-ring-centre-v1",
+  "reset_coverage": true,
+  "reset_coverage_version": "uniform-six-reset-coverage-v1",
+  "reset_lessons": true,
+  "reset_curriculum_version": "validated-fresh-return-curriculum-v2",
+  "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+  "observation_dim": 119,
+  "source_checkpoint": "PROJECT_ROOT\\DroneSoccer-Optimized\\runs\\return-route-40k-20260927\\best_model.zip",
+  "source_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+  "source_reward_version": "lap-remaining-route-potential-v3",
+  "source_history": {
+    "steps": 10000,
+    "updates": 5001,
+    "imitation_updates": 0,
+    "transfer": "actor_only_zero_column_append",
+    "source_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+    "source_observation_dim": 100,
+    "observation_dim": 119,
+    "source_has_frozen_reference": true,
+    "reference": "original_frozen_reference_from_source_checkpoint",
+    "fresh_critics": true,
+    "fresh_optimizers": true,
+    "new_demonstrations": 0,
+    "entropy_coefficient": 0.012956607155501842,
+    "entropy_mode": "fixed_at_source_value",
+    "replay_refill_transitions": 5000,
+    "critic_calibration_updates": 5000,
+    "actor_learning_rate": 3e-05,
+    "critic_learning_rate": 0.0003,
+    "policy_update_rule": "metric-ring-recent-retrace-v1",
+    "anchor_coefficient": 10.0,
+    "anchor_max_batch_mean_kl": 0.1,
+    "actor_receives_privileged_context": false,
+    "critic_observation_dim": 119,
+    "replay_sampling": "50% all single-pass;25% all lap;25% latest2048 lap insertions"
+  },
+  "start_focus_stage": 4,
+  "initial_training_mix": [
+    {
+      "name": "Centered single pass",
+      "probability": 0.2
+    },
+    {
+      "name": "Varied single pass",
+      "probability": 0.2
+    },
+    {
+      "name": "Complete front-start flight",
+      "probability": 0.2
+    },
+    {
+      "name": "Fresh return lesson 0",
+      "probability": 0.06666666666666667
+    },
+    {
+      "name": "Fresh return lesson 1",
+      "probability": 0.06666666666666667
+    },
+    {
+      "name": "Fresh return lesson 2",
+      "probability": 0.06666666666666667
+    },
+    {
+      "name": "Fresh return lesson 3",
+      "probability": 0.06666666666666667
+    },
+    {
+      "name": "Fresh return lesson 4",
+      "probability": 0.06666666666666667
+    },
+    {
+      "name": "Fresh return lesson 5",
+      "probability": 0.06666666666666667
+    }
+  ],
+  "mixture": "40% single-pass;20% full flights;40% uniform six reset lessons",
+  "return_library": "D:\\DroneSoccerData\\return-libraries\\front-memory-train-v1",
+  "return_validation": "D:\\DroneSoccerData\\return-libraries\\front-memory-development-v1",
+  "return_library_sha256": "2c798367ed060c468bd86e9947b3d7f1341810139e9d0542ddb6ba556b3f3804",
+  "return_validation_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+  "new_demonstrations": 0,
+  "new_imitation_updates": 0,
+  "replay_refill_transitions": 5000,
+  "learning_starts": 0,
+  "buffer_size": 100000,
+  "eval_every": 5000,
+  "eval_episodes": 25,
+  "geometry": {
+    "cage": {
+      "length": 2.05,
+      "width": 2.05,
+      "height": 2.05,
+      "margin": 0.15,
+      "min_altitude": 0.3
+    },
+    "drone": {
+      "width": 0.2,
+      "height": 0.035,
+      "length": 0.2,
+      "max_speed": 0.4,
+      "max_yaw_rate_deg": 60.0,
+      "tau": 0.3,
+      "delay_steps": 0,
+      "dt": 0.1,
+      "takeoff_height": 0.8
+    },
+    "hoop": {
+      "outer_diameter": 0.45,
+      "diameter_tolerance": 0.03,
+      "thickness": 0.065,
+      "n_points": 32,
+      "marker_max_angle_deg": 70.0,
+      "hanger_half_width": 0.2
+    },
+    "camera": {
+      "width": 960,
+      "height": 720,
+      "fx": 920.0,
+      "fy": 920.0,
+      "cx": 480.0,
+      "cy": 360.0,
+      "pitch_deg": 0.0,
+      "offset_forward": 0.05
+    },
+    "pad": {
+      "inset": 0.25,
+      "heading_error_deg": 15.0
+    }
+  }
+}

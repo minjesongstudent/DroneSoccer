@@ -1,0 +1,6 @@
+{
+  "mode": "stopped",
+  "steps": 65536,
+  "reason": "bounded_centered_trial_complete",
+  "mission_accepted": false
+}

@@ -1,8 +1,10 @@
 # Optimized ring-flight experiments
 
-Current snapshot: 27 September 2026. One learned SAC policy controls forward/right/up/yaw commands inside a 2.05 m cage. Reliable repeated laps are **not yet solved**. Physical flight is unvalidated. All runs are stopped; the latest metric-ring trial stopped at15k after regression.
+Current snapshot:28 September2026. One learned recurrent policy is being developed for repeated ring passages in a2.05m cage. Latest front-start testing recorded3/25 returns to the front but0/25 full missions. Physical flight remains unvalidated.
 
-See [development process](DEVELOPMENT_PROCESS.md), [measured results](RESULTS.md), and [saved evidence](evidence/summary.json). Earlier A/B/C and unified work remains in the parent directory. This package has its own `src`; run commands from `experiments/faisal/optimized`.
+Start with [Latest progress](LATEST_PROGRESS.md), [development history](DEVELOPMENT_PROCESS.md) and [results](RESULTS.md). Recurrent model hashes are in models/recurrent-manifest.json. All bounded trials in this snapshot have stopped. Historical SAC instructions below are retained for reference.
+
+Install requirements-recurrent.txt in addition to the existing dependencies. Evaluate the exported recurrent model with evaluate_recurrent.py as described in Latest progress.
 
 ## Setup and tests
 
@@ -13,7 +15,7 @@ python -c "import torch; assert torch.cuda.is_available(); print(torch.cuda.get_
 python -m pytest -q
 ```
 
-Development verification:479 tests passed, with two existing non-failing Gymnasium infinite-bound warnings. Some integration tests require the original local return banks and run layout; they skip when those artifacts are absent. See PUBLICATION_VERIFICATION.md for the exported package test result.
+Current exported-package verification:499 tests passed,25 skipped, with two existing non-failing Gymnasium infinite-bound warnings. Some integration tests require the original local return banks and run layout; they skip when those artifacts are absent. See PUBLICATION_VERIFICATION.md for the exported package test result.
 
 ## Reproduce a fresh metric trial
 

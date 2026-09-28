@@ -1,9 +1,7 @@
-# Publication verification
+# Publication verification:28 September2026
 
-27 September2026. Exported package:462 passed,17 skipped,two existing non-failing Gymnasium observation-bound warnings,32.51seconds. Skipped checks require local source checkpoints/return banks at the development run layout. The original working project previously passed all479 tests, including CUDA policy transfer, actual learning and save/resume, in77.00seconds.
+Exported package:499 tests passed,25 skipped,2 existing non-failing Gymnasium infinite observation-bound warnings,18.22seconds. Skips cover tests requiring local artifacts or optional fixture layouts; this is not a claim that every archived experiment was rerun.
 
-The first exported test run exposed a missing diagnostic helper; the helper and its companion comparison script were included, and the full exported suite then passed. No test assertions were weakened.
+Portable evaluate_recurrent.py loaded models/recurrent-lap-transfer-500.zip on CUDA and reproduced fixed-suite successes:front lesson0/25,centered25/25,varied21/25,general full0/25,delayed full0/25. The exported evaluation is evidence/2026-09-28/exported-checkpoint-verification.json. Model bytes are unchanged from local checkpoints and SHA256 values are recorded in models/recurrent-manifest.json.
 
-Model export changes only training-output directory metadata. Every other archive entry is byte-identical; original/published SHA256 values are in models/manifest.json. Seven source snapshots preserve the run implementations. Saved results are copied with absolute workstation paths replaced by portable provenance placeholders. Full replay buffers are not included.
-
-Current status: repeated laps unsolved, no accepted simulation policy, physical flight unvalidated. The latest15k checkpoint is a failed diagnostic, not a winning model. Group publication targets only branchFaisal; personal repository remains private.
+No independent acceptance test or physical flight was performed. Historical trials remain recorded as failed where appropriate. Full mission acceptance has not been achieved.

@@ -1,0 +1,2022 @@
+{
+  "schema_version": 1,
+  "config": {
+    "episodes": 50,
+    "reference_centered": 0.96,
+    "reference_varied": 0.92,
+    "retention_drop": 0.12,
+    "centered_floor": 0.7,
+    "varied_floor": 0.6,
+    "improvement_episodes": 5,
+    "improvement_checks": 2,
+    "extension_gate_steps": 20000,
+    "no_new_pass_cap_steps": 40000
+  },
+  "history": [
+    {
+      "step": 0,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96
+        },
+        "varied_approach": {
+          "success_rate": 0.92
+        },
+        "return_practice": {
+          "episodes": 50,
+          "successful_episodes": 0,
+          "safe_front_return_episodes": 0,
+          "crash_rate": 0.02
+        }
+      },
+      "protocols": {
+        "return_practice": {
+          "id": "development-return-continuations-v1",
+          "environment": "ReturnPracticeEnv",
+          "split": "development",
+          "bank_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "bank_manifest_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "source_checkpoint_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+          "source_seed_start": 8000000,
+          "source_seed_end": 8000127,
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "max_steps": 200,
+          "episodes": 50,
+          "seed_start": 8500000,
+          "seed_end": 8500049,
+          "deterministic": true,
+          "seeds": [
+            8500000,
+            8500001,
+            8500002,
+            8500003,
+            8500004,
+            8500005,
+            8500006,
+            8500007,
+            8500008,
+            8500009,
+            8500010,
+            8500011,
+            8500012,
+            8500013,
+            8500014,
+            8500015,
+            8500016,
+            8500017,
+            8500018,
+            8500019,
+            8500020,
+            8500021,
+            8500022,
+            8500023,
+            8500024,
+            8500025,
+            8500026,
+            8500027,
+            8500028,
+            8500029,
+            8500030,
+            8500031,
+            8500032,
+            8500033,
+            8500034,
+            8500035,
+            8500036,
+            8500037,
+            8500038,
+            8500039,
+            8500040,
+            8500041,
+            8500042,
+            8500043,
+            8500044,
+            8500045,
+            8500046,
+            8500047,
+            8500048,
+            8500049
+          ],
+          "success": "at least one new fully cleared pass and no crash through all 200 continuation steps",
+          "safe_front_return": "outside back-to-front plane crossing, whole body clears front, and no crash through all 200 steps",
+          "historical_passes_counted": false,
+          "full_mission_test": false,
+          "selection_method": "fixed approximately phase-balanced snapshots from distinct source flights",
+          "unique_snapshots": 50,
+          "unique_source_flights": 50,
+          "phase_counts": {
+            "return_side": 25,
+            "return_front": 25
+          },
+          "snapshot_selection": [
+            {
+              "seed": 8500000,
+              "snapshot_id": "snapshot-0095",
+              "source_seed": 8000065,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500001,
+              "snapshot_id": "snapshot-0014",
+              "source_seed": 8000009,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500002,
+              "snapshot_id": "snapshot-0143",
+              "source_seed": 8000098,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500003,
+              "snapshot_id": "snapshot-0052",
+              "source_seed": 8000035,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500004,
+              "snapshot_id": "snapshot-0025",
+              "source_seed": 8000015,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500005,
+              "snapshot_id": "snapshot-0129",
+              "source_seed": 8000087,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500006,
+              "snapshot_id": "snapshot-0174",
+              "source_seed": 8000119,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500007,
+              "snapshot_id": "snapshot-0103",
+              "source_seed": 8000070,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500008,
+              "snapshot_id": "snapshot-0007",
+              "source_seed": 8000004,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500009,
+              "snapshot_id": "snapshot-0063",
+              "source_seed": 8000042,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500010,
+              "snapshot_id": "snapshot-0150",
+              "source_seed": 8000105,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500011,
+              "snapshot_id": "snapshot-0127",
+              "source_seed": 8000086,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500012,
+              "snapshot_id": "snapshot-0137",
+              "source_seed": 8000093,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500013,
+              "snapshot_id": "snapshot-0151",
+              "source_seed": 8000106,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500014,
+              "snapshot_id": "snapshot-0124",
+              "source_seed": 8000084,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500015,
+              "snapshot_id": "snapshot-0156",
+              "source_seed": 8000110,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500016,
+              "snapshot_id": "snapshot-0077",
+              "source_seed": 8000051,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500017,
+              "snapshot_id": "snapshot-0028",
+              "source_seed": 8000018,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500018,
+              "snapshot_id": "snapshot-0184",
+              "source_seed": 8000125,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500019,
+              "snapshot_id": "snapshot-0035",
+              "source_seed": 8000023,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500020,
+              "snapshot_id": "snapshot-0107",
+              "source_seed": 8000073,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500021,
+              "snapshot_id": "snapshot-0100",
+              "source_seed": 8000068,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500022,
+              "snapshot_id": "snapshot-0146",
+              "source_seed": 8000102,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500023,
+              "snapshot_id": "snapshot-0027",
+              "source_seed": 8000016,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500024,
+              "snapshot_id": "snapshot-0115",
+              "source_seed": 8000077,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500025,
+              "snapshot_id": "snapshot-0183",
+              "source_seed": 8000124,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500026,
+              "snapshot_id": "snapshot-0120",
+              "source_seed": 8000082,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500027,
+              "snapshot_id": "snapshot-0164",
+              "source_seed": 8000114,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500028,
+              "snapshot_id": "snapshot-0169",
+              "source_seed": 8000117,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500029,
+              "snapshot_id": "snapshot-0081",
+              "source_seed": 8000054,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500030,
+              "snapshot_id": "snapshot-0168",
+              "source_seed": 8000116,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500031,
+              "snapshot_id": "snapshot-0018",
+              "source_seed": 8000011,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500032,
+              "snapshot_id": "snapshot-0131",
+              "source_seed": 8000089,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500033,
+              "snapshot_id": "snapshot-0135",
+              "source_seed": 8000092,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500034,
+              "snapshot_id": "snapshot-0089",
+              "source_seed": 8000060,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500035,
+              "snapshot_id": "snapshot-0051",
+              "source_seed": 8000034,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500036,
+              "snapshot_id": "snapshot-0155",
+              "source_seed": 8000109,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500037,
+              "snapshot_id": "snapshot-0068",
+              "source_seed": 8000046,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500038,
+              "snapshot_id": "snapshot-0067",
+              "source_seed": 8000045,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500039,
+              "snapshot_id": "snapshot-0049",
+              "source_seed": 8000033,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500040,
+              "snapshot_id": "snapshot-0040",
+              "source_seed": 8000027,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500041,
+              "snapshot_id": "snapshot-0031",
+              "source_seed": 8000021,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500042,
+              "snapshot_id": "snapshot-0133",
+              "source_seed": 8000090,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500043,
+              "snapshot_id": "snapshot-0171",
+              "source_seed": 8000118,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500044,
+              "snapshot_id": "snapshot-0101",
+              "source_seed": 8000069,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500045,
+              "snapshot_id": "snapshot-0138",
+              "source_seed": 8000094,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500046,
+              "snapshot_id": "snapshot-0070",
+              "source_seed": 8000047,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500047,
+              "snapshot_id": "snapshot-0147",
+              "source_seed": 8000103,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500048,
+              "snapshot_id": "snapshot-0019",
+              "source_seed": 8000012,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500049,
+              "snapshot_id": "snapshot-0075",
+              "source_seed": 8000050,
+              "phase": "return_front"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 5000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96
+        },
+        "varied_approach": {
+          "success_rate": 0.92
+        },
+        "return_practice": {
+          "episodes": 50,
+          "successful_episodes": 0,
+          "safe_front_return_episodes": 0,
+          "crash_rate": 0.02
+        }
+      },
+      "protocols": {
+        "return_practice": {
+          "id": "development-return-continuations-v1",
+          "environment": "ReturnPracticeEnv",
+          "split": "development",
+          "bank_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "bank_manifest_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "source_checkpoint_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+          "source_seed_start": 8000000,
+          "source_seed_end": 8000127,
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "max_steps": 200,
+          "episodes": 50,
+          "seed_start": 8500000,
+          "seed_end": 8500049,
+          "deterministic": true,
+          "seeds": [
+            8500000,
+            8500001,
+            8500002,
+            8500003,
+            8500004,
+            8500005,
+            8500006,
+            8500007,
+            8500008,
+            8500009,
+            8500010,
+            8500011,
+            8500012,
+            8500013,
+            8500014,
+            8500015,
+            8500016,
+            8500017,
+            8500018,
+            8500019,
+            8500020,
+            8500021,
+            8500022,
+            8500023,
+            8500024,
+            8500025,
+            8500026,
+            8500027,
+            8500028,
+            8500029,
+            8500030,
+            8500031,
+            8500032,
+            8500033,
+            8500034,
+            8500035,
+            8500036,
+            8500037,
+            8500038,
+            8500039,
+            8500040,
+            8500041,
+            8500042,
+            8500043,
+            8500044,
+            8500045,
+            8500046,
+            8500047,
+            8500048,
+            8500049
+          ],
+          "success": "at least one new fully cleared pass and no crash through all 200 continuation steps",
+          "safe_front_return": "outside back-to-front plane crossing, whole body clears front, and no crash through all 200 steps",
+          "historical_passes_counted": false,
+          "full_mission_test": false,
+          "selection_method": "fixed approximately phase-balanced snapshots from distinct source flights",
+          "unique_snapshots": 50,
+          "unique_source_flights": 50,
+          "phase_counts": {
+            "return_side": 25,
+            "return_front": 25
+          },
+          "snapshot_selection": [
+            {
+              "seed": 8500000,
+              "snapshot_id": "snapshot-0095",
+              "source_seed": 8000065,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500001,
+              "snapshot_id": "snapshot-0014",
+              "source_seed": 8000009,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500002,
+              "snapshot_id": "snapshot-0143",
+              "source_seed": 8000098,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500003,
+              "snapshot_id": "snapshot-0052",
+              "source_seed": 8000035,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500004,
+              "snapshot_id": "snapshot-0025",
+              "source_seed": 8000015,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500005,
+              "snapshot_id": "snapshot-0129",
+              "source_seed": 8000087,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500006,
+              "snapshot_id": "snapshot-0174",
+              "source_seed": 8000119,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500007,
+              "snapshot_id": "snapshot-0103",
+              "source_seed": 8000070,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500008,
+              "snapshot_id": "snapshot-0007",
+              "source_seed": 8000004,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500009,
+              "snapshot_id": "snapshot-0063",
+              "source_seed": 8000042,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500010,
+              "snapshot_id": "snapshot-0150",
+              "source_seed": 8000105,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500011,
+              "snapshot_id": "snapshot-0127",
+              "source_seed": 8000086,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500012,
+              "snapshot_id": "snapshot-0137",
+              "source_seed": 8000093,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500013,
+              "snapshot_id": "snapshot-0151",
+              "source_seed": 8000106,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500014,
+              "snapshot_id": "snapshot-0124",
+              "source_seed": 8000084,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500015,
+              "snapshot_id": "snapshot-0156",
+              "source_seed": 8000110,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500016,
+              "snapshot_id": "snapshot-0077",
+              "source_seed": 8000051,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500017,
+              "snapshot_id": "snapshot-0028",
+              "source_seed": 8000018,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500018,
+              "snapshot_id": "snapshot-0184",
+              "source_seed": 8000125,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500019,
+              "snapshot_id": "snapshot-0035",
+              "source_seed": 8000023,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500020,
+              "snapshot_id": "snapshot-0107",
+              "source_seed": 8000073,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500021,
+              "snapshot_id": "snapshot-0100",
+              "source_seed": 8000068,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500022,
+              "snapshot_id": "snapshot-0146",
+              "source_seed": 8000102,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500023,
+              "snapshot_id": "snapshot-0027",
+              "source_seed": 8000016,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500024,
+              "snapshot_id": "snapshot-0115",
+              "source_seed": 8000077,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500025,
+              "snapshot_id": "snapshot-0183",
+              "source_seed": 8000124,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500026,
+              "snapshot_id": "snapshot-0120",
+              "source_seed": 8000082,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500027,
+              "snapshot_id": "snapshot-0164",
+              "source_seed": 8000114,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500028,
+              "snapshot_id": "snapshot-0169",
+              "source_seed": 8000117,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500029,
+              "snapshot_id": "snapshot-0081",
+              "source_seed": 8000054,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500030,
+              "snapshot_id": "snapshot-0168",
+              "source_seed": 8000116,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500031,
+              "snapshot_id": "snapshot-0018",
+              "source_seed": 8000011,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500032,
+              "snapshot_id": "snapshot-0131",
+              "source_seed": 8000089,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500033,
+              "snapshot_id": "snapshot-0135",
+              "source_seed": 8000092,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500034,
+              "snapshot_id": "snapshot-0089",
+              "source_seed": 8000060,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500035,
+              "snapshot_id": "snapshot-0051",
+              "source_seed": 8000034,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500036,
+              "snapshot_id": "snapshot-0155",
+              "source_seed": 8000109,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500037,
+              "snapshot_id": "snapshot-0068",
+              "source_seed": 8000046,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500038,
+              "snapshot_id": "snapshot-0067",
+              "source_seed": 8000045,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500039,
+              "snapshot_id": "snapshot-0049",
+              "source_seed": 8000033,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500040,
+              "snapshot_id": "snapshot-0040",
+              "source_seed": 8000027,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500041,
+              "snapshot_id": "snapshot-0031",
+              "source_seed": 8000021,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500042,
+              "snapshot_id": "snapshot-0133",
+              "source_seed": 8000090,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500043,
+              "snapshot_id": "snapshot-0171",
+              "source_seed": 8000118,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500044,
+              "snapshot_id": "snapshot-0101",
+              "source_seed": 8000069,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500045,
+              "snapshot_id": "snapshot-0138",
+              "source_seed": 8000094,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500046,
+              "snapshot_id": "snapshot-0070",
+              "source_seed": 8000047,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500047,
+              "snapshot_id": "snapshot-0147",
+              "source_seed": 8000103,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500048,
+              "snapshot_id": "snapshot-0019",
+              "source_seed": 8000012,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500049,
+              "snapshot_id": "snapshot-0075",
+              "source_seed": 8000050,
+              "phase": "return_front"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 10000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96
+        },
+        "varied_approach": {
+          "success_rate": 0.88
+        },
+        "return_practice": {
+          "episodes": 50,
+          "successful_episodes": 0,
+          "safe_front_return_episodes": 0,
+          "crash_rate": 0.02
+        }
+      },
+      "protocols": {
+        "return_practice": {
+          "id": "development-return-continuations-v1",
+          "environment": "ReturnPracticeEnv",
+          "split": "development",
+          "bank_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "bank_manifest_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "source_checkpoint_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+          "source_seed_start": 8000000,
+          "source_seed_end": 8000127,
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "max_steps": 200,
+          "episodes": 50,
+          "seed_start": 8500000,
+          "seed_end": 8500049,
+          "deterministic": true,
+          "seeds": [
+            8500000,
+            8500001,
+            8500002,
+            8500003,
+            8500004,
+            8500005,
+            8500006,
+            8500007,
+            8500008,
+            8500009,
+            8500010,
+            8500011,
+            8500012,
+            8500013,
+            8500014,
+            8500015,
+            8500016,
+            8500017,
+            8500018,
+            8500019,
+            8500020,
+            8500021,
+            8500022,
+            8500023,
+            8500024,
+            8500025,
+            8500026,
+            8500027,
+            8500028,
+            8500029,
+            8500030,
+            8500031,
+            8500032,
+            8500033,
+            8500034,
+            8500035,
+            8500036,
+            8500037,
+            8500038,
+            8500039,
+            8500040,
+            8500041,
+            8500042,
+            8500043,
+            8500044,
+            8500045,
+            8500046,
+            8500047,
+            8500048,
+            8500049
+          ],
+          "success": "at least one new fully cleared pass and no crash through all 200 continuation steps",
+          "safe_front_return": "outside back-to-front plane crossing, whole body clears front, and no crash through all 200 steps",
+          "historical_passes_counted": false,
+          "full_mission_test": false,
+          "selection_method": "fixed approximately phase-balanced snapshots from distinct source flights",
+          "unique_snapshots": 50,
+          "unique_source_flights": 50,
+          "phase_counts": {
+            "return_side": 25,
+            "return_front": 25
+          },
+          "snapshot_selection": [
+            {
+              "seed": 8500000,
+              "snapshot_id": "snapshot-0095",
+              "source_seed": 8000065,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500001,
+              "snapshot_id": "snapshot-0014",
+              "source_seed": 8000009,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500002,
+              "snapshot_id": "snapshot-0143",
+              "source_seed": 8000098,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500003,
+              "snapshot_id": "snapshot-0052",
+              "source_seed": 8000035,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500004,
+              "snapshot_id": "snapshot-0025",
+              "source_seed": 8000015,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500005,
+              "snapshot_id": "snapshot-0129",
+              "source_seed": 8000087,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500006,
+              "snapshot_id": "snapshot-0174",
+              "source_seed": 8000119,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500007,
+              "snapshot_id": "snapshot-0103",
+              "source_seed": 8000070,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500008,
+              "snapshot_id": "snapshot-0007",
+              "source_seed": 8000004,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500009,
+              "snapshot_id": "snapshot-0063",
+              "source_seed": 8000042,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500010,
+              "snapshot_id": "snapshot-0150",
+              "source_seed": 8000105,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500011,
+              "snapshot_id": "snapshot-0127",
+              "source_seed": 8000086,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500012,
+              "snapshot_id": "snapshot-0137",
+              "source_seed": 8000093,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500013,
+              "snapshot_id": "snapshot-0151",
+              "source_seed": 8000106,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500014,
+              "snapshot_id": "snapshot-0124",
+              "source_seed": 8000084,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500015,
+              "snapshot_id": "snapshot-0156",
+              "source_seed": 8000110,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500016,
+              "snapshot_id": "snapshot-0077",
+              "source_seed": 8000051,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500017,
+              "snapshot_id": "snapshot-0028",
+              "source_seed": 8000018,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500018,
+              "snapshot_id": "snapshot-0184",
+              "source_seed": 8000125,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500019,
+              "snapshot_id": "snapshot-0035",
+              "source_seed": 8000023,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500020,
+              "snapshot_id": "snapshot-0107",
+              "source_seed": 8000073,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500021,
+              "snapshot_id": "snapshot-0100",
+              "source_seed": 8000068,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500022,
+              "snapshot_id": "snapshot-0146",
+              "source_seed": 8000102,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500023,
+              "snapshot_id": "snapshot-0027",
+              "source_seed": 8000016,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500024,
+              "snapshot_id": "snapshot-0115",
+              "source_seed": 8000077,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500025,
+              "snapshot_id": "snapshot-0183",
+              "source_seed": 8000124,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500026,
+              "snapshot_id": "snapshot-0120",
+              "source_seed": 8000082,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500027,
+              "snapshot_id": "snapshot-0164",
+              "source_seed": 8000114,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500028,
+              "snapshot_id": "snapshot-0169",
+              "source_seed": 8000117,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500029,
+              "snapshot_id": "snapshot-0081",
+              "source_seed": 8000054,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500030,
+              "snapshot_id": "snapshot-0168",
+              "source_seed": 8000116,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500031,
+              "snapshot_id": "snapshot-0018",
+              "source_seed": 8000011,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500032,
+              "snapshot_id": "snapshot-0131",
+              "source_seed": 8000089,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500033,
+              "snapshot_id": "snapshot-0135",
+              "source_seed": 8000092,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500034,
+              "snapshot_id": "snapshot-0089",
+              "source_seed": 8000060,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500035,
+              "snapshot_id": "snapshot-0051",
+              "source_seed": 8000034,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500036,
+              "snapshot_id": "snapshot-0155",
+              "source_seed": 8000109,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500037,
+              "snapshot_id": "snapshot-0068",
+              "source_seed": 8000046,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500038,
+              "snapshot_id": "snapshot-0067",
+              "source_seed": 8000045,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500039,
+              "snapshot_id": "snapshot-0049",
+              "source_seed": 8000033,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500040,
+              "snapshot_id": "snapshot-0040",
+              "source_seed": 8000027,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500041,
+              "snapshot_id": "snapshot-0031",
+              "source_seed": 8000021,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500042,
+              "snapshot_id": "snapshot-0133",
+              "source_seed": 8000090,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500043,
+              "snapshot_id": "snapshot-0171",
+              "source_seed": 8000118,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500044,
+              "snapshot_id": "snapshot-0101",
+              "source_seed": 8000069,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500045,
+              "snapshot_id": "snapshot-0138",
+              "source_seed": 8000094,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500046,
+              "snapshot_id": "snapshot-0070",
+              "source_seed": 8000047,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500047,
+              "snapshot_id": "snapshot-0147",
+              "source_seed": 8000103,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500048,
+              "snapshot_id": "snapshot-0019",
+              "source_seed": 8000012,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500049,
+              "snapshot_id": "snapshot-0075",
+              "source_seed": 8000050,
+              "phase": "return_front"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 15000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96
+        },
+        "varied_approach": {
+          "success_rate": 1.0
+        },
+        "return_practice": {
+          "episodes": 50,
+          "successful_episodes": 0,
+          "safe_front_return_episodes": 0,
+          "crash_rate": 0.02
+        }
+      },
+      "protocols": {
+        "return_practice": {
+          "id": "development-return-continuations-v1",
+          "environment": "ReturnPracticeEnv",
+          "split": "development",
+          "bank_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "bank_manifest_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "source_checkpoint_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+          "source_seed_start": 8000000,
+          "source_seed_end": 8000127,
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "max_steps": 200,
+          "episodes": 50,
+          "seed_start": 8500000,
+          "seed_end": 8500049,
+          "deterministic": true,
+          "seeds": [
+            8500000,
+            8500001,
+            8500002,
+            8500003,
+            8500004,
+            8500005,
+            8500006,
+            8500007,
+            8500008,
+            8500009,
+            8500010,
+            8500011,
+            8500012,
+            8500013,
+            8500014,
+            8500015,
+            8500016,
+            8500017,
+            8500018,
+            8500019,
+            8500020,
+            8500021,
+            8500022,
+            8500023,
+            8500024,
+            8500025,
+            8500026,
+            8500027,
+            8500028,
+            8500029,
+            8500030,
+            8500031,
+            8500032,
+            8500033,
+            8500034,
+            8500035,
+            8500036,
+            8500037,
+            8500038,
+            8500039,
+            8500040,
+            8500041,
+            8500042,
+            8500043,
+            8500044,
+            8500045,
+            8500046,
+            8500047,
+            8500048,
+            8500049
+          ],
+          "success": "at least one new fully cleared pass and no crash through all 200 continuation steps",
+          "safe_front_return": "outside back-to-front plane crossing, whole body clears front, and no crash through all 200 steps",
+          "historical_passes_counted": false,
+          "full_mission_test": false,
+          "selection_method": "fixed approximately phase-balanced snapshots from distinct source flights",
+          "unique_snapshots": 50,
+          "unique_source_flights": 50,
+          "phase_counts": {
+            "return_side": 25,
+            "return_front": 25
+          },
+          "snapshot_selection": [
+            {
+              "seed": 8500000,
+              "snapshot_id": "snapshot-0095",
+              "source_seed": 8000065,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500001,
+              "snapshot_id": "snapshot-0014",
+              "source_seed": 8000009,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500002,
+              "snapshot_id": "snapshot-0143",
+              "source_seed": 8000098,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500003,
+              "snapshot_id": "snapshot-0052",
+              "source_seed": 8000035,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500004,
+              "snapshot_id": "snapshot-0025",
+              "source_seed": 8000015,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500005,
+              "snapshot_id": "snapshot-0129",
+              "source_seed": 8000087,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500006,
+              "snapshot_id": "snapshot-0174",
+              "source_seed": 8000119,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500007,
+              "snapshot_id": "snapshot-0103",
+              "source_seed": 8000070,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500008,
+              "snapshot_id": "snapshot-0007",
+              "source_seed": 8000004,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500009,
+              "snapshot_id": "snapshot-0063",
+              "source_seed": 8000042,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500010,
+              "snapshot_id": "snapshot-0150",
+              "source_seed": 8000105,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500011,
+              "snapshot_id": "snapshot-0127",
+              "source_seed": 8000086,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500012,
+              "snapshot_id": "snapshot-0137",
+              "source_seed": 8000093,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500013,
+              "snapshot_id": "snapshot-0151",
+              "source_seed": 8000106,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500014,
+              "snapshot_id": "snapshot-0124",
+              "source_seed": 8000084,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500015,
+              "snapshot_id": "snapshot-0156",
+              "source_seed": 8000110,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500016,
+              "snapshot_id": "snapshot-0077",
+              "source_seed": 8000051,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500017,
+              "snapshot_id": "snapshot-0028",
+              "source_seed": 8000018,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500018,
+              "snapshot_id": "snapshot-0184",
+              "source_seed": 8000125,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500019,
+              "snapshot_id": "snapshot-0035",
+              "source_seed": 8000023,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500020,
+              "snapshot_id": "snapshot-0107",
+              "source_seed": 8000073,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500021,
+              "snapshot_id": "snapshot-0100",
+              "source_seed": 8000068,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500022,
+              "snapshot_id": "snapshot-0146",
+              "source_seed": 8000102,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500023,
+              "snapshot_id": "snapshot-0027",
+              "source_seed": 8000016,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500024,
+              "snapshot_id": "snapshot-0115",
+              "source_seed": 8000077,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500025,
+              "snapshot_id": "snapshot-0183",
+              "source_seed": 8000124,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500026,
+              "snapshot_id": "snapshot-0120",
+              "source_seed": 8000082,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500027,
+              "snapshot_id": "snapshot-0164",
+              "source_seed": 8000114,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500028,
+              "snapshot_id": "snapshot-0169",
+              "source_seed": 8000117,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500029,
+              "snapshot_id": "snapshot-0081",
+              "source_seed": 8000054,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500030,
+              "snapshot_id": "snapshot-0168",
+              "source_seed": 8000116,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500031,
+              "snapshot_id": "snapshot-0018",
+              "source_seed": 8000011,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500032,
+              "snapshot_id": "snapshot-0131",
+              "source_seed": 8000089,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500033,
+              "snapshot_id": "snapshot-0135",
+              "source_seed": 8000092,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500034,
+              "snapshot_id": "snapshot-0089",
+              "source_seed": 8000060,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500035,
+              "snapshot_id": "snapshot-0051",
+              "source_seed": 8000034,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500036,
+              "snapshot_id": "snapshot-0155",
+              "source_seed": 8000109,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500037,
+              "snapshot_id": "snapshot-0068",
+              "source_seed": 8000046,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500038,
+              "snapshot_id": "snapshot-0067",
+              "source_seed": 8000045,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500039,
+              "snapshot_id": "snapshot-0049",
+              "source_seed": 8000033,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500040,
+              "snapshot_id": "snapshot-0040",
+              "source_seed": 8000027,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500041,
+              "snapshot_id": "snapshot-0031",
+              "source_seed": 8000021,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500042,
+              "snapshot_id": "snapshot-0133",
+              "source_seed": 8000090,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500043,
+              "snapshot_id": "snapshot-0171",
+              "source_seed": 8000118,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500044,
+              "snapshot_id": "snapshot-0101",
+              "source_seed": 8000069,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500045,
+              "snapshot_id": "snapshot-0138",
+              "source_seed": 8000094,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500046,
+              "snapshot_id": "snapshot-0070",
+              "source_seed": 8000047,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500047,
+              "snapshot_id": "snapshot-0147",
+              "source_seed": 8000103,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500048,
+              "snapshot_id": "snapshot-0019",
+              "source_seed": 8000012,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500049,
+              "snapshot_id": "snapshot-0075",
+              "source_seed": 8000050,
+              "phase": "return_front"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 20000,
+      "suites": {
+        "original_centered": {
+          "success_rate": 0.96
+        },
+        "varied_approach": {
+          "success_rate": 1.0
+        },
+        "return_practice": {
+          "episodes": 50,
+          "successful_episodes": 0,
+          "safe_front_return_episodes": 0,
+          "crash_rate": 0.02
+        }
+      },
+      "protocols": {
+        "return_practice": {
+          "id": "development-return-continuations-v1",
+          "environment": "ReturnPracticeEnv",
+          "split": "development",
+          "bank_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "bank_manifest_sha256": "50e300258a708d476deb130e0f6c48159cba653729bc9111911af3128ad574c7",
+          "source_checkpoint_sha256": "884834222681c545623110f8b00fe6b7def32322ec069906d728a2373dd39337",
+          "source_seed_start": 8000000,
+          "source_seed_end": 8000127,
+          "reward_version": "outside-return-geometric-progress-v1",
+          "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+          "max_steps": 200,
+          "episodes": 50,
+          "seed_start": 8500000,
+          "seed_end": 8500049,
+          "deterministic": true,
+          "seeds": [
+            8500000,
+            8500001,
+            8500002,
+            8500003,
+            8500004,
+            8500005,
+            8500006,
+            8500007,
+            8500008,
+            8500009,
+            8500010,
+            8500011,
+            8500012,
+            8500013,
+            8500014,
+            8500015,
+            8500016,
+            8500017,
+            8500018,
+            8500019,
+            8500020,
+            8500021,
+            8500022,
+            8500023,
+            8500024,
+            8500025,
+            8500026,
+            8500027,
+            8500028,
+            8500029,
+            8500030,
+            8500031,
+            8500032,
+            8500033,
+            8500034,
+            8500035,
+            8500036,
+            8500037,
+            8500038,
+            8500039,
+            8500040,
+            8500041,
+            8500042,
+            8500043,
+            8500044,
+            8500045,
+            8500046,
+            8500047,
+            8500048,
+            8500049
+          ],
+          "success": "at least one new fully cleared pass and no crash through all 200 continuation steps",
+          "safe_front_return": "outside back-to-front plane crossing, whole body clears front, and no crash through all 200 steps",
+          "historical_passes_counted": false,
+          "full_mission_test": false,
+          "selection_method": "fixed approximately phase-balanced snapshots from distinct source flights",
+          "unique_snapshots": 50,
+          "unique_source_flights": 50,
+          "phase_counts": {
+            "return_side": 25,
+            "return_front": 25
+          },
+          "snapshot_selection": [
+            {
+              "seed": 8500000,
+              "snapshot_id": "snapshot-0095",
+              "source_seed": 8000065,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500001,
+              "snapshot_id": "snapshot-0014",
+              "source_seed": 8000009,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500002,
+              "snapshot_id": "snapshot-0143",
+              "source_seed": 8000098,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500003,
+              "snapshot_id": "snapshot-0052",
+              "source_seed": 8000035,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500004,
+              "snapshot_id": "snapshot-0025",
+              "source_seed": 8000015,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500005,
+              "snapshot_id": "snapshot-0129",
+              "source_seed": 8000087,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500006,
+              "snapshot_id": "snapshot-0174",
+              "source_seed": 8000119,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500007,
+              "snapshot_id": "snapshot-0103",
+              "source_seed": 8000070,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500008,
+              "snapshot_id": "snapshot-0007",
+              "source_seed": 8000004,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500009,
+              "snapshot_id": "snapshot-0063",
+              "source_seed": 8000042,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500010,
+              "snapshot_id": "snapshot-0150",
+              "source_seed": 8000105,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500011,
+              "snapshot_id": "snapshot-0127",
+              "source_seed": 8000086,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500012,
+              "snapshot_id": "snapshot-0137",
+              "source_seed": 8000093,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500013,
+              "snapshot_id": "snapshot-0151",
+              "source_seed": 8000106,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500014,
+              "snapshot_id": "snapshot-0124",
+              "source_seed": 8000084,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500015,
+              "snapshot_id": "snapshot-0156",
+              "source_seed": 8000110,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500016,
+              "snapshot_id": "snapshot-0077",
+              "source_seed": 8000051,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500017,
+              "snapshot_id": "snapshot-0028",
+              "source_seed": 8000018,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500018,
+              "snapshot_id": "snapshot-0184",
+              "source_seed": 8000125,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500019,
+              "snapshot_id": "snapshot-0035",
+              "source_seed": 8000023,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500020,
+              "snapshot_id": "snapshot-0107",
+              "source_seed": 8000073,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500021,
+              "snapshot_id": "snapshot-0100",
+              "source_seed": 8000068,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500022,
+              "snapshot_id": "snapshot-0146",
+              "source_seed": 8000102,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500023,
+              "snapshot_id": "snapshot-0027",
+              "source_seed": 8000016,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500024,
+              "snapshot_id": "snapshot-0115",
+              "source_seed": 8000077,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500025,
+              "snapshot_id": "snapshot-0183",
+              "source_seed": 8000124,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500026,
+              "snapshot_id": "snapshot-0120",
+              "source_seed": 8000082,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500027,
+              "snapshot_id": "snapshot-0164",
+              "source_seed": 8000114,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500028,
+              "snapshot_id": "snapshot-0169",
+              "source_seed": 8000117,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500029,
+              "snapshot_id": "snapshot-0081",
+              "source_seed": 8000054,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500030,
+              "snapshot_id": "snapshot-0168",
+              "source_seed": 8000116,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500031,
+              "snapshot_id": "snapshot-0018",
+              "source_seed": 8000011,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500032,
+              "snapshot_id": "snapshot-0131",
+              "source_seed": 8000089,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500033,
+              "snapshot_id": "snapshot-0135",
+              "source_seed": 8000092,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500034,
+              "snapshot_id": "snapshot-0089",
+              "source_seed": 8000060,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500035,
+              "snapshot_id": "snapshot-0051",
+              "source_seed": 8000034,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500036,
+              "snapshot_id": "snapshot-0155",
+              "source_seed": 8000109,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500037,
+              "snapshot_id": "snapshot-0068",
+              "source_seed": 8000046,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500038,
+              "snapshot_id": "snapshot-0067",
+              "source_seed": 8000045,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500039,
+              "snapshot_id": "snapshot-0049",
+              "source_seed": 8000033,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500040,
+              "snapshot_id": "snapshot-0040",
+              "source_seed": 8000027,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500041,
+              "snapshot_id": "snapshot-0031",
+              "source_seed": 8000021,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500042,
+              "snapshot_id": "snapshot-0133",
+              "source_seed": 8000090,
+              "phase": "return_front"
+            },
+            {
+              "seed": 8500043,
+              "snapshot_id": "snapshot-0171",
+              "source_seed": 8000118,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500044,
+              "snapshot_id": "snapshot-0101",
+              "source_seed": 8000069,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500045,
+              "snapshot_id": "snapshot-0138",
+              "source_seed": 8000094,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500046,
+              "snapshot_id": "snapshot-0070",
+              "source_seed": 8000047,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500047,
+              "snapshot_id": "snapshot-0147",
+              "source_seed": 8000103,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500048,
+              "snapshot_id": "snapshot-0019",
+              "source_seed": 8000012,
+              "phase": "return_side"
+            },
+            {
+              "seed": 8500049,
+              "snapshot_id": "snapshot-0075",
+              "source_seed": 8000050,
+              "phase": "return_front"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

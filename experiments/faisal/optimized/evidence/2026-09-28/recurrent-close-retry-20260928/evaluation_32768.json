@@ -1,0 +1,1352 @@
+{
+  "step": 32768,
+  "stage": 4,
+  "episodes_per_suite": 25,
+  "seed_start": 5000000,
+  "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+  "reward_version": "outside-return-geometric-progress-v1",
+  "policy_mode": "deterministic",
+  "suites": {
+    "lesson": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.0,
+      "crash_rate": 0.28,
+      "total_passes": 0,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "timeout": 18,
+        "left_cage": 7
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 70,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 82,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 75,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 73,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 75,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 75,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 73,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "original_centered": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.0,
+      "crash_rate": 0.32,
+      "total_passes": 0,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "timeout": 17,
+        "left_cage": 8
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 65,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 66,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 65,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 64,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 64,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 63,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 64,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 64,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "varied_approach": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.0,
+      "crash_rate": 0.0,
+      "total_passes": 0,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "timeout": 25
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "full_task": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.0,
+      "crash_rate": 0.48,
+      "total_passes": 0,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "left_cage": 12,
+        "timeout": 13
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 22,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 17,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 386,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 21,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 301,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 21,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 39,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 58,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 20,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 22,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "full_task_delay_200ms": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.0,
+      "crash_rate": 0.64,
+      "total_passes": 0,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "left_cage": 16,
+        "timeout": 9
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 18,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 443,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 19,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 155,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 42,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 62,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 475,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 22,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "timeout",
+          "passes": 0,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 197,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    }
+  },
+  "protocols": {
+    "lesson": {
+      "id": "completion-lesson-v1",
+      "environment": "GuidedLessonEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": 4,
+      "max_steps": 600,
+      "success": "timeout and passes >= 2",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "original_centered": {
+      "id": "completion-original_centered-v1",
+      "environment": "LessonEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": 0,
+      "max_steps": 150,
+      "success": "passed",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "varied_approach": {
+      "id": "completion-varied_approach-v1",
+      "environment": "LessonEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": 1,
+      "max_steps": 150,
+      "success": "passed",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "full_task": {
+      "id": "completion-full_task-v1",
+      "environment": "HoopEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": null,
+      "max_steps": 600,
+      "success": "timeout and passes >= 2",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "full_task_delay_200ms": {
+      "id": "completion-full_task_delay_200ms-v1",
+      "environment": "HoopEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": null,
+      "max_steps": 600,
+      "success": "timeout and passes >= 2",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 2,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    }
+  }
+}

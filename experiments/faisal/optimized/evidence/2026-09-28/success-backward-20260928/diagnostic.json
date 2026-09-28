@@ -1,0 +1,254 @@
+{
+  "records": [
+    {
+      "checkpoint": 0,
+      "seed": 2810249,
+      "outcome": "timeout",
+      "elapsed": 200,
+      "new_passes": 1,
+      "success": true,
+      "path_metres": 1.3342197355794232,
+      "net_metres": 0.8262886615635116,
+      "visible_fraction": 0.0,
+      "mean_action": [
+        -0.05632627010345459,
+        0.108359195291996,
+        -0.009636026807129383,
+        -0.29972878098487854
+      ],
+      "events": [
+        {
+          "local_step": 10,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 14,
+          "new_pass": true
+        }
+      ]
+    },
+    {
+      "checkpoint": 0,
+      "seed": 2810252,
+      "outcome": "timeout",
+      "elapsed": 200,
+      "new_passes": 1,
+      "success": true,
+      "path_metres": 2.4087627495425066,
+      "net_metres": 1.2425114778071251,
+      "visible_fraction": 0.19,
+      "mean_action": [
+        -0.08789556473493576,
+        0.17341355979442596,
+        0.022812023758888245,
+        -0.24152995645999908
+      ],
+      "events": [
+        {
+          "local_step": 73,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 78,
+          "new_pass": true
+        }
+      ]
+    },
+    {
+      "checkpoint": 0,
+      "seed": 2810296,
+      "outcome": "timeout",
+      "elapsed": 200,
+      "new_passes": 1,
+      "success": true,
+      "path_metres": 1.3838491193383429,
+      "net_metres": 0.8681610881597337,
+      "visible_fraction": 0.0,
+      "mean_action": [
+        -0.06917037069797516,
+        0.10702536255121231,
+        -0.009859214536845684,
+        -0.312965452671051
+      ],
+      "events": [
+        {
+          "local_step": 10,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 13,
+          "new_pass": true
+        }
+      ]
+    },
+    {
+      "checkpoint": 0,
+      "seed": 2810312,
+      "outcome": "hit",
+      "elapsed": 161,
+      "new_passes": 1,
+      "success": false,
+      "path_metres": 1.3723545877294545,
+      "net_metres": 0.593105183385448,
+      "visible_fraction": 0.006211180124223602,
+      "mean_action": [
+        -0.02521505206823349,
+        0.12475044280290604,
+        -0.021073367446660995,
+        -0.23581896722316742
+      ],
+      "events": [
+        {
+          "local_step": 10,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 14,
+          "new_pass": true
+        }
+      ]
+    },
+    {
+      "checkpoint": 15000,
+      "seed": 2810249,
+      "outcome": "left_cage",
+      "elapsed": 89,
+      "new_passes": 1,
+      "success": false,
+      "path_metres": 1.130344718199397,
+      "net_metres": 1.058216018741026,
+      "visible_fraction": 0.0449438202247191,
+      "mean_action": [
+        0.11605185270309448,
+        0.11525208503007889,
+        0.018451891839504242,
+        -0.2900048494338989
+      ],
+      "events": [
+        {
+          "local_step": 10,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 15,
+          "new_pass": true
+        }
+      ]
+    },
+    {
+      "checkpoint": 15000,
+      "seed": 2810252,
+      "outcome": "left_cage",
+      "elapsed": 12,
+      "new_passes": 0,
+      "success": false,
+      "path_metres": 0.12410020606761021,
+      "net_metres": 0.12215656743565424,
+      "visible_fraction": 0.0,
+      "mean_action": [
+        0.07963535189628601,
+        -0.30286523699760437,
+        0.122909314930439,
+        -0.3516523838043213
+      ],
+      "events": []
+    },
+    {
+      "checkpoint": 15000,
+      "seed": 2810296,
+      "outcome": "left_cage",
+      "elapsed": 84,
+      "new_passes": 1,
+      "success": false,
+      "path_metres": 1.1432451814246545,
+      "net_metres": 1.0649932540440639,
+      "visible_fraction": 0.047619047619047616,
+      "mean_action": [
+        0.0944904088973999,
+        0.13991136848926544,
+        0.03480851277709007,
+        -0.30920177698135376
+      ],
+      "events": [
+        {
+          "local_step": 10,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 13,
+          "new_pass": true
+        }
+      ]
+    },
+    {
+      "checkpoint": 15000,
+      "seed": 2810312,
+      "outcome": "left_cage",
+      "elapsed": 85,
+      "new_passes": 1,
+      "success": false,
+      "path_metres": 1.175391037163109,
+      "net_metres": 1.0904209818050699,
+      "visible_fraction": 0.07058823529411765,
+      "mean_action": [
+        0.12351426482200623,
+        0.1066211685538292,
+        0.043626248836517334,
+        -0.32186049222946167
+      ],
+      "events": [
+        {
+          "local_step": 10,
+          "crossing": [
+            1,
+            true
+          ]
+        },
+        {
+          "local_step": 15,
+          "new_pass": true
+        }
+      ]
+    }
+  ],
+  "counters": {
+    "0": {
+      "anchor_accepted": 0,
+      "anchor_rejected": 0,
+      "calibration_updates": 5000,
+      "critic_calibration_updates": 0,
+      "actor_updates": 0,
+      "_n_updates": 0,
+      "target_update_interval": 1
+    },
+    "15000": {
+      "anchor_accepted": 3602,
+      "anchor_rejected": 1399,
+      "calibration_updates": 5000,
+      "critic_calibration_updates": 5000,
+      "actor_updates": 3602,
+      "_n_updates": 10001,
+      "target_update_interval": 1
+    }
+  },
+  "models_unchanged": true,
+  "reserved_layout_rollouts": 0
+}

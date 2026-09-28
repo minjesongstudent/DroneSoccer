@@ -1,0 +1,2 @@
+# Optional baseline; install into the existing CUDA-enabled project environment.
+sb3-contrib==2.9.0

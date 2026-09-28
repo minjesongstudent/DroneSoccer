@@ -11,13 +11,17 @@ from src.return_evaluation import _fingerprint
 VERSION='validated-fresh-return-curriculum-v2'
 SEED_START=8_700_000
 EPISODES=25
+COVERAGE_VERSION='uniform-six-reset-coverage-v1'
 
 
-def wrap(env,single=False,metric_ring=False):
+def wrap(env,single=False,metric_ring=False,geometric_return=False):
     result=FrontMemoryObservation(MissionObservation(env,single_pass=single))
     if metric_ring:
         from src.ring_estimate import MetricRingObservation
         result=MetricRingObservation(result)
+    if geometric_return:
+        from src.return_geometry import GeometricReturnProgress
+        result=GeometricReturnProgress(result)
     return result
 
 
@@ -66,11 +70,12 @@ class ResetScheduler:
 
 class ResetMixture(gym.Env):
     """40% single-pass,20% full flights,20% current reset,20% earlier resets."""
-    def __init__(self,scheduler,metric_ring=False):
+    def __init__(self,scheduler,metric_ring=False,coverage=False,geometric_return=False):
+        self.coverage=bool(coverage)
         self.scheduler=scheduler
-        self.single=[wrap(GuidedLessonEnv(stage=k),True,metric_ring) for k in (2,3)]
-        self.full=wrap(GuidedLessonEnv(stage=4),metric_ring=metric_ring)
-        self.lessons=[wrap(ReturnResetLesson(k),metric_ring=metric_ring) for k in range(len(LEVELS))]
+        self.single=[wrap(GuidedLessonEnv(stage=k),True,metric_ring,geometric_return) for k in (2,3)]
+        self.full=wrap(GuidedLessonEnv(stage=4),metric_ring=metric_ring,geometric_return=geometric_return)
+        self.lessons=[wrap(ReturnResetLesson(k),metric_ring=metric_ring,geometric_return=geometric_return) for k in range(len(LEVELS))]
         self.active=self.single[0];self.rng=np.random.default_rng()
         self.observation_space=self.active.observation_space;self.action_space=self.active.action_space
 
@@ -90,7 +95,7 @@ class ResetMixture(gym.Env):
         if choice<2:self.active=self.single[choice]
         elif choice==2:self.active=self.full
         else:
-            k=self.scheduler.level if choice==3 else int(self.rng.integers(max(1,self.scheduler.level)))
+            k=int(self.rng.integers(len(LEVELS))) if self.coverage else self.scheduler.level if choice==3 else int(self.rng.integers(max(1,self.scheduler.level)))
             self.active=self.lessons[k]
         obs,info=self.active.reset(seed=int(self.rng.integers(1_000_000)),options=options)
         return obs,dict(info,focus_stage=4)
@@ -103,10 +108,10 @@ class ResetMixture(gym.Env):
         for env in [*self.single,self.full,*self.lessons]:env.close()
 
 
-def evaluate_reset_lessons(model,progress=None,metric_ring=False):
+def evaluate_reset_lessons(model,progress=None,metric_ring=False,geometric_return=False):
     before=_fingerprint(model);records=[]
     for level in range(len(LEVELS)):
-        env=wrap(ReturnResetLesson(level),metric_ring=metric_ring)
+        env=wrap(ReturnResetLesson(level),metric_ring=metric_ring,geometric_return=geometric_return)
         try:
             for i in range(EPISODES):
                 obs,info=env.reset(seed=SEED_START+i)
