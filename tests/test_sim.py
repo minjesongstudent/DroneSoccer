@@ -164,8 +164,8 @@ def test_the_geofence_holds_the_drone_without_ending_the_episode():
     assert not terminated and info["outcome"] == "running"
     assert env.pos[2] == pytest.approx(ceiling)
     assert info["wall_steps"] > 0
-    # Pressed into the ceiling: no progress, so only the time, the wall, and
-    # R_HIDDEN if the hoop has dropped out of the frame below.
+    # Pressed into the ceiling: the drone no longer moves, so the shaping is
+    # zero and only the time, the wall, and R_HIDDEN are left.
     assert -(R_WALL + R_STEP + R_HIDDEN) - 0.01 <= reward <= -(R_WALL + R_STEP) + 0.01
 
 
@@ -231,24 +231,77 @@ def test_a_crash_costs_less_than_a_pass_pays():
     assert R_CRASH < R_PASS
     env = make_env()
     env.place([5.0, 5.0 + 0.3, 1.5], 0.0, HOOP_AT, BACK)   # aimed at the rim
+    total = 0.0
     for _ in range(100):
         _, reward, terminated, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+        total += reward
         if terminated:
             break
-    assert info["outcome"] == "hit" and reward < -R_CRASH + 1.0
+    # The crash step carries the shaping that closes the telescoping sum, so
+    # the cost shows in the episode return, not in the last step alone.
+    assert info["outcome"] == "hit"
+    assert total < 0.0 and -total < R_PASS
 
 
 def test_crashing_is_never_the_cheap_way_out_of_an_episode():
-    assert R_STEP * LAPS_MAX_STEPS < R_CRASH < R_PASS
+    """R_STEP * LAPS_MAX_STEPS is above R_CRASH, so check the returns, not the
+    constants. An approach earns more shaping than the time it costs, so the
+    drone that flies at the hoop and crashes still loses to the one that waits.
+    """
+    assert R_CRASH < R_PASS
+
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    hovering = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
+
+    env = make_env()
+    env.place([5.0, 5.0 + 0.3, 1.5], 0.0, HOOP_AT, BACK)   # aimed at the rim
+    crashing, terminated = 0.0, False
+    for _ in range(LAPS_MAX_STEPS):
+        _, reward, terminated, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+        crashing += reward
+        if terminated:
+            break
+    assert terminated and info["outcome"] == "hit"
+    assert crashing < hovering
 
 
-def test_hovering_the_whole_minute_costs_the_time_but_less_than_a_pass_pays():
-    """Hovering must never be the best option, and must still beat crashing."""
+def test_hovering_costs_only_time():
+    """A drone that holds still must earn no shaping at all.
+
+    phi is negative, so discounting it inside the shaping would pay
+    (GAMMA - 1) * phi every step and turn loitering out of reach into income.
+    """
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     total = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
     assert total == pytest.approx(-R_STEP * LAPS_MAX_STEPS, abs=0.1)
     assert total < 0.0 and -total < R_PASS * 2
+
+
+def test_the_shaping_telescopes_and_cannot_be_farmed():
+    """Any loop back to the start must earn nothing, whatever route it takes."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    start = env._phi(env.pos.copy(), False)
+    shaping = 0.0
+    for action in ([0.0, 1.0, 0.0, 0.0],) * 20 + ([0.0, -1.0, 0.0, 0.0],) * 20:
+        prev = env.pos.copy()
+        _, _, terminated, _, _ = env.step(list(action))
+        shaping += env._phi(env.pos, terminated) - env._phi(prev, False)
+        assert not terminated
+    assert shaping == pytest.approx(env._phi(env.pos, False) - start, abs=1e-9)
+
+
+def test_phi_is_zero_at_every_terminal_state():
+    """Ng's result needs it. Otherwise the shaping pays a crash bonus that
+    grows with the distance to the hoop."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for offset in ([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [5.0, 0.0, 0.0]):
+        pos = env.hoop_centre + np.array(offset)
+        assert env._phi(pos, True) == 0.0
+        assert env._phi(pos, False) <= 0.0
 
 
 def test_back_through_the_ring_is_wrong_way():

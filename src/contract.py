@@ -23,17 +23,35 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-# Reward per step = R_PROGRESS * metres closer to the target / PROGRESS_UNIT
+# Reward per step = phi(next state) - phi(state)
 #                 - R_HIDDEN if the hoop is out of view, - R_STEP always,
 #                 - R_WALL while the geofence holds the drone back,
 #                 + R_PASS on a pass, - R_CRASH on a crash.
-R_PASS = 25.0
+#
+# phi scores a state on its own: minus the distance to the target, in units of
+# PROGRESS_UNIT. Paying the change in phi each step gives the agent a dense
+# signal it cannot farm, because the payments telescope to
+# phi(end) - phi(start). The route between two points is worth nothing, so no
+# loop around the rim earns anything, and holding still earns exactly zero.
+# phi reads the state alone, so the target may jump when the drone crosses the
+# hoop plane without opening a way to farm the jump.
+#
+# phi is 0 at every terminal state. Every episode that ends in a crash or a
+# pass therefore collects the same -phi(start) in total, whatever route it
+# took, so the shaping cannot favour one ending over another. A timeout is not
+# a terminal state and keeps its live phi. See sim.HoopEnv._phi.
+R_PASS = 90.0
 R_CRASH = 15.0        # under R_PASS, or hovering out of reach beats trying
-R_PROGRESS = 1.0
+POT_SCALE = 0.25      # phi = -POT_SCALE * metres to the target / PROGRESS_UNIT
 PROGRESS_UNIT = 0.10  # metres
 R_HIDDEN = 0.02
 R_STEP = 0.02        # R_STEP * LAPS_MAX_STEPS stays under R_CRASH, so crashing
-                     # early is never cheaper than flying the minute out
+                     # early is never cheaper than flying the minute out.
+                     # POT_SCALE guards the same rule: phi is 0 at a terminal
+                     # state, so every crash banks +|phi(start)|. The cage
+                     # diagonal is 3.55 m, so that bonus reaches
+                     # POT_SCALE * 3.55 / PROGRESS_UNIT = 8.9, which must stay
+                     # under R_CRASH. See test_crashing_is_never_the_cheap_way.
 R_WALL = 0.5
 
 GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing

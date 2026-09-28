@@ -211,7 +211,6 @@ class HoopEnv(gym.Env):
         self.yaw_rate += (yaw_cmd - self.yaw_rate) * alpha
 
         prev = self.pos.copy()
-        target = self._progress_target(prev)
         self.pos = self.pos + self.vel * dt
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
         self.steps += 1
@@ -225,9 +224,9 @@ class HoopEnv(gym.Env):
         self._frames.append(obs)
         self._actions.append(action)
 
-        progress = float(np.linalg.norm(prev - target) - np.linalg.norm(self.pos - target))
         terminated = outcome in contract.CRASHES
-        reward = (contract.R_PROGRESS * progress / contract.PROGRESS_UNIT
+        shaping = self._phi(self.pos, terminated) - self._phi(prev, False)
+        reward = (shaping
                   - contract.R_HIDDEN * (1.0 - obs[6]) - contract.R_STEP
                   - contract.R_WALL * on_wall
                   + contract.R_PASS * (outcome == "passed") - contract.R_CRASH * terminated)
@@ -235,6 +234,27 @@ class HoopEnv(gym.Env):
         if truncated:
             outcome = "timeout"
         return self._policy_input(), float(reward), terminated, truncated, self._info(outcome)
+
+    def _phi(self, pos, terminated):
+        """The shaping potential: minus the distance to the target.
+
+        Zero at a terminal state. Potential-based shaping only leaves the best
+        policy unchanged when the potential vanishes at the end, so a crash
+        must score the same wherever it happens.
+
+        This reads `pos` alone and never the step before it. Reward that
+        depends on the path, not the state, is reward the agent can farm.
+
+        The caller pays phi(next) - phi(prev) with no discount on phi(next).
+        Discounting it pays (GAMMA - 1) * phi every step the drone holds
+        still, and phi is negative, so the drone would earn 0.05 per metre
+        per step for loitering out of reach. See test_hovering_costs_only_time.
+        """
+        if terminated:
+            return 0.0
+        target = self._progress_target(pos)
+        dist = float(np.linalg.norm(pos - target))
+        return -contract.POT_SCALE * dist / contract.PROGRESS_UNIT
 
     def _progress_target(self, pos):
         """The hoop centre, or from behind the hoop, the nearest side waypoint."""
