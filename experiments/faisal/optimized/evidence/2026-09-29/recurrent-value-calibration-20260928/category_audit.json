@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "early_return": {
+      "episodes": 2,
+      "frames": 494,
+      "rmse": 8.229956517666496,
+      "constant_rmse": 5.2067839083637555
+    },
+    "reapproach": {
+      "episodes": 2,
+      "frames": 213,
+      "rmse": 5.214963523531779,
+      "constant_rmse": 8.47999995544958
+    },
+    "natural_full": {
+      "episodes": 2,
+      "frames": 98,
+      "rmse": 21.145720652492912,
+      "constant_rmse": 3.683844692674556
+    },
+    "basic": {
+      "episodes": 2,
+      "frames": 58,
+      "rmse": 7.521512872847924,
+      "constant_rmse": 61.64870015339697
+    }
+  },
+  "rows": [
+    {
+      "index": 0,
+      "group": "early_return",
+      "frames": 356,
+      "sse": 32782.03125,
+      "constant_sse": 5984.6982421875,
+      "bias": -8.696590423583984
+    },
+    {
+      "index": 3,
+      "group": "early_return",
+      "frames": 138,
+      "sse": 677.6677856445312,
+      "constant_sse": 7407.9375,
+      "bias": -1.0595439672470093
+    },
+    {
+      "index": 8,
+      "group": "reapproach",
+      "frames": 67,
+      "sse": 203.1182098388672,
+      "constant_sse": 5093.9072265625,
+      "bias": 1.6551048755645752
+    },
+    {
+      "index": 9,
+      "group": "reapproach",
+      "frames": 146,
+      "sse": 5589.5966796875,
+      "constant_sse": 10223.0078125,
+      "bias": -2.793888807296753
+    },
+    {
+      "index": 16,
+      "group": "natural_full",
+      "frames": 58,
+      "sse": 34219.97265625,
+      "constant_sse": 822.4909057617188,
+      "bias": 18.315645217895508
+    },
+    {
+      "index": 20,
+      "group": "natural_full",
+      "frames": 40,
+      "sse": 9599.89453125,
+      "constant_sse": 507.4388427734375,
+      "bias": 15.073854446411133
+    },
+    {
+      "index": 23,
+      "group": "basic",
+      "frames": 26,
+      "sse": 1057.5914306640625,
+      "constant_sse": 96412.484375,
+      "bias": -3.3773305416107178
+    },
+    {
+      "index": 25,
+      "group": "basic",
+      "frames": 32,
+      "sse": 2223.651611328125,
+      "constant_sse": 124020.125,
+      "bias": 1.5825934410095215
+    }
+  ]
+}

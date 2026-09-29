@@ -1,0 +1,25 @@
+SAVED POLICY CHECK — SIMULATION ONLY
+
+This is the preserved 500-update recurrent policy, before the rejected lap-only
+experiment. Reference results: centred 25/25, varied 21/25 single-pass simulations.
+It does not establish that the policy can fly the real drone.
+
+1. Extract this folder on your Mac.
+2. While online, double-click 1-Setup.command. It installs dependencies into a
+   separate .venv folder. The first download includes PyTorch and can be large.
+3. Once it says READY, double-click 2-Check-Policy.command.
+4. It runs 50 single-pass simulations and opens an HTML results report.
+   Keep results.json to send back for comparison.
+
+Python 3.10+ required. Your existing Python 3.13 can be tried. If dependency
+installation fails (especially on an Intel Mac), send the actual error text.
+The package has been exercised on Windows; installation on your Mac is unverified.
+If double-click is blocked, open Terminal in this folder and use:
+  bash 1-Setup.command
+  bash 2-Check-Policy.command
+
+CPU is used for lightweight inference on the Mac, never for training. Home-PC
+training remains on CUDA. This file contains no physical drone-control interface.
+It reports test results; it is not a live 3D viewer or camera-based lab flight test.
+All movement in these simulations comes from the saved recurrent policy.
+No weights are updated. Independent acceptance seeds are not used.

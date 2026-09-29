@@ -1,0 +1,93 @@
+{
+  "cases": [
+    {
+      "index": 65,
+      "group": "centered",
+      "seed": 2970065,
+      "torch_seed": 988065,
+      "split": "fit"
+    },
+    {
+      "index": 66,
+      "group": "centered",
+      "seed": 2970066,
+      "torch_seed": 988066,
+      "split": "fit"
+    },
+    {
+      "index": 67,
+      "group": "centered",
+      "seed": 2970067,
+      "torch_seed": 988067,
+      "split": "fit"
+    },
+    {
+      "index": 69,
+      "group": "centered",
+      "seed": 2970069,
+      "torch_seed": 988069,
+      "split": "fit"
+    },
+    {
+      "index": 70,
+      "group": "centered",
+      "seed": 2970070,
+      "torch_seed": 988070,
+      "split": "fit"
+    },
+    {
+      "index": 71,
+      "group": "centered",
+      "seed": 2970071,
+      "torch_seed": 988071,
+      "split": "fit"
+    },
+    {
+      "index": 73,
+      "group": "varied",
+      "seed": 2970073,
+      "torch_seed": 988073,
+      "split": "fit"
+    },
+    {
+      "index": 74,
+      "group": "varied",
+      "seed": 2970074,
+      "torch_seed": 988074,
+      "split": "fit"
+    },
+    {
+      "index": 75,
+      "group": "varied",
+      "seed": 2970075,
+      "torch_seed": 988075,
+      "split": "fit"
+    },
+    {
+      "index": 77,
+      "group": "varied",
+      "seed": 2970077,
+      "torch_seed": 988077,
+      "split": "fit"
+    },
+    {
+      "index": 78,
+      "group": "varied",
+      "seed": 2970078,
+      "torch_seed": 988078,
+      "split": "fit"
+    },
+    {
+      "index": 79,
+      "group": "varied",
+      "seed": 2970079,
+      "torch_seed": 988079,
+      "split": "fit"
+    }
+  ],
+  "repeats": 8,
+  "torch_seed_rule": "991000 + 100 * original index + repeat",
+  "source_sha256": "8cf74f2e95caba0e170729914a90512d7e42f9bd364c9df99070880e03f20727",
+  "purpose": "FIT-only conditional return variability diagnostic, no optimization or outcome selection",
+  "gamma": 0.999
+}

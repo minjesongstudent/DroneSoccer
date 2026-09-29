@@ -1,0 +1,1353 @@
+{
+  "step": 32768,
+  "stage": 4,
+  "episodes_per_suite": 25,
+  "seed_start": 5000000,
+  "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+  "reward_version": "outside-return-geometric-progress-v1",
+  "policy_mode": "deterministic",
+  "suites": {
+    "lesson": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.88,
+      "crash_rate": 0.92,
+      "total_passes": 22,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 1,
+      "returned_to_front_episodes": 2,
+      "outcomes": {
+        "hit": 13,
+        "left_cage": 10,
+        "timeout": 2
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 22,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 109,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 137,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 209,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 100,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 235,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 66,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 229,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 150,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 202,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 403,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 198,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 574,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 217,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "timeout",
+          "passes": 1,
+          "steps": 600,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 212,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 201,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "timeout",
+          "passes": 1,
+          "steps": 600,
+          "returned_to_side": true,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 56,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 523,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 223,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 266,
+          "returned_to_side": false,
+          "returned_to_front": true
+        },
+        {
+          "seed": 5000022,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 407,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 304,
+          "returned_to_side": false,
+          "returned_to_front": true
+        },
+        {
+          "seed": 5000024,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 203,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "original_centered": {
+      "successful_episodes": 25,
+      "success_rate": 1.0,
+      "episodes_with_pass_rate": 1.0,
+      "crash_rate": 0.0,
+      "total_passes": 25,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "passed": 25
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 64,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 59,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 62,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 26,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 61,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 26,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 57,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 63,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 59,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 62,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 24,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 58,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 25,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "varied_approach": {
+      "successful_episodes": 21,
+      "success_rate": 0.84,
+      "episodes_with_pass_rate": 0.84,
+      "crash_rate": 0.16,
+      "total_passes": 21,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "hit": 4,
+        "passed": 21
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 23,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 35,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 31,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 64,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 33,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 52,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 60,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 55,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 37,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 33,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 37,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 29,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 37,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 54,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 28,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 56,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 28,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 32,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 48,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 28,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 36,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 30,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 41,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 28,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "passed",
+          "passes": 1,
+          "steps": 30,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "full_task": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.24,
+      "crash_rate": 1.0,
+      "total_passes": 6,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 0,
+      "returned_to_front_episodes": 0,
+      "outcomes": {
+        "left_cage": 21,
+        "hit": 4
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 60,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 44,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 10,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 6,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 10,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 194,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 39,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 245,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 13,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 46,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 6,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 12,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 51,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 8,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 11,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 9,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 36,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 37,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 10,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 197,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000020,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 201,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000021,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 34,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 144,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 228,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 127,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    },
+    "full_task_delay_200ms": {
+      "successful_episodes": 0,
+      "success_rate": 0.0,
+      "episodes_with_pass_rate": 0.24,
+      "crash_rate": 1.0,
+      "total_passes": 6,
+      "episodes_with_two_passes": 0,
+      "returned_to_side_episodes": 2,
+      "returned_to_front_episodes": 2,
+      "outcomes": {
+        "left_cage": 21,
+        "hit": 4
+      },
+      "records": [
+        {
+          "seed": 5000000,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 72,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000001,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 48,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000002,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 14,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000003,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 8,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000004,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 14,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000005,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 275,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000006,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 41,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000007,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 140,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000008,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 14,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000009,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 48,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000010,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 8,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000011,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 14,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000012,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 53,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000013,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 10,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000014,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 13,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000015,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 11,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000016,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 38,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000017,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 39,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000018,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 14,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000019,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 277,
+          "returned_to_side": true,
+          "returned_to_front": true
+        },
+        {
+          "seed": 5000020,
+          "outcome": "hit",
+          "passes": 1,
+          "steps": 302,
+          "returned_to_side": true,
+          "returned_to_front": true
+        },
+        {
+          "seed": 5000021,
+          "outcome": "left_cage",
+          "passes": 0,
+          "steps": 38,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000022,
+          "outcome": "hit",
+          "passes": 0,
+          "steps": 57,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000023,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 129,
+          "returned_to_side": false,
+          "returned_to_front": false
+        },
+        {
+          "seed": 5000024,
+          "outcome": "left_cage",
+          "passes": 1,
+          "steps": 122,
+          "returned_to_side": false,
+          "returned_to_front": false
+        }
+      ]
+    }
+  },
+  "protocols": {
+    "lesson": {
+      "id": "completion-lesson-v1",
+      "environment": "GuidedLessonEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": 4,
+      "max_steps": 600,
+      "success": "timeout and passes >= 2",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "original_centered": {
+      "id": "completion-original_centered-v1",
+      "environment": "LessonEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": 0,
+      "max_steps": 150,
+      "success": "passed",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "varied_approach": {
+      "id": "completion-varied_approach-v1",
+      "environment": "LessonEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": 1,
+      "max_steps": 150,
+      "success": "passed",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "full_task": {
+      "id": "completion-full_task-v1",
+      "environment": "HoopEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": null,
+      "max_steps": 600,
+      "success": "timeout and passes >= 2",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 0,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    },
+    "full_task_delay_200ms": {
+      "id": "completion-full_task_delay_200ms-v1",
+      "environment": "HoopEnv",
+      "reward_version": "outside-return-geometric-progress-v1",
+      "observation_version": "camera-command-memory-and-requested-task-v1+public-front-sighting-memory-append-v1+public-approximate-ring-centre-v1",
+      "stage": null,
+      "max_steps": 600,
+      "success": "timeout and passes >= 2",
+      "deterministic": true,
+      "geometry": {
+        "cage": {
+          "length": 2.05,
+          "width": 2.05,
+          "height": 2.05,
+          "margin": 0.15,
+          "min_altitude": 0.3
+        },
+        "drone": {
+          "width": 0.2,
+          "height": 0.035,
+          "length": 0.2,
+          "max_speed": 0.4,
+          "max_yaw_rate_deg": 60.0,
+          "tau": 0.3,
+          "delay_steps": 2,
+          "dt": 0.1,
+          "takeoff_height": 0.8
+        },
+        "hoop": {
+          "outer_diameter": 0.45,
+          "diameter_tolerance": 0.03,
+          "thickness": 0.065,
+          "n_points": 32,
+          "marker_max_angle_deg": 70.0,
+          "hanger_half_width": 0.2
+        },
+        "camera": {
+          "width": 960,
+          "height": 720,
+          "fx": 920.0,
+          "fy": 920.0,
+          "cx": 480.0,
+          "cy": 360.0,
+          "pitch_deg": 0.0,
+          "offset_forward": 0.05
+        },
+        "pad": {
+          "inset": 0.25,
+          "heading_error_deg": 15.0
+        }
+      }
+    }
+  }
+}

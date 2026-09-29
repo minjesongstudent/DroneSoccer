@@ -1,0 +1,2372 @@
+{
+  "rows": [
+    {
+      "id": "2920002_49_return_side",
+      "group": 1,
+      "repeat": 0,
+      "steps": 211,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 260,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.4522607758852935,
+          0.13354990494352176,
+          0.9296976308981892
+        ],
+        "heading": 2.0979878130963012,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9937899852494871
+        ],
+        "hoop_normal": [
+          0.9947505457937814,
+          -0.10232962250968244,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920002_49_return_side",
+      "group": 1,
+      "repeat": 1,
+      "steps": 98,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 147,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.366310885002773,
+          0.8055026381049164,
+          1.0904782010721308
+        ],
+        "heading": -2.8123410350881697,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9937899852494871
+        ],
+        "hoop_normal": [
+          0.9947505457937814,
+          -0.10232962250968244,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920002_49_return_side",
+      "group": 1,
+      "repeat": 2,
+      "steps": 118,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 167,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.2749208627201527,
+          0.6992484683194543,
+          1.2365366969417244
+        ],
+        "heading": -2.128772474312965,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9937899852494871
+        ],
+        "hoop_normal": [
+          0.9947505457937814,
+          -0.10232962250968244,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920003_55_return_side",
+      "group": 2,
+      "repeat": 0,
+      "steps": 292,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 347,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.186792043697871,
+          0.1482317229438583,
+          0.9279408159405894
+        ],
+        "heading": -0.23314919679185442,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9513721859553311
+        ],
+        "hoop_normal": [
+          0.97186200736388,
+          0.2355509257945079,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920003_55_return_side",
+      "group": 2,
+      "repeat": 1,
+      "steps": 284,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 339,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.0817583478765387,
+          0.1483188935537814,
+          0.7366969330294927
+        ],
+        "heading": -1.399521795484081,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9513721859553311
+        ],
+        "hoop_normal": [
+          0.97186200736388,
+          0.2355509257945079,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920003_55_return_side",
+      "group": 2,
+      "repeat": 2,
+      "steps": 112,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 167,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.9008314601516068,
+          1.5018959039840354,
+          0.9394229421265885
+        ],
+        "heading": -2.634232660114993,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9513721859553311
+        ],
+        "hoop_normal": [
+          0.97186200736388,
+          0.2355509257945079,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920005_34_return_side",
+      "group": 4,
+      "repeat": 0,
+      "steps": 97,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 131,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.9067168842505327,
+          1.2510030381158954,
+          1.1310015582677426
+        ],
+        "heading": -2.8720223738072757,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.1446174411419114
+        ],
+        "hoop_normal": [
+          0.999720511592267,
+          -0.023641038507139264,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920005_34_return_side",
+      "group": 4,
+      "repeat": 1,
+      "steps": 126,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 160,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.8695969234386418,
+          1.910333018690092,
+          1.1739638223491906
+        ],
+        "heading": -2.169291203062591,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.1446174411419114
+        ],
+        "hoop_normal": [
+          0.999720511592267,
+          -0.023641038507139264,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920005_34_return_side",
+      "group": 4,
+      "repeat": 2,
+      "steps": 117,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 151,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3379170784472494,
+          0.7540395140700596,
+          1.4559132669446986
+        ],
+        "heading": -1.7528444548472117,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.1446174411419114
+        ],
+        "hoop_normal": [
+          0.999720511592267,
+          -0.023641038507139264,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920006_51_return_side",
+      "group": 5,
+      "repeat": 0,
+      "steps": 185,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 236,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.1334674943473864,
+          1.0904021542626432,
+          1.1573381385259338
+        ],
+        "heading": -0.5474638575937001,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920006_51_return_side",
+      "group": 5,
+      "repeat": 1,
+      "steps": 549,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "timeout",
+        "passes": 2,
+        "steps": 600,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3686848856774665,
+          0.9390428731922806,
+          0.5537629766309123
+        ],
+        "heading": -0.7571831184274531,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920006_51_return_side",
+      "group": 5,
+      "repeat": 2,
+      "steps": 167,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 218,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.9026418283191655,
+          1.3329388306573788,
+          1.125103591268391
+        ],
+        "heading": -2.709788352853267,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920010_29_return_side",
+      "group": 6,
+      "repeat": 0,
+      "steps": 108,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 137,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3870982803536658,
+          0.9040847407422277,
+          1.2175039840873605
+        ],
+        "heading": -2.5168018895769815,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9370254289789695
+        ],
+        "hoop_normal": [
+          0.9913307695956044,
+          -0.13138989783460045,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920010_29_return_side",
+      "group": 6,
+      "repeat": 1,
+      "steps": 132,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 161,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3357169954893489,
+          0.8065413151229401,
+          1.0146251927265
+        ],
+        "heading": 3.0847920142235328,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9370254289789695
+        ],
+        "hoop_normal": [
+          0.9913307695956044,
+          -0.13138989783460045,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920010_29_return_side",
+      "group": 6,
+      "repeat": 2,
+      "steps": 129,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 158,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3022289114208723,
+          0.7540983519827038,
+          1.0301232604050288
+        ],
+        "heading": 2.790673987128507,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9370254289789695
+        ],
+        "hoop_normal": [
+          0.9913307695956044,
+          -0.13138989783460045,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920011_30_return_side",
+      "group": 7,
+      "repeat": 0,
+      "steps": 228,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 258,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.5226313175013346,
+          1.1416538900547004,
+          0.2985755315970293
+        ],
+        "heading": 2.54219410691962,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0469315082702093
+        ],
+        "hoop_normal": [
+          0.9987495708881721,
+          0.04999294600933559,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920011_30_return_side",
+      "group": 7,
+      "repeat": 1,
+      "steps": 95,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 125,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.9006960316994062,
+          1.1012774262284757,
+          0.6180742649767739
+        ],
+        "heading": 2.7715695285157835,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0469315082702093
+        ],
+        "hoop_normal": [
+          0.9987495708881721,
+          0.04999294600933559,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2920011_30_return_side",
+      "group": 7,
+      "repeat": 2,
+      "steps": 103,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 133,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.9037430269723672,
+          1.1968354699347608,
+          0.6092468105731409
+        ],
+        "heading": -3.0952295334591184,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0469315082702093
+        ],
+        "hoop_normal": [
+          0.9987495708881721,
+          0.04999294600933559,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_5_195_align_front",
+      "group": 10,
+      "repeat": 0,
+      "steps": 42,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 237,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.118747961122023,
+          1.1734547934944954,
+          1.0530408849491515
+        ],
+        "heading": -0.646673623684296,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_5_195_align_front",
+      "group": 10,
+      "repeat": 1,
+      "steps": 180,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 2,
+        "steps": 375,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.9135128850191363,
+          0.9525997743898733,
+          1.0632632772310386
+        ],
+        "heading": 2.9626074776802938,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_5_195_align_front",
+      "group": 10,
+      "repeat": 2,
+      "steps": 259,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 2,
+        "steps": 454,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.1210008168137586,
+          1.2152714620378615,
+          1.0990280659917784
+        ],
+        "heading": -0.6716678928264632,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_5_380_align_front",
+      "group": 11,
+      "repeat": 0,
+      "steps": 43,
+      "initial_passes": 2,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 2,
+        "steps": 423,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.125214099511149,
+          1.1128779536172337,
+          1.0670593244924051
+        ],
+        "heading": -0.36399370462304237,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_5_380_align_front",
+      "group": 11,
+      "repeat": 1,
+      "steps": 45,
+      "initial_passes": 2,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 2,
+        "steps": 425,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.1376963449051087,
+          1.122771440888351,
+          1.112263145305956
+        ],
+        "heading": -0.4022477328499394,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_5_380_align_front",
+      "group": 11,
+      "repeat": 2,
+      "steps": 51,
+      "initial_passes": 2,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 2,
+        "steps": 431,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.131951459183646,
+          1.1151536082619107,
+          1.1078155173409339
+        ],
+        "heading": -0.3949388648674077,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0798947991689458
+        ],
+        "hoop_normal": [
+          0.9720712700802683,
+          -0.23468584508771353,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_6_216_align_front",
+      "group": 12,
+      "repeat": 0,
+      "steps": 137,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 353,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.1125277712721657,
+          1.1269410944752436,
+          0.9382615268569766
+        ],
+        "heading": -0.20678789228692285,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9370254289789695
+        ],
+        "hoop_normal": [
+          0.9913307695956044,
+          -0.13138989783460045,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_6_216_align_front",
+      "group": 12,
+      "repeat": 1,
+      "steps": 191,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 407,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.0164041818782992,
+          0.14145953474171888,
+          0.3041810511901875
+        ],
+        "heading": -0.10626900752361346,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9370254289789695
+        ],
+        "hoop_normal": [
+          0.9913307695956044,
+          -0.13138989783460045,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "2_6_216_align_front",
+      "group": 12,
+      "repeat": 2,
+      "steps": 58,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 274,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          0.8531693069502428,
+          0.1438622797592322,
+          0.5864619235652663
+        ],
+        "heading": 0.7360725618348769,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9370254289789695
+        ],
+        "hoop_normal": [
+          0.9913307695956044,
+          -0.13138989783460045,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "3_2_223_align_front",
+      "group": 13,
+      "repeat": 0,
+      "steps": 57,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 280,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.074121067366214,
+          1.1121087736954332,
+          0.9305045981868961
+        ],
+        "heading": -0.15006706319257113,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9513721859553311
+        ],
+        "hoop_normal": [
+          0.97186200736388,
+          0.2355509257945079,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "3_2_223_align_front",
+      "group": 13,
+      "repeat": 1,
+      "steps": 97,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 2,
+        "steps": 320,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3903053664889378,
+          0.9119514866744772,
+          1.0083866874405072
+        ],
+        "heading": 0.3700996953812439,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9513721859553311
+        ],
+        "hoop_normal": [
+          0.97186200736388,
+          0.2355509257945079,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "3_2_223_align_front",
+      "group": 13,
+      "repeat": 2,
+      "steps": 60,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 283,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.0695496272024967,
+          1.102823623484242,
+          0.997005413358909
+        ],
+        "heading": -0.026605319750949707,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9513721859553311
+        ],
+        "hoop_normal": [
+          0.97186200736388,
+          0.2355509257945079,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "3_7_187_align_front",
+      "group": 14,
+      "repeat": 0,
+      "steps": 36,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 223,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.2495439255617713,
+          0.14993960101712464,
+          1.2992849422465675
+        ],
+        "heading": 0.8126241758509845,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0469315082702093
+        ],
+        "hoop_normal": [
+          0.9987495708881721,
+          0.04999294600933559,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "3_7_187_align_front",
+      "group": 14,
+      "repeat": 1,
+      "steps": 29,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 216,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.0814197366916838,
+          0.14872693836557302,
+          1.2542909860934457
+        ],
+        "heading": 0.5192273349381935,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0469315082702093
+        ],
+        "hoop_normal": [
+          0.9987495708881721,
+          0.04999294600933559,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "3_7_187_align_front",
+      "group": 14,
+      "repeat": 2,
+      "steps": 30,
+      "initial_passes": 1,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 217,
+        "route": null,
+        "lap_phase": "align_front",
+        "level": 0.0,
+        "drone_pos": [
+          1.1439149427074995,
+          0.14862228927367904,
+          1.2656894425241088
+        ],
+        "heading": 0.6602340633460742,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.0469315082702093
+        ],
+        "hoop_normal": [
+          0.9987495708881721,
+          0.04999294600933559,
+          0.0
+        ],
+        "stage": 4,
+        "reference_stage": 2,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_0",
+      "group": 15,
+      "repeat": 0,
+      "steps": 42,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 42,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          0.9792108091495648,
+          1.0049001538762548,
+          1.1559907019412206
+        ],
+        "heading": 0.7320568951451265,
+        "hoop_centre": [
+          1.1620412944774967,
+          1.0827147495258984,
+          1.141879790244562
+        ],
+        "hoop_normal": [
+          0.38204738346122474,
+          0.9241427361562888,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_0",
+      "group": 15,
+      "repeat": 1,
+      "steps": 261,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 261,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 1.0,
+        "drone_pos": [
+          1.3044210153698137,
+          1.9063927125849713,
+          1.17111232717529
+        ],
+        "heading": -1.7488526190316331,
+        "hoop_centre": [
+          1.1620412944774967,
+          1.0827147495258984,
+          1.141879790244562
+        ],
+        "hoop_normal": [
+          0.38204738346122474,
+          0.9241427361562888,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_0",
+      "group": 15,
+      "repeat": 2,
+      "steps": 335,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 335,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 1.0,
+        "drone_pos": [
+          1.1589382961833252,
+          1.3152723617698345,
+          0.2938325420862191
+        ],
+        "heading": 0.7733954615280534,
+        "hoop_centre": [
+          1.1620412944774967,
+          1.0827147495258984,
+          1.141879790244562
+        ],
+        "hoop_normal": [
+          0.38204738346122474,
+          0.9241427361562888,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_1",
+      "group": 16,
+      "repeat": 0,
+      "steps": 207,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 207,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 1.0,
+        "drone_pos": [
+          0.48893691130265793,
+          0.14629988393818527,
+          0.6313477195127521
+        ],
+        "heading": 1.4793687091222623,
+        "hoop_centre": [
+          0.7806450361860231,
+          0.513145160566301,
+          1.0969933355170114
+        ],
+        "hoop_normal": [
+          -0.9745525730039502,
+          -0.22415905614402562,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_1",
+      "group": 16,
+      "repeat": 1,
+      "steps": 74,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 74,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          0.8656369024734746,
+          0.6007784393462983,
+          1.102007907943966
+        ],
+        "heading": -3.0241726232134116,
+        "hoop_centre": [
+          0.7806450361860231,
+          0.513145160566301,
+          1.0969933355170114
+        ],
+        "hoop_normal": [
+          -0.9745525730039502,
+          -0.22415905614402562,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_1",
+      "group": 16,
+      "repeat": 2,
+      "steps": 75,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 75,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          0.7490496130576046,
+          0.5673665556181162,
+          1.1163939706644748
+        ],
+        "heading": -2.8777616399683774,
+        "hoop_centre": [
+          0.7806450361860231,
+          0.513145160566301,
+          1.0969933355170114
+        ],
+        "hoop_normal": [
+          -0.9745525730039502,
+          -0.22415905614402562,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_2",
+      "group": 17,
+      "repeat": 0,
+      "steps": 58,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 58,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.910590346841084,
+          0.2804034522768298,
+          0.7953931548997524
+        ],
+        "heading": 2.442368219349542,
+        "hoop_centre": [
+          1.0047764862114925,
+          0.810592700727288,
+          1.3601054675300812
+        ],
+        "hoop_normal": [
+          0.18591983172057172,
+          0.9825649170273658,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_2",
+      "group": 17,
+      "repeat": 1,
+      "steps": 19,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 19,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.8629588641897985,
+          0.14169248133372986,
+          1.0463089196438706
+        ],
+        "heading": 2.5122146320059304,
+        "hoop_centre": [
+          1.0047764862114925,
+          0.810592700727288,
+          1.3601054675300812
+        ],
+        "hoop_normal": [
+          0.18591983172057172,
+          0.9825649170273658,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_2",
+      "group": 17,
+      "repeat": 2,
+      "steps": 49,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 49,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.9010671902121243,
+          0.3674209490162112,
+          1.1799582785989249
+        ],
+        "heading": 2.859896358415858,
+        "hoop_centre": [
+          1.0047764862114925,
+          0.810592700727288,
+          1.3601054675300812
+        ],
+        "hoop_normal": [
+          0.18591983172057172,
+          0.9825649170273658,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_3",
+      "group": 18,
+      "repeat": 0,
+      "steps": 40,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 40,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.1754832957635015,
+          1.2497926549688565,
+          0.7507052271314607
+        ],
+        "heading": 0.5202699815780241,
+        "hoop_centre": [
+          1.2970437487105102,
+          1.2637194030040104,
+          0.7531638193718105
+        ],
+        "hoop_normal": [
+          0.5405956345110895,
+          0.8412825684320058,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_3",
+      "group": 18,
+      "repeat": 1,
+      "steps": 189,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 1,
+        "steps": 189,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 1.0,
+        "drone_pos": [
+          1.3329203216691567,
+          1.9076964184168508,
+          0.7825737452331086
+        ],
+        "heading": -1.6076442553253567,
+        "hoop_centre": [
+          1.2970437487105102,
+          1.2637194030040104,
+          0.7531638193718105
+        ],
+        "hoop_normal": [
+          0.5405956345110895,
+          0.8412825684320058,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_3",
+      "group": 18,
+      "repeat": 2,
+      "steps": 81,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 1,
+        "steps": 81,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 1.0,
+        "drone_pos": [
+          1.5573850114723258,
+          1.287821123818707,
+          0.6472113808458759
+        ],
+        "heading": 1.4052352993185773,
+        "hoop_centre": [
+          1.2970437487105102,
+          1.2637194030040104,
+          0.7531638193718105
+        ],
+        "hoop_normal": [
+          0.5405956345110895,
+          0.8412825684320058,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_4",
+      "group": 19,
+      "repeat": 0,
+      "steps": 56,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 56,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          0.44154213653080787,
+          0.14846494188906698,
+          0.9224143916177077
+        ],
+        "heading": 1.0421867143453536,
+        "hoop_centre": [
+          0.37146149613749957,
+          1.006640021871856,
+          1.2923468240684757
+        ],
+        "hoop_normal": [
+          -0.45645635291316944,
+          0.8897458052079864,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_4",
+      "group": 19,
+      "repeat": 1,
+      "steps": 57,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 57,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          0.31959323362096415,
+          0.14843473529317305,
+          0.8810702977985801
+        ],
+        "heading": 0.905103976820179,
+        "hoop_centre": [
+          0.37146149613749957,
+          1.006640021871856,
+          1.2923468240684757
+        ],
+        "hoop_normal": [
+          -0.45645635291316944,
+          0.8897458052079864,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_4",
+      "group": 19,
+      "repeat": 2,
+      "steps": 48,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 48,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          0.3037190002964894,
+          0.14841167155817872,
+          0.882162991358329
+        ],
+        "heading": 0.6816008414046051,
+        "hoop_centre": [
+          0.37146149613749957,
+          1.006640021871856,
+          1.2923468240684757
+        ],
+        "hoop_normal": [
+          -0.45645635291316944,
+          0.8897458052079864,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_5",
+      "group": 20,
+      "repeat": 0,
+      "steps": 133,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 133,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.9046723463443416,
+          0.7134587329093942,
+          1.0292093105259768
+        ],
+        "heading": -2.8885510286438896,
+        "hoop_centre": [
+          0.6617457026135664,
+          0.6644849558698165,
+          0.9730076518392439
+        ],
+        "hoop_normal": [
+          0.21605778475488122,
+          -0.9763805782822667,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_5",
+      "group": 20,
+      "repeat": 1,
+      "steps": 122,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 122,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.901503512632246,
+          0.9365907656552207,
+          0.8541399296062376
+        ],
+        "heading": -2.4827697117324403,
+        "hoop_centre": [
+          0.6617457026135664,
+          0.6644849558698165,
+          0.9730076518392439
+        ],
+        "hoop_normal": [
+          0.21605778475488122,
+          -0.9763805782822667,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_5",
+      "group": 20,
+      "repeat": 2,
+      "steps": 108,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 108,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.9026190064564508,
+          0.4383127916343324,
+          0.8344118562863678
+        ],
+        "heading": 3.0765246798738666,
+        "hoop_centre": [
+          0.6617457026135664,
+          0.6644849558698165,
+          0.9730076518392439
+        ],
+        "hoop_normal": [
+          0.21605778475488122,
+          -0.9763805782822667,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_6",
+      "group": 21,
+      "repeat": 0,
+      "steps": 106,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 106,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.908676431207232,
+          1.084834407540938,
+          1.4274374512543582
+        ],
+        "heading": 3.123003629595794,
+        "hoop_centre": [
+          0.8214473292458839,
+          1.3368311255875973,
+          1.3717655418447186
+        ],
+        "hoop_normal": [
+          -0.13306593237685557,
+          -0.9911071877656211,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_6",
+      "group": 21,
+      "repeat": 1,
+      "steps": 115,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 115,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.9030631050688276,
+          1.24428666399325,
+          1.3692683427530552
+        ],
+        "heading": -2.980780957697235,
+        "hoop_centre": [
+          0.8214473292458839,
+          1.3368311255875973,
+          1.3717655418447186
+        ],
+        "hoop_normal": [
+          -0.13306593237685557,
+          -0.9911071877656211,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_6",
+      "group": 21,
+      "repeat": 2,
+      "steps": 28,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "left_cage",
+        "passes": 0,
+        "steps": 28,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.9095218988342015,
+          1.578801493267317,
+          1.2657864507635894
+        ],
+        "heading": -2.768048186129409,
+        "hoop_centre": [
+          0.8214473292458839,
+          1.3368311255875973,
+          1.3717655418447186
+        ],
+        "hoop_normal": [
+          -0.13306593237685557,
+          -0.9911071877656211,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_7",
+      "group": 22,
+      "repeat": 0,
+      "steps": 29,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 29,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.1611536674723917,
+          0.8064827663999966,
+          0.7586195797335185
+        ],
+        "heading": 2.1120423462485984,
+        "hoop_centre": [
+          1.0737747887417801,
+          1.0272991210822588,
+          0.7938702787674417
+        ],
+        "hoop_normal": [
+          -0.929493151068639,
+          0.36883937170059866,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_7",
+      "group": 22,
+      "repeat": 1,
+      "steps": 30,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 30,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.1429910702701584,
+          0.8733459281592957,
+          0.7668828292298951
+        ],
+        "heading": 2.275346204026736,
+        "hoop_centre": [
+          1.0737747887417801,
+          1.0272991210822588,
+          0.7938702787674417
+        ],
+        "hoop_normal": [
+          -0.929493151068639,
+          0.36883937170059866,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_full_7",
+      "group": 22,
+      "repeat": 2,
+      "steps": 30,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 30,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 1.0,
+        "drone_pos": [
+          1.1462682797630863,
+          0.8242165023352711,
+          0.7765521815346793
+        ],
+        "heading": 2.1720857444685446,
+        "hoop_centre": [
+          1.0737747887417801,
+          1.0272991210822588,
+          0.7938702787674417
+        ],
+        "hoop_normal": [
+          -0.929493151068639,
+          0.36883937170059866,
+          0.0
+        ],
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_0",
+      "group": 23,
+      "repeat": 0,
+      "steps": 49,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 49,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.415435192882622,
+          0.9737172931859271,
+          1.0848273307364702
+        ],
+        "heading": 0.5939462302464049,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.1419939949762756
+        ],
+        "hoop_normal": [
+          0.9999212925447785,
+          0.01254626301252976,
+          0.0
+        ],
+        "stage": 0,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_0",
+      "group": 23,
+      "repeat": 1,
+      "steps": 25,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 25,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.4055407655154757,
+          0.9795204662983875,
+          1.1225232986697598
+        ],
+        "heading": -0.18289663767508157,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.1419939949762756
+        ],
+        "hoop_normal": [
+          0.9999212925447785,
+          0.01254626301252976,
+          0.0
+        ],
+        "stage": 0,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_0",
+      "group": 23,
+      "repeat": 2,
+      "steps": 25,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 25,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3987174814925722,
+          0.9536408516583234,
+          1.1559070210328812
+        ],
+        "heading": -0.09258643320713622,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          1.1419939949762756
+        ],
+        "hoop_normal": [
+          0.9999212925447785,
+          0.01254626301252976,
+          0.0
+        ],
+        "stage": 0,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_1",
+      "group": 24,
+      "repeat": 0,
+      "steps": 47,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 47,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.399562691836211,
+          1.0205938012777998,
+          0.9360998646160755
+        ],
+        "heading": -0.018683669822009197,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9564142874919099
+        ],
+        "hoop_normal": [
+          0.9999889441894877,
+          -0.004702286549508866,
+          0.0
+        ],
+        "stage": 0,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_1",
+      "group": 24,
+      "repeat": 1,
+      "steps": 60,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 60,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.391103758312935,
+          0.9992112298255842,
+          0.9467471261238528
+        ],
+        "heading": 0.02152662497805835,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9564142874919099
+        ],
+        "hoop_normal": [
+          0.9999889441894877,
+          -0.004702286549508866,
+          0.0
+        ],
+        "stage": 0,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_1",
+      "group": 24,
+      "repeat": 2,
+      "steps": 39,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 39,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 0.0,
+        "drone_pos": [
+          1.114949861647839,
+          0.9684537430541593,
+          0.9096569326641554
+        ],
+        "heading": 0.07679618709633829,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9564142874919099
+        ],
+        "hoop_normal": [
+          0.9999889441894877,
+          -0.004702286549508866,
+          0.0
+        ],
+        "stage": 0,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_2",
+      "group": 25,
+      "repeat": 0,
+      "steps": 40,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 40,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3754730854392867,
+          1.0174071164644651,
+          0.8576089856035695
+        ],
+        "heading": -0.07816710377425773,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9108812609864599
+        ],
+        "hoop_normal": [
+          0.9977583388405343,
+          -0.06692008124754198,
+          0.0
+        ],
+        "stage": 1,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_2",
+      "group": 25,
+      "repeat": 1,
+      "steps": 31,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 31,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3866639042077868,
+          1.0480577675241864,
+          0.8980624084900711
+        ],
+        "heading": -0.12284406997111086,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9108812609864599
+        ],
+        "hoop_normal": [
+          0.9977583388405343,
+          -0.06692008124754198,
+          0.0
+        ],
+        "stage": 1,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_2",
+      "group": 25,
+      "repeat": 2,
+      "steps": 31,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 31,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.3815178235228562,
+          0.9957285169222836,
+          0.911826488917135
+        ],
+        "heading": -0.07992910197748193,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9108812609864599
+        ],
+        "hoop_normal": [
+          0.9977583388405343,
+          -0.06692008124754198,
+          0.0
+        ],
+        "stage": 1,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_3",
+      "group": 26,
+      "repeat": 0,
+      "steps": 32,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 32,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.4188500632762615,
+          0.9638626828563069,
+          0.8990143351890098
+        ],
+        "heading": -0.43291343334194954,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9269357037543822
+        ],
+        "hoop_normal": [
+          0.9829586528966915,
+          -0.18382678448888143,
+          0.0
+        ],
+        "stage": 1,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_3",
+      "group": 26,
+      "repeat": 1,
+      "steps": 33,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "passed",
+        "passes": 1,
+        "steps": 33,
+        "route": null,
+        "lap_phase": "return_side",
+        "level": 0.0,
+        "drone_pos": [
+          1.399360417820814,
+          1.0177048166100082,
+          0.8907867402541985
+        ],
+        "heading": -0.3804175334623201,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9269357037543822
+        ],
+        "hoop_normal": [
+          0.9829586528966915,
+          -0.18382678448888143,
+          0.0
+        ],
+        "stage": 1,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    },
+    {
+      "id": "natural_basic_3",
+      "group": 26,
+      "repeat": 2,
+      "steps": 24,
+      "initial_passes": 0,
+      "final_info": {
+        "outcome": "hit",
+        "passes": 0,
+        "steps": 24,
+        "route": null,
+        "lap_phase": "approach",
+        "level": 0.0,
+        "drone_pos": [
+          1.102887813161128,
+          1.1527939273509844,
+          0.8939118246827757
+        ],
+        "heading": -0.4861205436804781,
+        "hoop_centre": [
+          1.2299999999999998,
+          1.025,
+          0.9269357037543822
+        ],
+        "hoop_normal": [
+          0.9829586528966915,
+          -0.18382678448888143,
+          0.0
+        ],
+        "stage": 1,
+        "geometric_return_advanced": false,
+        "geometric_reward_correction": 0.0
+      }
+    }
+  ],
+  "loss": 13.789370600774419,
+  "return_mean": -29.53904151916504,
+  "return_std": 18.187767038808595,
+  "basic_gradient_count": 0,
+  "guard_episodes": 69,
+  "preupdate_log_error": 0.0,
+  "grad_norm": 23.985435485839844,
+  "training_steps": 20632,
+  "guard": {
+    "accepted": false,
+    "mean_kl": 0.0007169924091624385,
+    "max_kl": 0.014006795740154732
+  }
+}

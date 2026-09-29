@@ -1,0 +1,528 @@
+{
+  "history": [
+    {
+      "epoch": 0,
+      "actor_parameters_exact": true,
+      "fit": {
+        "episodes": 71,
+        "frames": 5930,
+        "category_fit_constant_rmse": 19.89495086669922,
+        "rmse": 47.23306655883789,
+        "explained_variance": -4.297975063323975,
+        "constant_fit_mean_rmse": 19.89495086669922
+      },
+      "heldout": {
+        "episodes": 24,
+        "frames": 2119,
+        "category_fit_constant_rmse": 14.359540939331055,
+        "rmse": 42.63968276977539,
+        "explained_variance": -11.207778930664062,
+        "constant_fit_mean_rmse": 14.359540939331055
+      },
+      "categories": {
+        "centered": {
+          "fit": {
+            "episodes": 6,
+            "frames": 249,
+            "category_fit_constant_rmse": 23.69607925415039,
+            "rmse": 28.792619705200195,
+            "explained_variance": -0.4260178804397583,
+            "constant_fit_mean_rmse": 50.17717361450195
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 46,
+            "category_fit_constant_rmse": 39.27292251586914,
+            "rmse": 46.97620391845703,
+            "explained_variance": -0.13198328018188477,
+            "constant_fit_mean_rmse": 39.1694450378418
+          }
+        },
+        "early_return": {
+          "fit": {
+            "episodes": 6,
+            "frames": 1013,
+            "category_fit_constant_rmse": 6.364870548248291,
+            "rmse": 36.685630798339844,
+            "explained_variance": -13.270686149597168,
+            "constant_fit_mean_rmse": 12.221455574035645
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 494,
+            "category_fit_constant_rmse": 5.475471496582031,
+            "rmse": 48.943851470947266,
+            "explained_variance": -20.836345672607422,
+            "constant_fit_mean_rmse": 9.886698722839355
+          }
+        },
+        "natural_delayed": {
+          "fit": {
+            "episodes": 24,
+            "frames": 1805,
+            "category_fit_constant_rmse": 14.038883209228516,
+            "rmse": 47.9511604309082,
+            "explained_variance": -10.615209579467773,
+            "constant_fit_mean_rmse": 14.136524200439453
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 315,
+            "category_fit_constant_rmse": 12.231194496154785,
+            "rmse": 39.91401672363281,
+            "explained_variance": -74.43405151367188,
+            "constant_fit_mean_rmse": 13.793052673339844
+          }
+        },
+        "natural_nominal": {
+          "fit": {
+            "episodes": 24,
+            "frames": 2328,
+            "category_fit_constant_rmse": 19.07020378112793,
+            "rmse": 52.17375564575195,
+            "explained_variance": -5.671352386474609,
+            "constant_fit_mean_rmse": 19.109752655029297
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 969,
+            "category_fit_constant_rmse": 12.683924674987793,
+            "rmse": 40.394683837890625,
+            "explained_variance": -27.421140670776367,
+            "constant_fit_mean_rmse": 11.703445434570312
+          }
+        },
+        "reapproach": {
+          "fit": {
+            "episodes": 5,
+            "frames": 291,
+            "category_fit_constant_rmse": 2.31052303314209,
+            "rmse": 40.48191833496094,
+            "explained_variance": -240.31614685058594,
+            "constant_fit_mean_rmse": 14.096887588500977
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 213,
+            "category_fit_constant_rmse": 7.7768330574035645,
+            "rmse": 39.06886672973633,
+            "explained_variance": -21.837566375732422,
+            "constant_fit_mean_rmse": 13.743888854980469
+          }
+        },
+        "varied": {
+          "fit": {
+            "episodes": 6,
+            "frames": 244,
+            "category_fit_constant_rmse": 31.560836791992188,
+            "rmse": 53.395145416259766,
+            "explained_variance": -0.39535629749298096,
+            "constant_fit_mean_rmse": 35.07810592651367
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 82,
+            "category_fit_constant_rmse": 30.918550491333008,
+            "rmse": 44.125038146972656,
+            "explained_variance": -0.12131679058074951,
+            "constant_fit_mean_rmse": 32.23025894165039
+          }
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "actor_parameters_exact": true,
+      "fit": {
+        "episodes": 71,
+        "frames": 5930,
+        "category_fit_constant_rmse": 19.89495086669922,
+        "rmse": 20.179319381713867,
+        "explained_variance": 0.11944407224655151,
+        "constant_fit_mean_rmse": 19.89495086669922
+      },
+      "heldout": {
+        "episodes": 24,
+        "frames": 2119,
+        "category_fit_constant_rmse": 14.359540939331055,
+        "rmse": 10.694306373596191,
+        "explained_variance": 0.15996098518371582,
+        "constant_fit_mean_rmse": 14.359540939331055
+      },
+      "categories": {
+        "centered": {
+          "fit": {
+            "episodes": 6,
+            "frames": 249,
+            "category_fit_constant_rmse": 23.69607925415039,
+            "rmse": 51.93400573730469,
+            "explained_variance": -0.010741353034973145,
+            "constant_fit_mean_rmse": 50.17717361450195
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 46,
+            "category_fit_constant_rmse": 39.27292251586914,
+            "rmse": 39.25165939331055,
+            "explained_variance": 0.0014896392822265625,
+            "constant_fit_mean_rmse": 39.1694450378418
+          }
+        },
+        "early_return": {
+          "fit": {
+            "episodes": 6,
+            "frames": 1013,
+            "category_fit_constant_rmse": 6.364870548248291,
+            "rmse": 6.669703483581543,
+            "explained_variance": -0.025139331817626953,
+            "constant_fit_mean_rmse": 12.221455574035645
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 494,
+            "category_fit_constant_rmse": 5.475471496582031,
+            "rmse": 5.550379753112793,
+            "explained_variance": -0.17612123489379883,
+            "constant_fit_mean_rmse": 9.886698722839355
+          }
+        },
+        "natural_delayed": {
+          "fit": {
+            "episodes": 24,
+            "frames": 1805,
+            "category_fit_constant_rmse": 14.038883209228516,
+            "rmse": 14.07043170928955,
+            "explained_variance": 0.17241543531417847,
+            "constant_fit_mean_rmse": 14.136524200439453
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 315,
+            "category_fit_constant_rmse": 12.231194496154785,
+            "rmse": 5.241092681884766,
+            "explained_variance": 0.2938773036003113,
+            "constant_fit_mean_rmse": 13.793052673339844
+          }
+        },
+        "natural_nominal": {
+          "fit": {
+            "episodes": 24,
+            "frames": 2328,
+            "category_fit_constant_rmse": 19.07020378112793,
+            "rmse": 20.90106201171875,
+            "explained_variance": 0.043904900550842285,
+            "constant_fit_mean_rmse": 19.109752655029297
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 969,
+            "category_fit_constant_rmse": 12.683924674987793,
+            "rmse": 6.7139387130737305,
+            "explained_variance": 0.16577023267745972,
+            "constant_fit_mean_rmse": 11.703445434570312
+          }
+        },
+        "reapproach": {
+          "fit": {
+            "episodes": 5,
+            "frames": 291,
+            "category_fit_constant_rmse": 2.31052303314209,
+            "rmse": 4.906949043273926,
+            "explained_variance": -0.6906428337097168,
+            "constant_fit_mean_rmse": 14.096887588500977
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 213,
+            "category_fit_constant_rmse": 7.7768330574035645,
+            "rmse": 9.307814598083496,
+            "explained_variance": -0.32046663761138916,
+            "constant_fit_mean_rmse": 13.743888854980469
+          }
+        },
+        "varied": {
+          "fit": {
+            "episodes": 6,
+            "frames": 244,
+            "category_fit_constant_rmse": 31.560836791992188,
+            "rmse": 36.02830123901367,
+            "explained_variance": -0.010860681533813477,
+            "constant_fit_mean_rmse": 35.07810592651367
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 82,
+            "category_fit_constant_rmse": 30.918550491333008,
+            "rmse": 32.28496170043945,
+            "explained_variance": 0.01976686716079712,
+            "constant_fit_mean_rmse": 32.23025894165039
+          }
+        }
+      }
+    },
+    {
+      "epoch": 8,
+      "actor_parameters_exact": true,
+      "fit": {
+        "episodes": 71,
+        "frames": 5930,
+        "category_fit_constant_rmse": 19.89495086669922,
+        "rmse": 19.637609481811523,
+        "explained_variance": 0.18208247423171997,
+        "constant_fit_mean_rmse": 19.89495086669922
+      },
+      "heldout": {
+        "episodes": 24,
+        "frames": 2119,
+        "category_fit_constant_rmse": 14.359540939331055,
+        "rmse": 10.350443840026855,
+        "explained_variance": 0.22423797845840454,
+        "constant_fit_mean_rmse": 14.359540939331055
+      },
+      "categories": {
+        "centered": {
+          "fit": {
+            "episodes": 6,
+            "frames": 249,
+            "category_fit_constant_rmse": 23.69607925415039,
+            "rmse": 49.44387435913086,
+            "explained_variance": -0.011045455932617188,
+            "constant_fit_mean_rmse": 50.17717361450195
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 46,
+            "category_fit_constant_rmse": 39.27292251586914,
+            "rmse": 37.993648529052734,
+            "explained_variance": -0.0011407136917114258,
+            "constant_fit_mean_rmse": 39.1694450378418
+          }
+        },
+        "early_return": {
+          "fit": {
+            "episodes": 6,
+            "frames": 1013,
+            "category_fit_constant_rmse": 6.364870548248291,
+            "rmse": 7.006104469299316,
+            "explained_variance": -0.1720496416091919,
+            "constant_fit_mean_rmse": 12.221455574035645
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 494,
+            "category_fit_constant_rmse": 5.475471496582031,
+            "rmse": 5.629719257354736,
+            "explained_variance": 0.045861124992370605,
+            "constant_fit_mean_rmse": 9.886698722839355
+          }
+        },
+        "natural_delayed": {
+          "fit": {
+            "episodes": 24,
+            "frames": 1805,
+            "category_fit_constant_rmse": 14.038883209228516,
+            "rmse": 14.342925071716309,
+            "explained_variance": 0.18030571937561035,
+            "constant_fit_mean_rmse": 14.136524200439453
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 315,
+            "category_fit_constant_rmse": 12.231194496154785,
+            "rmse": 3.7115976810455322,
+            "explained_variance": 0.6086426973342896,
+            "constant_fit_mean_rmse": 13.793052673339844
+          }
+        },
+        "natural_nominal": {
+          "fit": {
+            "episodes": 24,
+            "frames": 2328,
+            "category_fit_constant_rmse": 19.07020378112793,
+            "rmse": 20.28759002685547,
+            "explained_variance": 0.12411880493164062,
+            "constant_fit_mean_rmse": 19.109752655029297
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 969,
+            "category_fit_constant_rmse": 12.683924674987793,
+            "rmse": 7.050442218780518,
+            "explained_variance": 0.08723914623260498,
+            "constant_fit_mean_rmse": 11.703445434570312
+          }
+        },
+        "reapproach": {
+          "fit": {
+            "episodes": 5,
+            "frames": 291,
+            "category_fit_constant_rmse": 2.31052303314209,
+            "rmse": 4.315822601318359,
+            "explained_variance": -1.1464240550994873,
+            "constant_fit_mean_rmse": 14.096887588500977
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 213,
+            "category_fit_constant_rmse": 7.7768330574035645,
+            "rmse": 7.313657760620117,
+            "explained_variance": 0.05681812763214111,
+            "constant_fit_mean_rmse": 13.743888854980469
+          }
+        },
+        "varied": {
+          "fit": {
+            "episodes": 6,
+            "frames": 244,
+            "category_fit_constant_rmse": 31.560836791992188,
+            "rmse": 34.67942428588867,
+            "explained_variance": -0.0036591291427612305,
+            "constant_fit_mean_rmse": 35.07810592651367
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 82,
+            "category_fit_constant_rmse": 30.918550491333008,
+            "rmse": 31.439647674560547,
+            "explained_variance": 0.03488653898239136,
+            "constant_fit_mean_rmse": 32.23025894165039
+          }
+        }
+      }
+    },
+    {
+      "epoch": 16,
+      "actor_parameters_exact": true,
+      "fit": {
+        "episodes": 71,
+        "frames": 5930,
+        "category_fit_constant_rmse": 19.89495086669922,
+        "rmse": 19.13509178161621,
+        "explained_variance": 0.2500905990600586,
+        "constant_fit_mean_rmse": 19.89495086669922
+      },
+      "heldout": {
+        "episodes": 24,
+        "frames": 2119,
+        "category_fit_constant_rmse": 14.359540939331055,
+        "rmse": 10.543106079101562,
+        "explained_variance": 0.2005828619003296,
+        "constant_fit_mean_rmse": 14.359540939331055
+      },
+      "categories": {
+        "centered": {
+          "fit": {
+            "episodes": 6,
+            "frames": 249,
+            "category_fit_constant_rmse": 23.69607925415039,
+            "rmse": 48.6324462890625,
+            "explained_variance": 0.012528777122497559,
+            "constant_fit_mean_rmse": 50.17717361450195
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 46,
+            "category_fit_constant_rmse": 39.27292251586914,
+            "rmse": 37.291893005371094,
+            "explained_variance": 0.002135336399078369,
+            "constant_fit_mean_rmse": 39.1694450378418
+          }
+        },
+        "early_return": {
+          "fit": {
+            "episodes": 6,
+            "frames": 1013,
+            "category_fit_constant_rmse": 6.364870548248291,
+            "rmse": 6.5189948081970215,
+            "explained_variance": -0.034911513328552246,
+            "constant_fit_mean_rmse": 12.221455574035645
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 494,
+            "category_fit_constant_rmse": 5.475471496582031,
+            "rmse": 5.782207012176514,
+            "explained_variance": -0.0014553070068359375,
+            "constant_fit_mean_rmse": 9.886698722839355
+          }
+        },
+        "natural_delayed": {
+          "fit": {
+            "episodes": 24,
+            "frames": 1805,
+            "category_fit_constant_rmse": 14.038883209228516,
+            "rmse": 11.60799503326416,
+            "explained_variance": 0.5116656422615051,
+            "constant_fit_mean_rmse": 14.136524200439453
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 315,
+            "category_fit_constant_rmse": 12.231194496154785,
+            "rmse": 3.3931820392608643,
+            "explained_variance": 0.5770584344863892,
+            "constant_fit_mean_rmse": 13.793052673339844
+          }
+        },
+        "natural_nominal": {
+          "fit": {
+            "episodes": 24,
+            "frames": 2328,
+            "category_fit_constant_rmse": 19.07020378112793,
+            "rmse": 20.744115829467773,
+            "explained_variance": 0.13606542348861694,
+            "constant_fit_mean_rmse": 19.109752655029297
+          },
+          "heldout": {
+            "episodes": 8,
+            "frames": 969,
+            "category_fit_constant_rmse": 12.683924674987793,
+            "rmse": 7.172284126281738,
+            "explained_variance": 0.06973499059677124,
+            "constant_fit_mean_rmse": 11.703445434570312
+          }
+        },
+        "reapproach": {
+          "fit": {
+            "episodes": 5,
+            "frames": 291,
+            "category_fit_constant_rmse": 2.31052303314209,
+            "rmse": 2.8410215377807617,
+            "explained_variance": -0.22669470310211182,
+            "constant_fit_mean_rmse": 14.096887588500977
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 213,
+            "category_fit_constant_rmse": 7.7768330574035645,
+            "rmse": 8.32354736328125,
+            "explained_variance": -0.24735689163208008,
+            "constant_fit_mean_rmse": 13.743888854980469
+          }
+        },
+        "varied": {
+          "fit": {
+            "episodes": 6,
+            "frames": 244,
+            "category_fit_constant_rmse": 31.560836791992188,
+            "rmse": 34.59192657470703,
+            "explained_variance": 0.0195162296295166,
+            "constant_fit_mean_rmse": 35.07810592651367
+          },
+          "heldout": {
+            "episodes": 2,
+            "frames": 82,
+            "category_fit_constant_rmse": 30.918550491333008,
+            "rmse": 32.53951644897461,
+            "explained_variance": -0.06026959419250488,
+            "constant_fit_mean_rmse": 32.23025894165039
+          }
+        }
+      }
+    }
+  ],
+  "actor_parameters_exact": true,
+  "actor_updates": 0,
+  "raw_value_scale": 40,
+  "flight_improvement_claimed": false
+}

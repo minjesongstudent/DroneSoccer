@@ -96,4 +96,3 @@ $('evalPracticeFront').textContent=practice?practice.safe_front_return_episodes+
 $('bestReturn').textContent=Number.isFinite(state.best_return_step)?count(state.best_return_step)+' steps · skill only':'—';
 chart();}catch(e){$('mode').textContent='Disconnected';$('error').textContent='Cannot reach the local Python process.'}setTimeout(poll,150)}poll();
 </script></html>
-

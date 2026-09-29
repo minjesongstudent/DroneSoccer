@@ -1,0 +1,52 @@
+{
+  "data": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928",
+  "batch": 0,
+  "fit": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    17,
+    18,
+    19,
+    21,
+    22,
+    24,
+    26
+  ],
+  "heldout": [
+    0,
+    3,
+    8,
+    9,
+    16,
+    20,
+    23,
+    25
+  ],
+  "epochs": 16,
+  "lr": 0.001,
+  "target": "Recorded gamma .999 Monte Carlo returns divided by40; critic outputs scaled units, not drop-in raw-value PPO",
+  "actor_frozen": true,
+  "critic_names": [
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.0.bias",
+    "value_net.weight",
+    "value_net.bias",
+    "lstm_critic.weight_ih_l0",
+    "lstm_critic.weight_hh_l0",
+    "lstm_critic.bias_ih_l0",
+    "lstm_critic.bias_hh_l0"
+  ],
+  "selection": "All checkpoints reported, heldout not optimized",
+  "holdout_grouping": "Parent source flight families 0/3 plus separate natural episodes; derived snapshots stay with parent",
+  "source_sha256": "8cf74f2e95caba0e170729914a90512d7e42f9bd364c9df99070880e03f20727"
+}

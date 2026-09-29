@@ -1,0 +1,27 @@
+MAC LAB RECORDER — DOUBLE-CLICK EDITION
+
+1. Run 1-Setup.command before leaving internet access.
+   If Python is missing, the official download page opens. Install Python's
+   macOS universal2 package, then run setup again. Look for READY.
+
+2. At the lab: connect to Tello Wi-Fi, keep motors OFF, close other drone apps,
+   and run 2-Record.command. Press Return to record for two minutes.
+   Allow Terminal/Python Local Network access if macOS asks.
+   Check that both telemetry and video counters increase.
+
+3. The sessions folder opens after recording. Add your photos and fill in the
+   newest session's measurements.md. Run 3-Export-Latest.command to ZIP it.
+   Finder reveals the resulting ZIP. Upload it to OneDrive on normal Wi-Fi.
+
+If macOS refuses to open a .command file, use Terminal:
+   cd ~/Downloads/Mac-Lab-Recorder
+   bash 1-Setup.command
+   bash 2-Record.command
+   bash 3-Export-Latest.command
+Adjust the folder if you extracted somewhere else. You can type cd followed
+by a space and drag the extracted folder into Terminal, then press Return.
+Do not disable macOS security settings globally.
+
+Recording needs no pip libraries, GPU or internet after Python is installed.
+For video playback, install VLC before the lab and open camera.h264 with it.
+Full instructions and limitations are in README.md.

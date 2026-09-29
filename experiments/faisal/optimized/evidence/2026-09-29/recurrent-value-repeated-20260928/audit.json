@@ -1,0 +1,188 @@
+{
+  "actor_exact": true,
+  "sampling_valid": true,
+  "selection_count": 2304,
+  "fit_only": true,
+  "rows": [
+    {
+      "index": 1,
+      "group": "early_return",
+      "prediction": -28.867509365081787,
+      "mean": -36.246214151382446,
+      "standard_error": 1.44099658166628
+    },
+    {
+      "index": 2,
+      "group": "early_return",
+      "prediction": -23.98895025253296,
+      "mean": -34.75891590118408,
+      "standard_error": 1.6780654242492286
+    },
+    {
+      "index": 4,
+      "group": "early_return",
+      "prediction": -36.770174503326416,
+      "mean": -28.149253249168396,
+      "standard_error": 5.376021044555226
+    },
+    {
+      "index": 5,
+      "group": "early_return",
+      "prediction": -25.813684463500977,
+      "mean": -33.065693378448486,
+      "standard_error": 2.779258379294326
+    },
+    {
+      "index": 6,
+      "group": "early_return",
+      "prediction": -23.155603408813477,
+      "mean": -33.228476762771606,
+      "standard_error": 3.388936886848531
+    },
+    {
+      "index": 7,
+      "group": "early_return",
+      "prediction": -27.72385597229004,
+      "mean": -32.46869599819183,
+      "standard_error": 5.0745691876298205
+    },
+    {
+      "index": 10,
+      "group": "reapproach",
+      "prediction": -32.09275960922241,
+      "mean": -30.71739912033081,
+      "standard_error": 2.4848986810335534
+    },
+    {
+      "index": 11,
+      "group": "reapproach",
+      "prediction": -36.834349632263184,
+      "mean": -28.176234245300293,
+      "standard_error": 2.301876271187472
+    },
+    {
+      "index": 12,
+      "group": "reapproach",
+      "prediction": -35.77518701553345,
+      "mean": -22.258318424224854,
+      "standard_error": 6.575033281338295
+    },
+    {
+      "index": 13,
+      "group": "reapproach",
+      "prediction": -35.63180208206177,
+      "mean": -32.17503523826599,
+      "standard_error": 2.1931792000608623
+    },
+    {
+      "index": 14,
+      "group": "reapproach",
+      "prediction": -38.289899826049805,
+      "mean": -41.052881717681885,
+      "standard_error": 0.15163375306883414
+    },
+    {
+      "index": 65,
+      "group": "centered",
+      "prediction": 0.9125050902366638,
+      "mean": 14.82438063621521,
+      "standard_error": 10.70415876632852
+    },
+    {
+      "index": 66,
+      "group": "centered",
+      "prediction": -3.125944137573242,
+      "mean": 5.773908376693726,
+      "standard_error": 11.59038658514028
+    },
+    {
+      "index": 67,
+      "group": "centered",
+      "prediction": 0.7905629277229309,
+      "mean": -1.065272569656372,
+      "standard_error": 12.408635551991594
+    },
+    {
+      "index": 69,
+      "group": "centered",
+      "prediction": -0.2820226550102234,
+      "mean": 15.505556583404541,
+      "standard_error": 10.67868227284785
+    },
+    {
+      "index": 70,
+      "group": "centered",
+      "prediction": -2.3867622017860413,
+      "mean": 22.309598684310913,
+      "standard_error": 8.042469960675739
+    },
+    {
+      "index": 71,
+      "group": "centered",
+      "prediction": -5.826699733734131,
+      "mean": -1.7750592231750488,
+      "standard_error": 11.867857045168986
+    },
+    {
+      "index": 73,
+      "group": "varied",
+      "prediction": -4.165019989013672,
+      "mean": 9.94749641418457,
+      "standard_error": 11.75692559069892
+    },
+    {
+      "index": 74,
+      "group": "varied",
+      "prediction": -3.250148296356201,
+      "mean": 14.655093908309937,
+      "standard_error": 10.82844620892909
+    },
+    {
+      "index": 75,
+      "group": "varied",
+      "prediction": 1.1470989882946014,
+      "mean": 14.597167253494263,
+      "standard_error": 10.590992151166214
+    },
+    {
+      "index": 77,
+      "group": "varied",
+      "prediction": -3.7031251192092896,
+      "mean": 9.998194694519043,
+      "standard_error": 11.655741676363546
+    },
+    {
+      "index": 78,
+      "group": "varied",
+      "prediction": -0.0957336276769638,
+      "mean": 9.365860939025879,
+      "standard_error": 11.770800472018724
+    },
+    {
+      "index": 79,
+      "group": "varied",
+      "prediction": 1.3492366671562195,
+      "mean": 31.08277988433838,
+      "standard_error": 0.06268790364659825
+    }
+  ],
+  "metrics": {
+    "centered": {
+      "rmse": 13.854995918610015,
+      "starts": 6
+    },
+    "early_return": {
+      "rmse": 8.379793607697552,
+      "starts": 6
+    },
+    "reapproach": {
+      "rmse": 7.47186216399801,
+      "starts": 5
+    },
+    "varied": {
+      "rmse": 17.61626465612386,
+      "starts": 6
+    }
+  },
+  "caution": "Repeated means are now training-data summaries, not out-of-sample evidence"
+}

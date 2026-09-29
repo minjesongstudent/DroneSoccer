@@ -1,0 +1,691 @@
+{
+  "records": [
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_0.npz",
+      "split": "heldout",
+      "group": "early_return",
+      "sha256": "dd0d61c5d6de764a88a1cc9721b2e782230a5856011ce01f6212873fb4dc0e46"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_1.npz",
+      "split": "fit",
+      "group": "early_return",
+      "sha256": "8d1f693fc41cbc407815496d2cf124b4b3446e85a7de4576184e3eb2a32f4890"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_2.npz",
+      "split": "fit",
+      "group": "early_return",
+      "sha256": "951d1a265634b99029d4e32767fceded40fa5a56b95b6e7dd53b69fc6724dd21"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_3.npz",
+      "split": "heldout",
+      "group": "early_return",
+      "sha256": "5efe72846ca8d78d8643e05c8ab8fb1e1541ebf52fd3d26ea8718d3006325d23"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_4.npz",
+      "split": "fit",
+      "group": "early_return",
+      "sha256": "41f8ad544e826d1297fd2e858473727da0fdc9c5671def201f2c2b3545a602a7"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_5.npz",
+      "split": "fit",
+      "group": "early_return",
+      "sha256": "96cdd22b6e081f70024418072bcb75bbd87118a6c85ef558e2f52d60077140b6"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_6.npz",
+      "split": "fit",
+      "group": "early_return",
+      "sha256": "3e9d408246d6bf61bfcb88f92c2b7fd2272916add09e41f49823fcb76e4727eb"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_7.npz",
+      "split": "fit",
+      "group": "early_return",
+      "sha256": "5b00ed4203f16c7e4da64b4311b0da3f6603345a0941bbd37745ef2e28f199e9"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_8.npz",
+      "split": "heldout",
+      "group": "reapproach",
+      "sha256": "2100872fe95835b56d898bd607d937874c159ecf850de47953b8ab4e4087e935"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_9.npz",
+      "split": "heldout",
+      "group": "reapproach",
+      "sha256": "7161ab8577db6fd8add9be7c14035cbc7a4c226728ab7b3d7bf23ec7c7775439"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_10.npz",
+      "split": "fit",
+      "group": "reapproach",
+      "sha256": "2ac95cf667faf6a78949170588d17e3d364fc152ba6f6e5be0cd0bb7fb42d329"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_11.npz",
+      "split": "fit",
+      "group": "reapproach",
+      "sha256": "71ced9476a7b6e1750dd7f2dd817f52716cafc56ac66f1fe5b59588614377e51"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_12.npz",
+      "split": "fit",
+      "group": "reapproach",
+      "sha256": "f45062bf73dde7a607881ffcdebaae1dee7b7128063b90c435719da7f7f6490f"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_13.npz",
+      "split": "fit",
+      "group": "reapproach",
+      "sha256": "addc9d6dc1f2efa6b32be14e4ebc3bec7fcb14535c70435f6267fe88065b051d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\acquisition-return-mixture-20260928\\rollout_0_14.npz",
+      "split": "fit",
+      "group": "reapproach",
+      "sha256": "d2b1f467b53d280295808483ae70bd6dea49186cd09d7db9893619e714e94525"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_0.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "6ee882aa37b48b699f71610e07d2a2ec4c9944ffef48ecc118eaaba0dcc8880f"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_1.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "d063a79826c3af585a7a04a1891845e4c287a02444bf8e2fb51ab74d54327315"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_2.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "770bbbb2212bb0eeeb49297664df625275c3c3518a97ca7a034e8322930e2b96"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_3.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "9a5293d9e8f816280500b7927d82a3da1c60f4fe3dc3caa04cafb526e89678d1"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_4.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "2704c2f720960634e7bcef9db82f3a3b2ef9e71113cb57da9e583ec4e09f39ee"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_5.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "e8a664eac79bd65eee2326e05a3bafb4d27667efe5481332257828beabb58d0e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_6.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "290cb4064ec7c3157b8f497d71c2f19e6364ef42b1cc43138bd2edab1495b89b"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_7.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "1f43c991a9b101c64ccfae8009d25d14e931fc4aba563b52ee9c81dcef10c20d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_8.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "8af670aafe813875a2fe722c34ac52639bfc2d7cf4ee7583167b7b5299337be7"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_9.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "211f3a65841679f4cd47685ccc8888700de8c2066c2d40473209d9abfc55e255"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_10.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "2967d8ffb4e08bef9a92602b603b02d2f6b2b7d570c8d5beaca9afcc0a825847"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_11.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "72afd6a746329acf6c32c96c63ae828a98ff5fa5c0e903e6c4ea607346a35fb0"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_12.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "cf90a09cc10679944ea424205b0a0bfcc3b0fa976a45f5e7b6c7180240209482"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_13.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "6f7271f41a511e49bed83e85d77b1e43c60b54d42b81cbc9130c1f2c81b6cf4c"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_14.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "c02bf881fcbfdf72fb98dfc43be616beabc7820d9fae5befa74b3a321a3b3be6"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_15.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "00057fd376cf3bdcb88c70e7e1476b86f07bc8ec9682dcfd222dad8f0f68da29"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_16.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "4ba74b1425221664c546a696bc56fcb85e0cd4e5a1cb4d34be18b795194259c8"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_17.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "a45e407ad07e0d0377173fdb1cf5197b27315d69dfaaed88aee845d379c16c5e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_18.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "1827fd90ab879c53313f973c1642b9376e8b92ef8364878bd79884521be8d73d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_19.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "5ddcb7811b53ce26af88e469dc2b0a2f145db3161000b81d7502f82ea4c5040e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_20.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "92d3e8458bac088bef556028d4a01d1cd82a0dd20d5dd8b1e1eb68f6c3a50be8"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_21.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "35ec80807f35e48922e65420080d7733f4f342aec8e4d6d11836da504c215c3d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_22.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "3b7112ab50ba2222ddb284bbbece67271c51c67a86df70ef0a17d5399bbf63cf"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_23.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "29ae7629b87d2577645da2bb11ae3b1dec83cedf36f95a629bceab8ff1a1fc49"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_24.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "2fd6c469929ee113aa3c17fc25be5a58ae40b84cc429ae26e80d197e30399385"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_25.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "9333c8e030c9b56ea607f8d5a8ddc7121685d5fa8540661ce0b6462730ed72df"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_26.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "d9a730f5f29a984c92a442a003b96e99ad65da7c6787f6a26e8bf13556db4426"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_27.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "50c4900fbeeac191a6cf735e3e0dc7f4c8927bbc44cc301abd9e398a190b5d47"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_28.npz",
+      "split": "heldout",
+      "group": "natural_nominal",
+      "sha256": "babd4f74b687de417d524347f2e2768b24f66712ab7ec047be430f8079bbd239"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_29.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "1f20a96a9671dbb17a0c55b197ebb068a741f743225420be1454e549a784c7cc"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_30.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "0bb00aaff61589ae87ca1cf8384323e0b04d110296d7ccd3f6b429f2ff2df586"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_31.npz",
+      "split": "fit",
+      "group": "natural_nominal",
+      "sha256": "a9956da61df6091672433b58d33ea3ee85764956e92e4d77f3c627a1105c2e04"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_32.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "e69a14a521f0af46b8c8386b4f9b0c41942fc22869e43961bfd7e1df00a578b3"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_33.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "6557a216339635eabbee2974cd43830c224844a37648e9950b2d517932b0e8c0"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_34.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "873f6e37040c27873e27574d0b83f12f9e64f09913e15272b6c89a9017223ed5"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_35.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "9fd984247622a55db3c630a76961742554fd2a4e462ce694e58813f497ccf30f"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_36.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "1ffc970a587bca2ab9e832c5c69ec4b5960c81cecf5ce082b141ce683cc4be17"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_37.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "10a2e4f64af37abe01582353d1a6a1be54bec90ad85d5ffd038a7928fd26588e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_38.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "9e14cb25173e92ff29311d862e17e1a0341cfa7f3d1bdb55e45665c86536658e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_39.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "db711cd7a61bcb7dd38583e762670427d18d9d000404d025eb1d16200a27d4cc"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_40.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "559f6ca3f88ccc1ffb3bf2c56af99d064edfebac6877bfbfcbb1b8bb31bcd331"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_41.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "921ed4e1e37805ff20a7b701c41159214d90d517741e04bf5bdcecf05c5f8012"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_42.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "58c026990f7cc0d20d8544fd46f5e2d11d472febda26517590e52fe4db90e559"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_43.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "fc12fa9aaf88df2a9ef28853444745a8027f106df316f5d9e9d147dd0d00fd03"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_44.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "da0a32b79ddce7cd9c85770cca54ad0a978957d45052f9f57faa1836dd981ccf"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_45.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "d5aaaf1e1c6c55b30177496d7cfefb53c444925b7783674651fb2471e0f8b932"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_46.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "42096713535b1ce9ac84502359809c25aa60815eedc7d70adc894c21883ba87e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_47.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "cd0b7cc524d97d0122d16c8c9ec1c9ee240bd30f77ecec591060508578024820"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_48.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "8375e127450a6e41876e97714be2d1d8772fd2fa313b4a700d3372438be2941d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_49.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "4effbbaa05eaa158ce5d8f00c77c258d0eb523a144c52ed352deb12ab6b6e2fc"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_50.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "527c3be049e7d27bedceba2c9d591c214bc910de3da5f142c9c615074b514bac"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_51.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "49f7f85ff1a90de64a1edad33e5b7f4bf0097c63ebbacc6cd70504a3f3256155"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_52.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "6c72023e048726b23ba687ce177f961d809f236d506f8677a9cd2ab08162ebd9"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_53.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "2bcbe75b7d51f3e6a2ccbaed0767c90abb0985fd70e4556a368ae52f7249dfa4"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_54.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "3f15771482e63a5328d77a00f3b594a700faa7adf975c544aa3b37df186440fc"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_55.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "24156624ae959e16c687fd249b9ff42ab2bc39951cdf01da071e0c2e1c6e152d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_56.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "8c0f399efd76f98bb00582dd29526824c5752db87992c9aab21d239ff530a258"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_57.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "4627ff256af6679f39faa306fabb6ce6ed16ce3e365a8a34ba1ce69bed171b4f"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_58.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "3fcf76655396a0b339e80c1717d3a95736fa36ec09fd70dbdba14eedde71e87f"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_59.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "c9d76927980e97aebafbae724bd457fe84d63d1e5592d2ef7302676cfa991352"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_60.npz",
+      "split": "heldout",
+      "group": "natural_delayed",
+      "sha256": "701ea72fc513a8c9c0ad6d77d1b0c878c8a21ab558694422a3346328bea1d726"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_61.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "7613490eaff96aae541be441a1a2b3e8f6edb91f9f27d5ff9f37776d05518a96"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_62.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "e4a8051507abd082f86a2a95db81a35f0aed1778ab1152f313f9d347d76f67f1"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_63.npz",
+      "split": "fit",
+      "group": "natural_delayed",
+      "sha256": "177e8c1941530790d38618fafc0d1fbde0233413c2a080f549018f845f1d0ee3"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_64.npz",
+      "split": "heldout",
+      "group": "centered",
+      "sha256": "645a88ea53821eb1394055c111b5aee81b372fd421f3f1b76077401a902be119"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_65.npz",
+      "split": "fit",
+      "group": "centered",
+      "sha256": "858967bf0a56c661a394f76a8314c4e2fdc9f45123dad28a4408b4eb4139f649"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_66.npz",
+      "split": "fit",
+      "group": "centered",
+      "sha256": "7ec06b9f811b395c453ec8a4604927e7988721cf3538860e382b41c98a6bff48"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_67.npz",
+      "split": "fit",
+      "group": "centered",
+      "sha256": "44fd22294572c71a5822c4d91d4fa674520d5efdb4140ca54f3c0eb747e1545c"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_68.npz",
+      "split": "heldout",
+      "group": "centered",
+      "sha256": "7b5f42f4850e6ee9c4092e2ccff8eaef3d28b95197c94d7c61ef4a577459ca17"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_69.npz",
+      "split": "fit",
+      "group": "centered",
+      "sha256": "18b4593a9fb0803b09ee21fb39f40615671cfd9ea969f4c6f7377bd00210517d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_70.npz",
+      "split": "fit",
+      "group": "centered",
+      "sha256": "cba8aa04ac1bb7b14ed66427226a0dd13e22477a446f398f4af00745487d8175"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_71.npz",
+      "split": "fit",
+      "group": "centered",
+      "sha256": "f57064e56eaf19de741d42b927f1e2a7c7772856e4aac04ebbec16e5ac4e6e75"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_72.npz",
+      "split": "heldout",
+      "group": "varied",
+      "sha256": "8463214815d9756c90a2bf0fbc223702afd97c1927864b8ec7bb7a25aa930b5a"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_73.npz",
+      "split": "fit",
+      "group": "varied",
+      "sha256": "afe5ab57301fcc2f670d12386ebf12244e0dbdfafdc4864f857a0d1d8de2cdec"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_74.npz",
+      "split": "fit",
+      "group": "varied",
+      "sha256": "4b217e958870fa1137aa3f1c60d5013f8445575839b7f8d54dab0abda16cd757"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_75.npz",
+      "split": "fit",
+      "group": "varied",
+      "sha256": "8a401298c926c1aa5ab4dad3551702ddd63777315a0730fc6df50352838fe88e"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_76.npz",
+      "split": "heldout",
+      "group": "varied",
+      "sha256": "f78a6f73d6b1ee29944627185d85737f2ba45474a5214aec9965b4ca934e73f0"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_77.npz",
+      "split": "fit",
+      "group": "varied",
+      "sha256": "1fcef125695879ebdde7f2ad75395fcaeeede3542da558a48f8f834f49d8e328"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_78.npz",
+      "split": "fit",
+      "group": "varied",
+      "sha256": "854d12121f6984fb0f4de79b8eb770c0f8639af1f75108c1a432904c0b9fd89d"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\value-natural-coverage-20260928\\episode_79.npz",
+      "split": "fit",
+      "group": "varied",
+      "sha256": "18cdf9a4b989a725160e389014f8c7102cf6fe27f1114b95bc3e5c99ed3fc444"
+    }
+  ],
+  "fit": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    10,
+    11,
+    12,
+    13,
+    14,
+    16,
+    17,
+    18,
+    20,
+    21,
+    22,
+    24,
+    25,
+    26,
+    28,
+    29,
+    30,
+    32,
+    33,
+    34,
+    36,
+    37,
+    38,
+    40,
+    41,
+    42,
+    44,
+    45,
+    46,
+    48,
+    49,
+    50,
+    52,
+    53,
+    54,
+    56,
+    57,
+    58,
+    60,
+    61,
+    62,
+    64,
+    65,
+    66,
+    68,
+    69,
+    70,
+    72,
+    73,
+    74,
+    76,
+    77,
+    78,
+    80,
+    81,
+    82,
+    84,
+    85,
+    86,
+    88,
+    89,
+    90,
+    92,
+    93,
+    94
+  ],
+  "heldout": [
+    0,
+    3,
+    8,
+    9,
+    15,
+    19,
+    23,
+    27,
+    31,
+    35,
+    39,
+    43,
+    47,
+    51,
+    55,
+    59,
+    63,
+    67,
+    71,
+    75,
+    79,
+    83,
+    87,
+    91
+  ],
+  "epochs": 16,
+  "lr": 0.001,
+  "target": "Recorded gamma .999 Monte Carlo returns divided by40; multiply predictions by40 for raw units",
+  "actor_frozen": true,
+  "critic_names": [
+    "mlp_extractor.value_net.0.weight",
+    "mlp_extractor.value_net.0.bias",
+    "value_net.weight",
+    "value_net.bias",
+    "lstm_critic.weight_ih_l0",
+    "lstm_critic.weight_hh_l0",
+    "lstm_critic.bias_ih_l0",
+    "lstm_critic.bias_hh_l0"
+  ],
+  "selection": "All checkpoints reported; no heldout optimization or best-checkpoint selection",
+  "holdout_grouping": "Old parent source flights 0/3 including derived snapshots; new predeclared every fourth episode",
+  "weighting": "One mean squared loss per episode per epoch, shuffled; metrics frame weighted within category",
+  "source_sha256": "8cf74f2e95caba0e170729914a90512d7e42f9bd364c9df99070880e03f20727"
+}

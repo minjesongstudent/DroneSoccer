@@ -34,3 +34,7 @@ Frozen learned-flight diagnostics found metric error below3.7cm on the sampled f
 Repeat learned stochastic continuations from identical genuine post-pass states/actions before choosing another value-learning treatment. Any calibration dataset must remain separate from fixed validation. Do not add simulator truth to deployable actor inputs, substitute a scripted controller, weaken success criteria or merely extend a stalled trial.
 
 Simulation completion still requires three sustained fixed validation checkpoints followed by an independent100-layout test. Reserved7M acceptance seeds have not been used. Camera calibration, sensing, real command response and physical clearance remain lab work. There is no claim of completed autonomous physical flight.
+
+## 29 September continuation
+
+The latest recurrent history, critic, independent-baseline, latency and paused-run results are documented in [LATEST_PROGRESS.md](LATEST_PROGRESS.md). It includes the final 29,770-step trial and evidence limitations. No checkpoint has met simulation acceptance.

@@ -1,0 +1,62 @@
+[
+  {
+    "epoch": 0,
+    "fit": {
+      "frames": 2042,
+      "rmse": 36.9977912902832,
+      "explained_variance": -5.677402973175049,
+      "constant_fit_mean_rmse": 12.940624237060547
+    },
+    "heldout": {
+      "frames": 863,
+      "rmse": 46.65525436401367,
+      "explained_variance": -5.030473709106445,
+      "constant_fit_mean_rmse": 17.0362606048584
+    }
+  },
+  {
+    "epoch": 4,
+    "fit": {
+      "frames": 2042,
+      "rmse": 10.716257095336914,
+      "explained_variance": 0.4077255129814148,
+      "constant_fit_mean_rmse": 12.940624237060547
+    },
+    "heldout": {
+      "frames": 863,
+      "rmse": 14.523228645324707,
+      "explained_variance": 0.3937247395515442,
+      "constant_fit_mean_rmse": 17.0362606048584
+    }
+  },
+  {
+    "epoch": 8,
+    "fit": {
+      "frames": 2042,
+      "rmse": 9.732463836669922,
+      "explained_variance": 0.5890069603919983,
+      "constant_fit_mean_rmse": 12.940624237060547
+    },
+    "heldout": {
+      "frames": 863,
+      "rmse": 14.039433479309082,
+      "explained_variance": 0.387850821018219,
+      "constant_fit_mean_rmse": 17.0362606048584
+    }
+  },
+  {
+    "epoch": 16,
+    "fit": {
+      "frames": 2042,
+      "rmse": 7.962005615234375,
+      "explained_variance": 0.7020017504692078,
+      "constant_fit_mean_rmse": 12.940624237060547
+    },
+    "heldout": {
+      "frames": 863,
+      "rmse": 10.003100395202637,
+      "explained_variance": 0.6650325655937195,
+      "constant_fit_mean_rmse": 17.0362606048584
+    }
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "seed": 6920010,
+  "delays": [
+    0,
+    2
+  ],
+  "models": [
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\return-focused-actor-20260929\\model_0.zip",
+      "sha256": "f845b632fa9c2f5d196494efb0bfd8a4ffd2247d256de34699b5b61e6a2a9290"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\return-focused-actor-20260929\\model_1.zip",
+      "sha256": "2e07fb1ea1c5c9dca29fcc14e7bf52d3f220f65e4e74440599ef8c3eda541ed1"
+    },
+    {
+      "path": "PROJECT_ROOT\\DroneSoccer-Optimized\\diagnostics\\return-focused-actor-20260929\\model_2.zip",
+      "sha256": "7ab4f79e03472b090fdf7cd1ea6e8efb4b18202e12c88c635a553b4402577f11"
+    }
+  ],
+  "purpose": "Development trajectory diagnostics only, no training; truth fields logged after actor prediction"
+}

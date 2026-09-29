@@ -1,4 +1,4 @@
-Latest update: [recurrent experiments and measured results,28 September](optimized/LATEST_PROGRESS.md). Reliable repeated laps remain unsolved.
+Latest update: [recurrent experiments and measured results,29 September](optimized/LATEST_PROGRESS.md). Reliable repeated laps remain unsolved.
 
 # Local GPU ring-flight experiment
 

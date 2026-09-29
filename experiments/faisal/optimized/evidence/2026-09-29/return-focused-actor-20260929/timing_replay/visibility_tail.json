@@ -1,0 +1,44 @@
+[
+  {
+    "model": 0,
+    "delay": 0,
+    "end": 472,
+    "lastVisibleAction": 409,
+    "finalBlindSteps": 63
+  },
+  {
+    "model": 0,
+    "delay": 2,
+    "end": 600,
+    "lastVisibleAction": 277,
+    "finalBlindSteps": 323
+  },
+  {
+    "model": 1,
+    "delay": 0,
+    "end": 600,
+    "lastVisibleAction": 504,
+    "finalBlindSteps": 96
+  },
+  {
+    "model": 1,
+    "delay": 2,
+    "end": 284,
+    "lastVisibleAction": 268,
+    "finalBlindSteps": 16
+  },
+  {
+    "model": 2,
+    "delay": 0,
+    "end": 492,
+    "lastVisibleAction": 481,
+    "finalBlindSteps": 11
+  },
+  {
+    "model": 2,
+    "delay": 2,
+    "end": 285,
+    "lastVisibleAction": 269,
+    "finalBlindSteps": 16
+  }
+]

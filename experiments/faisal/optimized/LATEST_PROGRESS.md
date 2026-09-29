@@ -1,41 +1,121 @@
-# Latest results: 28 September 2026
+# Progress and experiment record — 29 September 2026
 
-The goal remains one policy that fully clears the hanging ring, returns around its outside, passes again and survives the600-step mission in the2.05m cage. Physical flight is unvalidated. No checkpoint has met simulation acceptance.
+Work is paused. The latest bounded experiment completed before the pause;
+no training or simulator viewer is running. No checkpoint has met simulation
+acceptance, and physical flight remains unvalidated.
 
-| Experiment | Centered /25 | Varied /25 | Front returns /25 | Full mission /25 |
-|---|---:|---:|---:|---:|
-| Recurrent supervised basic transfer,300 updates |25|20|0|0|
-| Recurrent RL fine-tuning,32,768 steps |25|23|0|0|
-| Whole-lap supervised transfer,300 updates |25|22|2|0|
-| Whole-lap supervised transfer,500 updates |25|21|3|0|
+The target remains one learned policy that fully passes through the hanging
+ring, returns around its outside and passes again in the 2.05 m cage. Every
+training and evaluation movement in the experiments below came from the learned
+policy. Simulator geometry was used for rewards, resets and separate diagnostics,
+not silently supplied to the deployable actor observations.
 
-Front returns are recorded by the front-start lesson; they are intermediate events, not successful missions. At500 updates the front-start crash rate was22/25; general and delayed full-task success also remained0/25. These25-layout comparisons are small fixed development tests, not independent acceptance results. Three sustained validation checkpoints and a fresh100-layout-per-suite acceptance test remain required; independent7M seeds have not been used.
+## Latest measured results
 
-## Development since the previous export
+The preserved recurrent source and the latest two-update latency-bank trial
+both scored 25/25 centered passes and 21/25 varied passes on the fixed suite.
+The latest run used 29,770 new environment steps; both accepted updates retained
+those basic scores, with 0/25 full-mission successes under both nominal and
+200 ms delayed commands. The latest model is an experimental checkpoint, not
+a replacement for the preserved source.
 
-1. Continued controlled SAC comparisons: balanced replay, source anchoring, geometric return recognition and reset coverage did not solve repeated laps. Failed trials and regression stops were preserved rather than presented as improvements.
-2. Collected authentic learned flights and separated fit layouts from reserved checks. A2048-flight collection produced11 complete repeated-lap successes:9 fit and2 reserved. This low success rate is the denominator for the selected successful examples, not evidence of a reliable producer.
-3. Investigated finite-return critic fits and bounded on-policy updates. Generalization and policy-change checks rejected treatments that did not establish improvement. Historical scripts, reports and protocols are exported as evidence.
-4. Tested maintained RecurrentPPO with119 public observation values and correctly carried LSTM state. A fresh mixed-task run and subsequent close-start runs learned no validated passes. One launch failed due to memory allocation; historical replay servers were closed and the bounded run restarted. The failure was preserved.
-5. Diagnosed the close lesson: the camera detector saw the ring in0/100 close resets,33/100 near resets and100/100 centered/varied resets. The preserved SAC policy passed25/25 centered diagnostic flights but0/25 close starts. Camera geometry was not changed to hide this limitation. Centered-start recurrent training alone still did not learn passes within its bounded trial.
-6. Initialized the recurrent actor by supervised imitation of a previously learned SAC policy. All actions came from that learned policy.80 fit and20 held-out complete flights were retained, including failures; teacher passes were72/80 and18/20. The recurrent student reached25/25 centered and20/25 varied validation passes at300 updates. This is supervised initialization, not pure reinforcement learning.
-7. Fine-tuned with PPO using centered/varied single-pass rehearsal and front-start laps. The first8192 steps trained only the critic; an actor hash verified unchanged movement weights. Subsequent RL retained25/25 centered and23/25 varied passing but stopped at32,768 steps for no front-return learning. Trajectories showed post-pass drift toward cage walls.
-8. Verified all nine fit lap trajectories against the current environment: complete119-value observation histories matched exactly and each ended with two passes and600-step survival. Used those whole histories for supervised recurrent transfer with basic-skill rehearsal. Reserved trajectories were excluded. At500 updates, three front returns appeared in25 development flights, but no full mission succeeded. Basic passing declined slightly to21/25 varied; this checkpoint is an experimental artifact, not a finished controller.
+| Trial | Accepted updates | Environment steps | Fixed nominal full /25 | Fixed delayed full /25 |
+|---|---:|---:|---|---|
+| Independent-rollout baseline |2; third rolled back|20,118|0 throughout|0 throughout|
+| Return-focused objective |2; third rolled back|20,632|0 throughout|1 at update 1; 0 at update 2|
+| Authentic latency-bank update |2; budget complete|29,770|0 throughout|0 throughout|
 
-## What is included
+Centered/varied retention stayed 25/21 for these fixed checks. The first two
+runs stopped when the unchanged maximum policy-divergence limit was exceeded;
+rejected changes were rolled back. See the exported evaluations for crash,
+return-to-front and passage counts rather than treating reward as success.
 
-Updated source and tests, recurrent dependency pin, four recurrent checkpoints with SHA256 manifest, training datasets for supervised transfer, checkpoint evaluations, protocols and selected diagnostic trajectories under evidence/2026-09-28. Earlier evidence remains intact. Historical runners retain local archive paths and are provenance records; they are not portable one-command training recipes. Large replay buffers and all unsuccessful collection trajectories remain in local archives. Exported text replaces the workstation project-root path with PROJECT_ROOT; original and exported hashes identify that metadata transformation.
+A separate development comparison of the return-focused source/update1/update2
+used 25 new layouts per suite. Nominal full successes were 0/1/0 and delayed
+successes 1/0/0. On one nominal episode, update1 made three passages and survived
+600 steps. On that same layout with delayed commands, it regressed from the
+source's two-pass survival to a collision after one pass. Full-task crash rates
+were 96–100%. This is an isolated learned-policy result, not robust completion.
+No candidate was promoted using that result.
 
-## Reproduce saved-policy evaluation
+## Process and findings
 
-Run from this directory with Python3.12 and CUDA PyTorch, after installing requirements-tested.txt and requirements-recurrent.txt:
+1. Reconstructed recurrent memory from authentic public observation histories
+   before updates and continuation evaluations. Added reset-isolation, replay
+   likelihood and rollback checks. Stored states never replace current-weight
+   memory reconstruction during training.
+2. Tested critic-only calibration with the actor frozen. Pooled prediction
+   improvements hid weak return-category predictions. Broader data, balanced
+   category losses and repeated-flight data were tested separately. All models
+   were retained, but none was promoted as a reliable return predictor.
+3. Measured stochastic target variability with 96 basic-flight repetitions and
+   88 authentic return continuations. Identical starts often produced different
+   sampled outcomes. These repetitions are correlated training evidence, not
+   independent layouts or deterministic acceptance tests.
+4. Replaced the unreliable critic baseline in a bounded policy experiment with
+   the mean return of other independent trajectories from the same start. Each
+   trajectory's own outcome was excluded. Tests checked that independence, and
+   live likelihood replay matched exactly before updates. Basic skills remained,
+   but reliable repeat missions did not emerge.
+5. Located the largest accepted policy drift on a basic-pass history. A second
+   trial removed basic-task reinforcement gradients while keeping those histories
+   in the fixed policy-change guard and retention validation. It produced the
+   isolated three-pass development episode but no sustained improvement.
+6. Replayed six nominal/delayed cases with the learned policies. All outcomes,
+   passage counts and terminal steps matched saved evaluation records. Failures
+   were ring collisions during re-approach; the updated delayed policies collided
+   after 1.6 seconds without seeing the ring. This is local diagnostic evidence,
+   not proof of a universal failure cause.
+7. Collected 128 full-task flights from 64 paired nominal/delayed layouts. Every
+   fourth parent layout was held out across both dynamics and all descendants.
+   All 42 snapshots passed recurrent-state and next-transition replay checks.
+   The training split contained 15 nominal return starts, 14 delayed return
+   starts and one delayed re-approach. Earlier return-history collection used
+   guided lessons; it must not be described as the same full-task distribution.
+8. Audited 120 continuations from the 30 training snapshots. Only two stochastic
+   continuations made a new passage; one survived. These are continuation results,
+   not natural-start acceptance. The resulting verified latency bank supported
+   the final two-update experiment, whose result is reported above.
+
+## Files and reproduction
+
+- Current simulator and learning utilities: `src/` and `tests/`.
+- Experiment runners and detailed reports: `diagnostics/`.
+- Protocols, evaluation records, source snapshots and recorded arrays:
+  `evidence/2026-09-29/`.
+- Source/export hashes: `evidence/2026-09-29/export-manifest.json`.
+- Selected new checkpoints: `models/september29-manifest.json`.
+- Previous history: `LATEST_PROGRESS_20260928.md` and `DEVELOPMENT_PROCESS.md`.
+- Mac recorder, simulation checker and motors-off camera/policy preview:
+  `../lab-tools/`. Camera preview proposes actions; it does not fly the drone.
+
+From this optimized folder, after installing `requirements-recurrent.txt` in
+an environment with CUDA-enabled PyTorch, a portable fixed evaluation is:
 
 ```powershell
-python evaluate_recurrent.py --model models/recurrent-lap-transfer-500.zip --output evaluation-500.json
+python evaluate_recurrent.py --model models/latency-bank-actor-20260929-update-2.zip --output latest-fixed-evaluation.json
 ```
 
-This uses the unchanged fixed development suites and authentic recurrent episode resets. It does not start training or connect to a physical drone. The model's stored RL step count and its supervised update count are different quantities; use the checkpoint manifest and experiment protocol for provenance.
+The command refuses to overwrite an existing output file. Use a fresh filename.
+This is a new evaluation, not a claim that the repository update reran training.
+Checkpoint weight entries are unchanged; local logging metadata was removed
+from selected exported archives and both original/export hashes are recorded.
+The critic-only checkpoint predicts returns divided by 40 and must not be used
+as an ordinary raw-value PPO resume.
 
-## Next work
+Historical runners record their original layout and require path adaptation:
+`PROJECT_ROOT` denotes the original workspace; archived drive references denote
+local experiment storage. Exported evidence contains source snapshots and raw
+arrays, but pickled environment snapshots, full optimizer states and all
+historical model files remain preserved locally. The publication is not an
+exact-resume bundle for every historical experiment. No data is fabricated to
+fill those missing artifacts.
 
-Inspect the three front-return trajectories to determine why the second passage fails, compare the300- and500-update checkpoints, and test any justified change with single-pass retention and full-flight checks. Keep actual camera/telemetry availability, camera calibration, latency and motion-response measurements on the lab checklist. The PC is intended to run inference and transmit commands; this does not supply unseen position or wall measurements.
+## Remaining requirements
+
+Simulation completion requires three sustained fixed-validation checkpoints,
+then the separate fresh 100-layout-per-suite acceptance test. Reserved acceptance
+seeds remain unused. The observed isolated successes do not meet that requirement.
+Physical flight still requires measured camera calibration, detector/marker
+checks, command response and latency verification, and supervised lab validation.
+No claim of autonomous physical ring flight is made.
