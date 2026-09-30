@@ -168,6 +168,11 @@ class HoopEnv(gym.Env):
         # the geofence count; a layout from place() may have none, so keep both then.
         gates = [hoop_centre + s * (radius_h + SIDE_GAP) * self._axis_h for s in (1, -1)]
         self._gates = [g for g in gates if self._in_fence(g)] or gates
+        # The open hole inside the noodle, and the point out front to line up on.
+        self._hole_h, self._hole_v = self._line_h - half_t, self._line_v - half_t
+        self._approach = hoop_centre - CLEARANCE * n
+        # Sideways from the centre, past which the drone clears the rim going round.
+        self._beside = radius_h + SIDE_GAP / 2
 
     def _start_episode(self):
         # Randomised dynamics are drawn once per episode into a copy of the drone.
@@ -225,42 +230,44 @@ class HoopEnv(gym.Env):
         self._actions.append(action)
 
         terminated = outcome in contract.CRASHES
-        shaping = self._phi(self.pos, terminated) - self._phi(prev, False)
-        reward = (shaping
-                  - contract.R_HIDDEN * (1.0 - obs[6]) - contract.R_STEP
-                  - contract.R_WALL * on_wall
-                  + contract.R_PASS * (outcome == "passed") - contract.R_CRASH * terminated)
+        reward = contract.reward(outcome, self._to_go(prev), self._to_go(self.pos),
+                                 on_wall, obs.copy(), action.copy())
         truncated = not terminated and self.steps >= contract.LAPS_MAX_STEPS
         if truncated:
             outcome = "timeout"
         return self._policy_input(), float(reward), terminated, truncated, self._info(outcome)
 
-    def _phi(self, pos, terminated):
-        """The shaping potential: minus the distance to the target.
+    def _to_go(self, pos) -> float:
+        """Metres left round the lap to the next pass, along a route that keeps
+        off the noodle. A straight line at the hoop centre from the side, or at
+        a side gate from just behind the ring, runs into the rim.
 
-        Zero at a terminal state. Potential-based shaping only leaves the best
-        policy unchanged when the potential vanishes at the end, so a crash
-        must score the same wherever it happens.
-
-        This reads `pos` alone and never the step before it. Reward that
-        depends on the path, not the state, is reward the agent can farm.
-
-        The caller pays phi(next) - phi(prev) with no discount on phi(next).
-        Discounting it pays (GAMMA - 1) * phi every step the drone holds
-        still, and phi is negative, so the drone would earn 0.05 per metre
-        per step for loitering out of reach. See test_hovering_costs_only_time.
+        In front, lined up with the hole: straight to the centre.
+        In front, not lined up: to the approach point CLEARANCE out front, then in.
+        Behind, still within the rim's width: out to a point CLEARANCE behind a
+        side gate, so the drone backs off the rim. Beside the rim: straight to
+        the gate, then round to the approach point.
+        Crossing the plane outside the ring never raises the distance to go, so
+        the only jump up is at a pass, which R_PASS pays for.
         """
-        if terminated:
-            return 0.0
-        target = self._progress_target(pos)
-        dist = float(np.linalg.norm(pos - target))
-        return -contract.POT_SCALE * dist / contract.PROGRESS_UNIT
-
-    def _progress_target(self, pos):
-        """The hoop centre, or from behind the hoop, the nearest side waypoint."""
-        if (pos - self.hoop_centre) @ self.hoop_normal >= 0.0:
-            return min(self._gates, key=lambda g: np.linalg.norm(pos - g))
-        return self.hoop_centre
+        rel = pos - self.hoop_centre
+        along = rel @ self.hoop_normal
+        h = rel @ self._axis_h
+        if along < 0.0:
+            v = rel @ self._axis_v
+            if (h / self._hole_h) ** 2 + (v / self._hole_v) ** 2 < 1.0:
+                return float(np.linalg.norm(rel))
+            return float(np.linalg.norm(pos - self._approach)) + CLEARANCE
+        best = np.inf
+        for gate in self._gates:
+            rest = float(np.linalg.norm(gate - self._approach)) + CLEARANCE
+            if h * ((gate - self.hoop_centre) @ self._axis_h) >= self._beside ** 2:
+                to_gate = float(np.linalg.norm(pos - gate))
+            else:
+                back_off = gate + CLEARANCE * self.hoop_normal
+                to_gate = float(np.linalg.norm(pos - back_off)) + CLEARANCE
+            best = min(best, to_gate + rest)
+        return best
 
     def _crossing(self, prev):
         """None, or (direction, inside, rel) if this step crossed the hoop's plane.
