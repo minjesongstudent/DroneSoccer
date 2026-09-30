@@ -273,6 +273,10 @@ def build(name: str, expected: int | None = None, job: str = "-") -> str:
     out = [name, f"job {job}   git {git}   {counts}{steps}",
            f"written {datetime.now():%Y-%m-%d %H:%M}", ""]
     out += ["SETTINGS"] + settings_table(line, args) + [""]
+    # What changed in the sim or reward for this run, in words: runs/<name>.notes.
+    notes_file = RUNS / f"{name}.notes"
+    if notes_file.exists():
+        out += ["NOTES"] + [f"  {n}".rstrip() for n in notes_file.read_text().splitlines()] + [""]
     if not seeds:
         out += ["RESULTS", f"no logs at runs/{name}_s*.log", ""]
         best = None

@@ -4,7 +4,7 @@ from gymnasium.utils.env_checker import check_env
 
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Randomise
-from src.contract import LAPS_MAX_STEPS, R_CRASH, R_HIDDEN, R_PASS, R_STEP, R_WALL
+from src.contract import LAPS_MAX_STEPS, R_CRASH, R_PASS, R_PROGRESS, R_WALL
 from src.sim import SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
@@ -165,8 +165,8 @@ def test_the_geofence_holds_the_drone_without_ending_the_episode():
     assert env.pos[2] == pytest.approx(ceiling)
     assert info["wall_steps"] > 0
     # Pressed into the ceiling: the drone no longer moves, so the shaping is
-    # zero and only the time, the wall, and R_HIDDEN are left.
-    assert -(R_WALL + R_STEP + R_HIDDEN) - 0.01 <= reward <= -(R_WALL + R_STEP) + 0.01
+    # zero and only the wall is left.
+    assert reward == pytest.approx(-R_WALL, abs=0.01)
 
 
 def test_the_floor_and_every_wall_hold_too():
@@ -222,7 +222,7 @@ def test_lap_pass_scores_and_keeps_flying():
         _, reward, terminated, truncated, info = env.step([0.0, 1.0, 0.0, 0.0])
         if info["outcome"] == "passed":
             break
-    assert info["outcome"] == "passed" and reward > 20.0
+    assert info["outcome"] == "passed" and reward > 10.0
     assert not terminated and not truncated and info["passes"] == 1
 
 
@@ -237,17 +237,13 @@ def test_a_crash_costs_less_than_a_pass_pays():
         total += reward
         if terminated:
             break
-    # The crash step carries the shaping that closes the telescoping sum, so
-    # the cost shows in the episode return, not in the last step alone.
     assert info["outcome"] == "hit"
     assert total < 0.0 and -total < R_PASS
 
 
 def test_crashing_is_never_the_cheap_way_out_of_an_episode():
-    """R_STEP * LAPS_MAX_STEPS is above R_CRASH, so check the returns, not the
-    constants. An approach earns more shaping than the time it costs, so the
-    drone that flies at the hoop and crashes still loses to the one that waits.
-    """
+    """The approach earns some shaping, but never enough to cover R_CRASH, so
+    the drone that flies at the rim loses to the one that waits."""
     assert R_CRASH < R_PASS
 
     env = make_env()
@@ -266,7 +262,7 @@ def test_crashing_is_never_the_cheap_way_out_of_an_episode():
     assert crashing < hovering
 
 
-def test_hovering_costs_only_time():
+def test_hovering_earns_nothing():
     """A drone that holds still must earn no shaping at all.
 
     phi is negative, so discounting it inside the shaping would pay
@@ -275,34 +271,30 @@ def test_hovering_costs_only_time():
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     total = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
-    assert total == pytest.approx(-R_STEP * LAPS_MAX_STEPS, abs=0.1)
-    assert total < 0.0 and -total < R_PASS * 2
+    assert total == pytest.approx(0.0, abs=1e-6)
 
 
 def test_the_shaping_telescopes_and_cannot_be_farmed():
     """Any loop back to the start must earn nothing, whatever route it takes."""
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
-    start = env._phi(env.pos.copy(), False)
-    shaping = 0.0
+    start = env._to_go(env.pos.copy())
+    total = 0.0
     for action in ([0.0, 1.0, 0.0, 0.0],) * 20 + ([0.0, -1.0, 0.0, 0.0],) * 20:
-        prev = env.pos.copy()
-        _, _, terminated, _, _ = env.step(list(action))
-        shaping += env._phi(env.pos, terminated) - env._phi(prev, False)
-        assert not terminated
-    assert shaping == pytest.approx(env._phi(env.pos, False) - start, abs=1e-9)
+        _, reward, terminated, _, info = env.step(list(action))
+        total += reward
+        assert not terminated and info["outcome"] == "running"
+    assert total == pytest.approx(R_PROGRESS * (start - env._to_go(env.pos)), abs=1e-9)
 
 
-def test_phi_is_zero_at_every_terminal_state():
-    """Ng's result needs it. Otherwise the shaping pays a crash bonus that
-    grows with the distance to the hoop."""
+def test_crossing_outside_the_ring_never_raises_the_distance_to_go():
+    """Only a pass may cost distance to go, or going round would be punished."""
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
-    for offset in ([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [5.0, 0.0, 0.0]):
-        pos = env.hoop_centre + np.array(offset)
-        assert env._phi(pos, True) == 0.0
-        assert env._phi(pos, False) <= 0.0
-
+    for y in np.linspace(5.25, 6.2, 12):
+        for z in (1.0, 1.5):
+            behind, front = np.array([6.001, y, z]), np.array([5.999, y, z])
+            assert env._to_go(front) <= env._to_go(behind) + 0.01
 
 def test_back_through_the_ring_is_wrong_way():
     env = make_env()
@@ -351,12 +343,34 @@ def test_hanger_blocks_going_over_the_top(y, z, expected):
     assert (info["outcome"] if terminated else info["route"]) == expected
 
 
-def test_progress_targets_a_side_waypoint_from_behind():
+def _downhill(env, pos, e=1e-4):
+    return -np.array([env._to_go(pos + e * d) - env._to_go(pos - e * d) for d in np.eye(3)])
+
+
+def test_the_shaping_leads_away_from_the_rim():
+    """Straight at the centre from the side, or at a gate from just behind the
+    ring, runs into the noodle. The route must lead out first."""
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
-    assert np.allclose(env._progress_target(np.array([5.5, 5.2, 1.5])), HOOP_AT)
-    gate = env._progress_target(np.array([6.5, 5.2, 1.5]))
-    assert np.allclose(gate, [6.0, 5.0 + EXACT.outer_diameter / 2 + SIDE_GAP, 1.5])
+    # In front, beside the rim: out front (-x), not sideways into it.
+    assert _downhill(env, np.array([5.97, 5.5, 1.5]))[0] < 0.0
+    # Just through the ring: backing off (+x) as well as sideways.
+    step = _downhill(env, np.array([6.05, 5.05, 1.5]))
+    assert step[0] > 0.0 and step[1] > 0.0
+    # Well beside the rim behind it: forwards to the gate, to come round.
+    assert _downhill(env, np.array([6.3, 5.6, 1.5]))[0] < 0.0
+
+
+def test_following_the_shaping_flies_clean_laps():
+    """An oracle that only descends the distance to go laps without a crash."""
+    env = make_env()
+    env.place([5.0, 5.3, 1.3], 0.0, HOOP_AT, BACK)
+    for _ in range(LAPS_MAX_STEPS):
+        v = _downhill(env, env.pos)
+        v /= max(np.linalg.norm(v), 1e-9)
+        _, _, terminated, _, info = env.step([-v[1], v[0], v[2], 0.0])
+        assert not terminated, info["outcome"]
+    assert info["passes"] >= 8
 
 
 @pytest.mark.parametrize("angle_deg, expected", [(0, 1), (60, 1), (75, 0), (180, 0)])

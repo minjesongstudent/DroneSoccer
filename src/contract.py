@@ -24,37 +24,38 @@ import cv2
 import numpy as np
 
 # Reward per step = phi(next state) - phi(state)
-#                 - R_HIDDEN if the hoop is out of view, - R_STEP always,
-#                 - R_WALL while the geofence holds the drone back,
-#                 + R_PASS on a pass, - R_CRASH on a crash.
+#                 + R_PASS on a pass, - R_CRASH on a crash,
+#                 - R_WALL while the geofence holds the drone back.
 #
-# phi scores a state on its own: minus the distance to the target, in units of
-# PROGRESS_UNIT. Paying the change in phi each step gives the agent a dense
-# signal it cannot farm, because the payments telescope to
-# phi(end) - phi(start). The route between two points is worth nothing, so no
-# loop around the rim earns anything, and holding still earns exactly zero.
-# phi reads the state alone, so the target may jump when the drone crosses the
-# hoop plane without opening a way to farm the jump.
-#
-# phi is 0 at every terminal state. Every episode that ends in a crash or a
-# pass therefore collects the same -phi(start) in total, whatever route it
-# took, so the shaping cannot favour one ending over another. A timeout is not
-# a terminal state and keeps its live phi. See sim.HoopEnv._phi.
-R_PASS = 90.0
-R_CRASH = 15.0        # under R_PASS, or hovering out of reach beats trying
-POT_SCALE = 0.25      # phi = -POT_SCALE * metres to the target / PROGRESS_UNIT
-PROGRESS_UNIT = 0.10  # metres
-R_HIDDEN = 0.02
-R_STEP = 0.02        # R_STEP * LAPS_MAX_STEPS stays under R_CRASH, so crashing
-                     # early is never cheaper than flying the minute out.
-                     # POT_SCALE guards the same rule: phi is 0 at a terminal
-                     # state, so every crash banks +|phi(start)|. The cage
-                     # diagonal is 3.55 m, so that bonus reaches
-                     # POT_SCALE * 3.55 / PROGRESS_UNIT = 8.9, which must stay
-                     # under R_CRASH. See test_crashing_is_never_the_cheap_way.
+# phi = -R_PROGRESS * metres still to fly round the lap to the next pass (see
+# sim.HoopEnv._to_go). It reads the state alone, so the payments telescope to
+# phi(end) - phi(start): no loop earns anything and holding still earns zero.
+# The distance to go only jumps up at a pass, where R_PASS more than covers it,
+# so a whole lap pays exactly R_PASS.
+R_PASS = 40.0       # the pass step nets ~18: the distance to go jumps ~2.2 m there
+R_CRASH = 30.0      # above that net, so passing then crashing loses; the drone
+                    # must go round to profit. R_PASS 90 vs 15 taught pass-and-die
+R_PROGRESS = 10.0   # per metre still to go
 R_WALL = 0.5
 
 GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing
+
+
+def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
+           obs: np.ndarray, action: np.ndarray) -> float:
+    """The reward for one step. sim.HoopEnv.step calls this and nothing else scores.
+
+    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way").
+    to_go_before, to_go_after: metres left round the lap to the next pass, before
+        and after the step (sim.HoopEnv._to_go).
+    on_wall: the geofence held the drone back this step.
+    obs: the eight numbers the camera reports after the step (FIELDS).
+    action: the command the policy just gave (ACTION_FIELDS), each in [-1, 1].
+    """
+    return (R_PROGRESS * (to_go_before - to_go_after)
+            + R_PASS * (outcome == "passed")
+            - R_CRASH * (outcome in CRASHES)
+            - R_WALL * on_wall)
 
 # Only what the policy can see ends an episode. The geofence is not in the state,
 # so it clamps and charges R_WALL instead.
