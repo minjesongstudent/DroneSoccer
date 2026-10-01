@@ -1,0 +1,31 @@
+seed 0 FAILED, see runs/softwall_s0.log:
+  File "/shared/homes/u168687/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/shared/homes/u168687/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'git'
+seed 1 FAILED, see runs/softwall_s1.log:
+  File "/shared/homes/u168687/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/shared/homes/u168687/.local/share/uv/python/cpython-3.11.16-linux-x86_64-gnu/lib/python3.11/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'git'
+pass rates on held-out episodes:
+seed 0  FAILED
+seed 1  FAILED
+2 of 2 seeds failed, so nothing was deleted
+softwall
+job 100045   git ?   seeds 2/2
+written 2026-09-26 19:06
+
+SETTINGS
+args      --envs 4
+          settings not logged (run predates the settings line)
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     1st pass  level      steps   time
+0     failed            -      -          -      -
+1     failed            -      -          -      -
+
+FLAGS
+  !! seed 0,1: failed: FileNotFoundError: [Errno 2] No such file or directory: 'git'

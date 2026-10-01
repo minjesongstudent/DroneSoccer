@@ -38,7 +38,7 @@ HOLD_STEPS = 10    # steps after a flip before the next may happen
 # Lapper. After a pass the drone is only ~0.3 m past the hoop, too close to see
 # it, so the way round is a fixed box, flown blind on timing: sidestep, reverse
 # past the hoop's plane, sidestep back, turn to face it. Right is a guess; the
-# baseline cannot know which side has room, so some laps end at the geofence.
+# baseline cannot know which side has room, so some laps end in the net.
 SEARCH_YAW = 0.5       # turning speed while the hoop is out of view
 # The camera looks down, so a hoop above the drone stays out of view however it
 # turns. After each full turn without a sighting, climb while turning.

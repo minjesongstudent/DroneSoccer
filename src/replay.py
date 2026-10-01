@@ -97,7 +97,7 @@ def draw(env: HoopEnv, run: dict, title: str, path: Path):
         top.plot(*xyz[-1, :2], "X", color=CRASH, mec=HOOP, ms=11)
     top.set_xlim(-0.05, cage.length + 0.05)
     top.set_ylim(-0.05, cage.width + 0.05)
-    _style(top, "From above   (light = early, dark = late; dashed = geofence)")
+    _style(top, "From above   (light = early, dark = late; dashed = layout margin)")
 
     # Face-on, looking from the front: +axis_h is the viewer's left, so negate it.
     rel = xyz - c
