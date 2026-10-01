@@ -299,6 +299,11 @@ detection drawn on it, the seven numbers, the chosen action, and arm and kill bu
 doubles as the safety interface and the demo video. Build it on B1's flight loop as soon as
 that exists.
 
+**The interface is `python-front-end/`** (Tkinter, djitellopy): `main.py` is the window,
+`tello_session.py` the Tello session. It already does manual flight, video and telemetry;
+extend it rather than starting over. `DroneSoccerWPF/` is a second, C# front end that we
+are **not** using: don't build on it, and ignore it in the report.
+
 Report sections I own: 1.4 Environment, 2.2 Architecture, 3.1 Experimental Settings, 3.3
 Results. The diagram above covers 2.1.
 
@@ -366,6 +371,6 @@ src/evaluate.py    result plots                             [A2-A4]
 src/safety.py      kill switch, limits                      [B1]
 src/fly.py         real flight loop                         [B1, B4]
 src/detect.py      colour detector                          [B3]
-src/gui.py         operator console                         [C]
+python-front-end/  operator console (main.py, tello_session.py) [C]
 notebooks/training.ipynb   Colab submission, imports from src/
 ```
