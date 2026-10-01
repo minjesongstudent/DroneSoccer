@@ -92,13 +92,14 @@ cmd_run() {  # local or interactive training
   bash hpc/run_seeds.sh "$name" "$seeds" "$steps" "$@"
 }
 
-# A screening run: 2 seeds, 800k steps, 8 environments each. About 45 minutes.
+# A screening run: 2 seeds, 800k steps, 4 environments each. About 1.5 hours.
+# 8 cores in all, since medq nodes rarely have 16 free and a 16-core job waits.
 # It answers one question, whether the reward works, before a full run pays for it.
 # Judge it on two numbers only: `wall` under 20%, and `level` above 0.
 cmd_screen() {
   local name=${1:?usage: ds screen <name> [train options]}
   shift
-  cmd_submit 2 800000 "$name" --envs 8 "$@"
+  cmd_submit 2 800000 "$name" --envs 4 "$@"
 }
 
 # Wall minutes one seed needs, plus a quarter. Seeds run in parallel on their
@@ -134,8 +135,8 @@ envs_for() {
   local name=$1 args="runs/$1.args" n=1 prev=""
   if [ -f "$args" ]; then
     while IFS= read -r arg; do
-      case "$prev" in --envs) n="$arg" ;; esac
-      case "$arg" in --envs=*) n="${arg#*=}" ;; esac
+      case "$prev" in --env|--envs) n="$arg" ;; esac
+      case "$arg" in --env=*|--envs=*) n="${arg#*=}" ;; esac
       prev="$arg"
     done < "$args"
   fi
@@ -206,6 +207,42 @@ cmd_cancel() {
   local id=${1:-}
   [ -n "$id" ] || die "usage: ./ds cancel <jobid>"
   qdel "$id"
+}
+
+# Claude designs and submits the next MDP whenever a run finishes (hpc/autopilot.sh).
+# It can change only R_* / GAMMA / reward() in src/contract.py; code enforces that.
+AUTOPILOT_CRON="*/20 * * * * bash $PWD/hpc/autopilot.sh >> $PWD/runs/autopilot/cron.log 2>&1"
+cmd_autopilot() {
+  local ap=runs/autopilot
+  mkdir -p "$ap" && touch "$ap/launched"
+  case "${1:-status}" in
+    install)
+      command -v crontab >/dev/null || die "no crontab here"
+      { crontab -l 2>/dev/null | grep -vF "hpc/autopilot.sh" || true; echo "$AUTOPILOT_CRON"; } | crontab -
+      rm -f "$ap/STOP"
+      printf 'installed: every 20 min on %s. It waits for the running job, then takes over.\n' "$(hostname)" ;;
+    uninstall)
+      { crontab -l 2>/dev/null | grep -vF "hpc/autopilot.sh" || true; } | crontab -
+      echo "removed from crontab" ;;
+    stop)    touch "$ap/STOP"; echo "stopped; ./ds autopilot resume to carry on" ;;
+    resume)  rm -f "$ap/STOP" "$ap/FAILED"; echo "resumed" ;;
+    dry)     # a fresh state dir each time, so repeated test rounds never hit the attempt limit
+             [ -d runs/autopilot-dry ] && chmod -R u+w runs/autopilot-dry && rm -rf runs/autopilot-dry
+             DRY_RUN=1 AUTOPILOT_LAST="${2:?usage: ds autopilot dry <finished run>}" bash hpc/autopilot.sh ;;
+    status)
+      if crontab -l 2>/dev/null | grep -qF "hpc/autopilot.sh"; then
+        printf '%scron%s      installed on %s\n' "$G" "$N" "$(hostname)"
+      else
+        printf '%scron%s      not installed (./ds autopilot install)\n' "$Y" "$N"
+      fi
+      [ -e "$ap/STOP" ] && printf '%sstopped%s   ./ds autopilot resume\n' "$Y" "$N"
+      [ -e "$ap/FAILED" ] && printf '%sFAILED%s    %s\n' "$R" "$N" "$(cat "$ap/FAILED")"
+      printf 'launched  %s of %s: %s\n' "$(wc -l < "$ap/launched")" "${MAX_RUNS:-5}" \
+        "$(paste -sd' ' "$ap/launched")"
+      printf 'watching  %s\n' "$(name_default)"
+      if [ -s "$ap/autopilot.log" ]; then echo; tail -5 "$ap/autopilot.log"; fi ;;
+    *) die "usage: ./ds autopilot [status|install|uninstall|stop|resume|dry <run>]" ;;
+  esac
 }
 
 cmd_vpn() {
@@ -314,7 +351,7 @@ banner() {
   ${B}setup${N}     build .venv, once per machine
   ${B}run${N}       train here: ./ds run [seeds] [steps] [name] [train options]
   ${B}submit${N}    qsub a job: ./ds submit [seeds] [steps] [name] [train options]
-  ${B}screen${N}    cheap check of a reward change: ./ds screen <name> (2 seeds, 800k, 8 envs)
+  ${B}screen${N}    cheap check of a reward change: ./ds screen <name> (2 seeds, 800k, 4 envs)
   ${B}resume${N}    resubmit a cut-off run from its snapshots: ./ds resume [name]
   ${B}status${N}    jobs, progress and walltime headroom
   ${B}queue${N}     your jobs, running and queued
@@ -323,6 +360,7 @@ banner() {
   ${B}logs${N}      follow a seed: ./ds logs [seed]
   ${B}test${N}      pytest
   ${B}cancel${N}    qdel a job: ./ds cancel <jobid>
+  ${B}autopilot${N} Claude submits the next MDP after each run: ./ds autopilot [status|install|stop|resume|dry <run>]
   ${B}vpn${N}       connect the UTS VPN
 
 EOF
@@ -330,7 +368,7 @@ EOF
 
 case "${1:-}" in
   ''|-h|--help|help) banner ;;
-  setup|run|submit|screen|resume|progress|report|status|queue|logs|test|cancel|vpn)
+  setup|run|submit|screen|resume|progress|report|status|queue|logs|test|cancel|autopilot|vpn)
     cmd="$1"; shift; "cmd_$cmd" "$@" ;;
   *) die "unknown command: $1  (run ./ds for the list)" ;;
 esac

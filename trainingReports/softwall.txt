@@ -1,0 +1,35 @@
+softwall
+job 100174   git unknown   seeds 4/4   steps 3,500,000
+written 2026-09-27 11:57
+
+SETTINGS
+args      --envs 1
+run       steps 3500000  level 0.0  randomise False  resume False  envs 1
+          R_PASS              25.0          R_CRASH             15.0          R_PROGRESS          1.0
+          PROGRESS_UNIT       0.1           R_HIDDEN            0.02          R_STEP              0.02
+          R_WALL              0.5           GAMMA               0.995         CRASHES             hit,wrong_way
+          LAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,markerOBS_DIM             8
+          ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4             OBS_LAGS            24,20,16,12,8,4,2,1,0
+          OBS_STACK           9             FRAME_HISTORY       25            ACTION_HISTORY      3
+          POLICY_INPUT_DIM    84            MIN_ARC_FRACTION    0.25          MIN_POINTS          5
+          MIN_RATIO           0.2           CLIP                3.0           _FIT_SCALE          1000.0
+          HOOP_HEIGHT         0.6,1.4       PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0
+          CLEARANCE           0.4           SIDE_GAP            0.35          CENTRELINE_POINTS   256
+          DEFAULT_EPISODES    200           CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000
+          LEVEL_STEP          0.25          LEVEL_WINDOW        200           LEVEL_UP            0.7
+          LEVEL_PASSES        2
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status    pass/min  crashed     wall      hit    wrong  timeout  1st pass  level      steps   time
+0     done          0.68    82.5%    16.0%    82.0%     1.0%    18.0%     10.9s   0.00      3500k   715m
+1     done          4.33    58.0%     5.0%    55.0%     3.0%    42.0%      5.0s   0.00      3500k   703m
+2*    done          9.65    13.0%     4.0%    13.0%     0.0%    87.0%      4.6s   1.00      3500k   731m
+3     done          0.15    36.0%    36.0%    36.0%     0.0%    64.0%      4.1s   0.00      3500k   711m
+base                1.55    85.5%     4.0%    86.0%     0.0%    14.0%      5.4s
+best      seed 2 -> trainedModels/softwall.zip
+
+FLAGS
+  !  seed 0,1: crash-heavy - 50%+ of episodes crash
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up), 3 (never levelled up)
+     seed 0,2,3: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)

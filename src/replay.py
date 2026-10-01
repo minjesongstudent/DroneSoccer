@@ -107,8 +107,8 @@ def draw(env: HoopEnv, run: dict, title: str, path: Path):
         face.plot(np.where(mask, across, np.nan), np.where(mask, up, np.nan),
                   color=colour, lw=1.6, label=label)
     face.add_patch(Ellipse((0, c[2]), 2 * radius_h, 2 * radius_v, fill=False, ec=HOOP, lw=4))
-    face.add_patch(Rectangle((-env.hoop.hanger_half_width, c[2] + radius_v),
-                             2 * env.hoop.hanger_half_width, cage.height - c[2] - radius_v,
+    face.add_patch(Rectangle((-env.hanger_half_width, c[2] + radius_v),
+                             2 * env.hanger_half_width, cage.height - c[2] - radius_v,
                              fc=GRID, ec=INK, lw=0.8, hatch="///", label="hanger"))
     face.axhline(cage.min_altitude, color=INK, lw=0.8, ls="--")
     face.axhline(cage.height - m, color=INK, lw=0.8, ls="--")

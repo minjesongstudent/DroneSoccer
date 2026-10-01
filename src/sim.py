@@ -27,7 +27,7 @@ import gymnasium as gym
 import numpy as np
 
 from src import contract
-from src.params import Cage, Camera, Drone, Hoop, Pad, Randomise, load_camera
+from src.params import Cage, Camera, Drone, Hoop, Pad, Randomise
 
 # Collision checks use this many points along the noodle's centreline. At ~5 mm
 # spacing, a contact can be missed by at most ~0.1 mm.
@@ -46,12 +46,15 @@ class HoopEnv(gym.Env):
                  pad: Pad | None = None, ranges: Randomise | None = None):
         self.cage = cage or Cage()
         self.hoop = hoop or Hoop()
-        self.camera = camera or load_camera()
+        self.camera = camera or Camera()
         self.drone = drone or Drone()
         self.pad = pad or Pad()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
         self.hanger = hanger   # off replays models trained before it existed
+        # The measured setup. With randomise, each episode works on a copy with
+        # ranges.error applied; without, on these.
+        self._measured = {"cage": self.cage, "hoop": self.hoop, "camera": self.camera, "drone": self.drone}
         self.set_level(level)
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, (contract.ACTION_DIM,), np.float32)
@@ -62,13 +65,27 @@ class HoopEnv(gym.Env):
         self._cos_phi, self._sin_phi = np.cos(phi), np.sin(phi)
         phi = np.linspace(0.0, 2 * np.pi, CENTRELINE_POINTS, endpoint=False)
         self._cos_line, self._sin_line = np.cos(phi), np.sin(phi)
+        self._derive()
+
+    def _derive(self):
+        """Values worked out from the setup, redone when measurement error changes it."""
         self._marker_cos = np.cos(np.deg2rad(self.hoop.marker_max_angle_deg))
         pitch = np.deg2rad(self.camera.pitch_deg)
         self._cos_pitch, self._sin_pitch = np.cos(pitch), np.sin(pitch)
-
         # Half-sizes of the drone's collision box in the body frame (forward, left, up).
         d = self.drone
         self._half_box = np.array([d.length, d.width, d.height]) / 2
+
+    def _apply_measurement_error(self):
+        """Per episode, move each measured value by up to +- ranges.error."""
+        changes: dict = {name: {} for name in self._measured}
+        for key, error in self.ranges.error.items():
+            name, attr = key.split(".")
+            base = getattr(self._measured[name], attr)
+            changes[name][attr] = base + self.np_random.uniform(-error, error)
+        for name, measured in self._measured.items():
+            setattr(self, name, dataclasses.replace(measured, **changes[name]))
+        self._derive()
 
     def set_level(self, level: float):
         """Curriculum level for starts, 0 (easy) to 1 (the real layout)."""
@@ -78,21 +95,26 @@ class HoopEnv(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
+        if self.randomise:
+            self._apply_measurement_error()
         self._sample_layout()
         return self._start_episode(), self._info("running")
 
-    def place(self, drone_pos, heading, hoop_centre, hoop_normal, hoop_diameter=None):
+    def place(self, drone_pos, heading, hoop_centre, hoop_normal, hoop_diameter=None,
+              hanger_half_width=None):
         """Set an exact layout instead of a random one. For tests and replaying real flights.
 
         hoop_normal points out of the hoop's back: the front, with the marker,
         faces the other way. hoop_diameter is one outer diameter, or
-        (horizontal, vertical) for a squashed hoop.
+        (horizontal, vertical) for a squashed hoop. hanger_half_width defaults to
+        the measured bar.
         """
         diameter = self.hoop.outer_diameter if hoop_diameter is None else hoop_diameter
         radius_h, radius_v = np.broadcast_to(np.asarray(diameter, float), 2) / 2
         self._set_layout(np.asarray(drone_pos, float), float(heading),
                          np.asarray(hoop_centre, float), np.asarray(hoop_normal, float),
-                         radius_h, radius_v)
+                         radius_h, radius_v,
+                         self.hoop.hanger_half_width if hanger_half_width is None else hanger_half_width)
         return self._start_episode()
 
     def _in_fence(self, xy) -> bool:
@@ -132,10 +154,12 @@ class HoopEnv(gym.Env):
         facing = (np.arctan2(to_centre[1], to_centre[0])
                   + np.deg2rad(rng.uniform(-pad.heading_error_deg, pad.heading_error_deg)))
         heading = _wrap(bearing + self.level * _wrap(facing - bearing))
+        hanger_half = rng.uniform(*self.hoop.hanger_half_width_range)
         self._set_layout(np.array([*start, drone_z]), heading,
-                         np.array([*centre, hoop_z]), np.array([*normal, 0.0]), *radii)
+                         np.array([*centre, hoop_z]), np.array([*normal, 0.0]), *radii, hanger_half)
 
-    def _set_layout(self, drone_pos, heading, hoop_centre, hoop_normal, radius_h, radius_v):
+    def _set_layout(self, drone_pos, heading, hoop_centre, hoop_normal, radius_h, radius_v,
+                    hanger_half_width):
         self.pos = drone_pos.copy()
         self.heading = heading
         self.hoop_centre = hoop_centre
@@ -155,6 +179,7 @@ class HoopEnv(gym.Env):
                             + np.outer(self._sin_line, self._line_v * self._axis_v))
         # The hanger strip runs from the top of the hoop's outer edge to the ceiling.
         self._hanger_bottom = hoop_centre[2] + radius_v
+        self.hanger_half_width = hanger_half_width
         # The marker sits on the noodle's front face at 6 o'clock.
         self._marker = hoop_centre - self._line_v * self._axis_v - half_t * n
         # What the camera projects each step: the outer edge, then the marker last.
@@ -168,6 +193,11 @@ class HoopEnv(gym.Env):
         # the geofence count; a layout from place() may have none, so keep both then.
         gates = [hoop_centre + s * (radius_h + SIDE_GAP) * self._axis_h for s in (1, -1)]
         self._gates = [g for g in gates if self._in_fence(g)] or gates
+        # The open hole inside the noodle, and the point out front to line up on.
+        self._hole_h, self._hole_v = self._line_h - half_t, self._line_v - half_t
+        self._approach = hoop_centre - CLEARANCE * n
+        # Sideways from the centre, past which the drone clears the rim going round.
+        self._beside = radius_h + SIDE_GAP / 2
 
     def _start_episode(self):
         # Randomised dynamics are drawn once per episode into a copy of the drone.
@@ -211,7 +241,6 @@ class HoopEnv(gym.Env):
         self.yaw_rate += (yaw_cmd - self.yaw_rate) * alpha
 
         prev = self.pos.copy()
-        target = self._progress_target(prev)
         self.pos = self.pos + self.vel * dt
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
         self.steps += 1
@@ -225,22 +254,45 @@ class HoopEnv(gym.Env):
         self._frames.append(obs)
         self._actions.append(action)
 
-        progress = float(np.linalg.norm(prev - target) - np.linalg.norm(self.pos - target))
         terminated = outcome in contract.CRASHES
-        reward = (contract.R_PROGRESS * progress / contract.PROGRESS_UNIT
-                  - contract.R_HIDDEN * (1.0 - obs[6]) - contract.R_STEP
-                  - contract.R_WALL * on_wall
-                  + contract.R_PASS * (outcome == "passed") - contract.R_CRASH * terminated)
+        reward = contract.reward(outcome, self._to_go(prev), self._to_go(self.pos),
+                                 on_wall, obs.copy(), action.copy())
         truncated = not terminated and self.steps >= contract.LAPS_MAX_STEPS
         if truncated:
             outcome = "timeout"
         return self._policy_input(), float(reward), terminated, truncated, self._info(outcome)
 
-    def _progress_target(self, pos):
-        """The hoop centre, or from behind the hoop, the nearest side waypoint."""
-        if (pos - self.hoop_centre) @ self.hoop_normal >= 0.0:
-            return min(self._gates, key=lambda g: np.linalg.norm(pos - g))
-        return self.hoop_centre
+    def _to_go(self, pos) -> float:
+        """Metres left round the lap to the next pass, along a route that keeps
+        off the noodle. A straight line at the hoop centre from the side, or at
+        a side gate from just behind the ring, runs into the rim.
+
+        In front, lined up with the hole: straight to the centre.
+        In front, not lined up: to the approach point CLEARANCE out front, then in.
+        Behind, still within the rim's width: out to a point CLEARANCE behind a
+        side gate, so the drone backs off the rim. Beside the rim: straight to
+        the gate, then round to the approach point.
+        Crossing the plane outside the ring never raises the distance to go, so
+        the only jump up is at a pass, which R_PASS pays for.
+        """
+        rel = pos - self.hoop_centre
+        along = rel @ self.hoop_normal
+        h = rel @ self._axis_h
+        if along < 0.0:
+            v = rel @ self._axis_v
+            if (h / self._hole_h) ** 2 + (v / self._hole_v) ** 2 < 1.0:
+                return float(np.linalg.norm(rel))
+            return float(np.linalg.norm(pos - self._approach)) + CLEARANCE
+        best = np.inf
+        for gate in self._gates:
+            rest = float(np.linalg.norm(gate - self._approach)) + CLEARANCE
+            if h * ((gate - self.hoop_centre) @ self._axis_h) >= self._beside ** 2:
+                to_gate = float(np.linalg.norm(pos - gate))
+            else:
+                back_off = gate + CLEARANCE * self.hoop_normal
+                to_gate = float(np.linalg.norm(pos - back_off)) + CLEARANCE
+            best = min(best, to_gate + rest)
+        return best
 
     def _crossing(self, prev):
         """None, or (direction, inside, rel) if this step crossed the hoop's plane.
@@ -276,7 +328,7 @@ class HoopEnv(gym.Env):
         drone_axes = [np.array([c, s]), np.array([-s, c])]
         drone_half = self._half_box[:2]
         strip_axes = [self.hoop_normal[:2], self._axis_h[:2]]
-        strip_half = [self.hoop.thickness / 2, self.hoop.hanger_half_width]
+        strip_half = [self.hoop.thickness / 2, self.hanger_half_width]
         gap = self.pos[:2] - self.hoop_centre[:2]
         for axis in drone_axes + strip_axes:
             reach = (sum(h * abs(a @ axis) for h, a in zip(drone_half, drone_axes))
