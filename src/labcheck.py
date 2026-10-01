@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import functools
 import json
 import re
 import logging
@@ -61,7 +62,6 @@ STEP_DEFAULTS = {             # amplitudes (rc percent) and seconds per step
     "yaw": ((25, 50, 100), 2.0),
 }
 BOARD_CORNERS = (9, 6)        # inner corners; the board is 10 x 7 squares
-BOARD_SQUARE_PX = 80
 KEY_SPACE, KEY_ESC = 32, 27
 # The Tello answers 'error' to takeoff once it is about this hot. Sitting powered
 # on with video streaming and no airflow gets it there in a few minutes.
@@ -496,26 +496,8 @@ def ladder_items(session: Session, levels: int, seconds: float) -> list:
 # Chessboard calibration
 # ---------------------------------------------------------------------------
 
-def board_image() -> np.ndarray:
-    cols, rows = BOARD_CORNERS[0] + 1, BOARD_CORNERS[1] + 1
-    sq = BOARD_SQUARE_PX
-    img = np.full(((rows + 2) * sq, (cols + 2) * sq), 255, np.uint8)
-    for r in range(rows):
-        for c in range(cols):
-            if (r + c) % 2 == 0:
-                img[(r + 1) * sq:(r + 2) * sq, (c + 1) * sq:(c + 2) * sq] = 0
-    # Grey outline round the grid, so the outer white squares have an edge to
-    # measure to. The detector only uses inner corners, so it does not see this.
-    cv2.rectangle(img, (sq, sq), ((cols + 1) * sq - 1, (rows + 1) * sq - 1), 128, 2)
-    return img
-
-
-def screen_square_mm() -> Optional[float]:
-    """Board square size on the main display, from its physical size (macOS only).
-
-    Assumes OpenCV draws one image pixel per screen point, which is why the
-    board command asks for a ruler check.
-    """
+def screen() -> Optional[tuple]:
+    """Main display as (width in points, height in points, mm per point), macOS only."""
     try:
         import ctypes
         import ctypes.util
@@ -527,13 +509,51 @@ def screen_square_mm() -> Optional[float]:
         cg.CGMainDisplayID.restype = ctypes.c_uint32
         cg.CGDisplayScreenSize.restype = Size
         cg.CGDisplayScreenSize.argtypes = [ctypes.c_uint32]
-        cg.CGDisplayPixelsWide.restype = ctypes.c_size_t
-        cg.CGDisplayPixelsWide.argtypes = [ctypes.c_uint32]
+        for fn in (cg.CGDisplayPixelsWide, cg.CGDisplayPixelsHigh):
+            fn.restype = ctypes.c_size_t
+            fn.argtypes = [ctypes.c_uint32]
         display = cg.CGMainDisplayID()
-        width_mm, points = cg.CGDisplayScreenSize(display).width, cg.CGDisplayPixelsWide(display)
-        return BOARD_SQUARE_PX * width_mm / points if width_mm > 0 and points > 0 else None
+        width_mm = cg.CGDisplayScreenSize(display).width
+        width, height = cg.CGDisplayPixelsWide(display), cg.CGDisplayPixelsHigh(display)
+        return (width, height, width_mm / width) if width_mm > 0 and width > 0 else None
     except Exception:
         return None
+
+
+SCREEN = screen()
+
+
+def board_layout() -> tuple:
+    """(canvas width, canvas height, square side, grid left, grid top), in screen points.
+
+    The canvas is the whole screen, shown fullscreen, so one image pixel is one
+    point; the grid is as large as fits with a square of margin for the text.
+    """
+    cols, rows = BOARD_CORNERS[0] + 1, BOARD_CORNERS[1] + 1
+    width, height = (SCREEN[0], SCREEN[1]) if SCREEN else ((cols + 2) * 80, (rows + 2) * 80)
+    sq = int(min(width / (cols + 2), height / (rows + 2)))
+    return width, height, sq, (width - cols * sq) // 2, (height - rows * sq) // 2
+
+
+@functools.lru_cache(maxsize=1)
+def board_image() -> np.ndarray:
+    cols, rows = BOARD_CORNERS[0] + 1, BOARD_CORNERS[1] + 1
+    width, height, sq, left, top = board_layout()
+    img = np.full((height, width), 255, np.uint8)
+    for r in range(rows):
+        for c in range(cols):
+            if (r + c) % 2 == 0:
+                img[top + r * sq:top + (r + 1) * sq, left + c * sq:left + (c + 1) * sq] = 0
+    # Grey outline round the grid, so the outer white squares have an edge to
+    # measure to. The detector only uses inner corners, so it does not see this.
+    cv2.rectangle(img, (left, top), (left + cols * sq - 1, top + rows * sq - 1), 128, 2)
+    return img
+
+
+def screen_square_mm() -> Optional[float]:
+    """Board square size when shown fullscreen on the main display. Assumes the
+    full screen height is drawn to (no notch strip), hence the ruler check."""
+    return board_layout()[2] * SCREEN[2] if SCREEN else None
 
 
 def square_mm_arg(args) -> float:
@@ -547,16 +567,23 @@ def square_mm_arg(args) -> float:
     return estimate
 
 
+def open_board_window() -> None:
+    cv2.namedWindow("board", cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty("board", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+
 def show_board(status: str = "", flash: bool = False, hint: str = "") -> None:
     img = cv2.cvtColor(board_image(), cv2.COLOR_GRAY2BGR)
+    width, height, sq, left, top = board_layout()
+    scale = sq / 110
     if flash:
-        cv2.rectangle(img, (0, 0), (img.shape[1] - 1, img.shape[0] - 1), (0, 200, 0), 30)
+        cv2.rectangle(img, (0, 0), (width - 1, height - 1), (0, 200, 0), max(10, sq // 3))
     if status:
-        cv2.putText(img, status, (BOARD_SQUARE_PX, BOARD_SQUARE_PX // 2 + 8),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 200), 2, cv2.LINE_AA)
-    if hint:  # in the bottom margin, large enough to read with the laptop held out
-        cv2.putText(img, hint, (BOARD_SQUARE_PX // 2, img.shape[0] - BOARD_SQUARE_PX // 2 + 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (200, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(img, status, (left, top - sq // 3), cv2.FONT_HERSHEY_SIMPLEX, scale,
+                    (0, 0, 200), 2, cv2.LINE_AA)
+    if hint:  # under the grid, large enough to read with the laptop held out
+        cv2.putText(img, hint, (left, height - top + sq // 2), cv2.FONT_HERSHEY_SIMPLEX, scale * 1.3,
+                    (200, 0, 0), 2, cv2.LINE_AA)
     cv2.imshow("board", img)
 
 
@@ -673,10 +700,7 @@ def run_calib(args) -> None:
         return
     square_mm = square_mm_arg(args)
     session = Session("calib", args.host)
-    cv2.namedWindow("board", cv2.WINDOW_AUTOSIZE)
-    cv2.moveWindow("board", 0, 0)
-    cv2.namedWindow("tello", cv2.WINDOW_AUTOSIZE)
-    cv2.moveWindow("tello", board_image().shape[1] + 10, 0)
+    open_board_window()
     taken: list = []
     previous = None
     flash_until = 0.0
@@ -696,11 +720,9 @@ def run_calib(args) -> None:
             height, width = frame.shape[:2]
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             corners = find_board(gray, fast=True)
-            view = frame.copy()
             sig = None if corners is None else pose_signature(corners, width, height)
             hint = direction(sig, next_target(taken))
             if corners is not None:
-                cv2.drawChessboardCorners(view, BOARD_CORNERS, corners.reshape(-1, 1, 2), True)
                 still = previous is not None and np.abs(corners - previous).mean() < 1.5
                 new = all(np.abs(sig - other).max() > 0.08 for other in taken)
                 if still and new:
@@ -709,7 +731,6 @@ def run_calib(args) -> None:
                     flash_until = session.now() + 0.4
                     session.event(f"captured view {len(taken)}")
             previous = corners
-            cv2.imshow("tello", cv2.resize(view, (width // 2, height // 2)))
     finally:
         session.close()
     calibrate(session.dir, square_mm)
@@ -972,10 +993,7 @@ def run_tilt(args) -> None:
     dh = (args.board_cm - args.lens_cm) / 100
 
     session = Session("tilt", args.host)
-    cv2.namedWindow("board", cv2.WINDOW_AUTOSIZE)
-    cv2.moveWindow("board", 0, 0)
-    cv2.namedWindow("tello", cv2.WINDOW_AUTOSIZE)
-    cv2.moveWindow("tello", board_image().shape[1] + 10, 0)
+    open_board_window()
     pitches, distances = [], []
     imu = None
     hint = "Waiting for video..."
@@ -989,7 +1007,6 @@ def run_tilt(args) -> None:
             frame = session.frame_bgr
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             corners = find_board(gray, fast=True)
-            view = frame.copy()
             hint = "Measuring, keep still" if corners is not None else \
                 "Board not seen: move laptop closer or in line with the camera"
             if corners is not None:
@@ -1003,8 +1020,6 @@ def run_tilt(args) -> None:
                     elevation = np.degrees(np.arctan2(dh, horizontal))
                     pitches.append(above_axis - elevation)
                     distances.append(horizontal)
-                cv2.drawChessboardCorners(view, BOARD_CORNERS, corners, True)
-            cv2.imshow("tello", cv2.resize(view, (view.shape[1] // 2, view.shape[0] // 2)))
         imu = session.state().get("pitch")
     finally:
         session.close()
@@ -1091,8 +1106,7 @@ def run_board(args) -> None:
               f"If it matches, calib and tilt need no --square-mm. If not, measure, divide by\n"
               f"{total}, and pass --square-mm. Esc closes the board.")
         status = f"Top row should be {row:.0f} mm. Check with a ruler. Esc closes."
-    cv2.namedWindow("board", cv2.WINDOW_AUTOSIZE)
-    cv2.moveWindow("board", 0, 0)
+    open_board_window()
     while True:
         show_board(status)
         if cv2.waitKey(30) & 0xFF == KEY_ESC:
