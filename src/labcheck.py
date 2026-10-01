@@ -606,53 +606,75 @@ def show_board(status: str = "", flash: bool = False, hint: str = "") -> None:
 
 
 # Views calibration wants, as pose_signature entries {index: value}: the board
-# in each of nine places in the frame, near and far, and tipped four ways.
+# in each of nine places in the frame, near and far, and seen from four sides.
 # Index 0, 1: centre x, y as a fraction of the frame; 2: width as a fraction;
 # 3: top wider than bottom; 4: left taller than right.
 CALIB_TARGETS = [{0: x, 1: y, 2: 0.35} for y in (0.25, 0.5, 0.75) for x in (0.25, 0.5, 0.75)] + [
     {0: 0.5, 1: 0.5, 2: 0.2}, {0: 0.5, 1: 0.5, 2: 0.55},
-    {0: 0.5, 1: 0.5, 3: 0.15}, {0: 0.5, 1: 0.5, 3: -0.15},
+    {0: 0.5, 1: 0.5, 3: 0.12}, {0: 0.5, 1: 0.5, 3: -0.12},
     {0: 0.5, 1: 0.5, 4: 0.15}, {0: 0.5, 1: 0.5, 4: -0.15},
 ]
 TARGET_TOL = {0: 0.12, 1: 0.12, 2: 0.08, 3: 0.07, 4: 0.07}
+TARGET_NAMES = ["top left", "top middle", "top right", "middle left", "centre", "middle right",
+                "bottom left", "bottom middle", "bottom right", "far", "near",
+                "from above", "from below", "from the left", "from the right"]
+HINT_MIN_SECONDS = 3.0    # a direction stays up at least this long
+HINT_SETTLE_SECONDS = 1.0  # and a new one must hold this long before it replaces it
+STILL_SECONDS = 0.6        # the board must sit still this long before a capture
 
 
 def meets(sig: np.ndarray, target: dict) -> bool:
     return all(abs(sig[i] - v) < TARGET_TOL[i] for i, v in target.items())
 
 
-def next_target(taken: list) -> Optional[dict]:
-    for target in CALIB_TARGETS:
-        if not any(meets(sig, target) for sig in taken):
-            return target
-    return None
+def missing_targets(taken: list) -> list:
+    return [i for i, target in enumerate(CALIB_TARGETS) if not any(meets(sig, target) for sig in taken)]
 
 
 def direction(sig: Optional[np.ndarray], target: Optional[dict]) -> str:
-    """One instruction, for someone holding the laptop in front of the drone.
+    """One instruction for someone moving the drone, with the laptop standing still.
 
-    Left and right are the drone's: the board sits further left in its picture
-    when the laptop moves to the drone's left, which is your right as you face it.
+    Left and right are the drone's own, which are yours if you hold it from behind.
+    The board sits further left in the picture when the drone points further right.
     """
     if target is None:
-        return "All views covered. Any extra angle helps, or press C"
+        return "All views done. Any extra angle helps, or press C to finish"
     if sig is None:
-        return "Board not seen: point the screen at the drone, 40-80 cm away"
-    for i, v in target.items():  # fix position first, then size, then tilt
+        return "Board not seen: point the drone at the screen, 40-80 cm away"
+    for i, v in target.items():  # fix position first, then size, then viewing side
         d = v - sig[i]
         if abs(d) < TARGET_TOL[i]:
             continue
         if i == 0:
-            return "Move laptop to the drone's " + ("RIGHT (your left)" if d > 0 else "LEFT (your right)")
+            return "Point the drone a little to its " + ("LEFT" if d > 0 else "RIGHT")
         if i == 1:
-            return "Move laptop " + ("DOWN" if d > 0 else "UP")
+            return "Point the drone's nose a little " + ("UP" if d > 0 else "DOWN")
         if i == 2:
-            return "Move laptop " + ("CLOSER to the drone" if d > 0 else "FURTHER from the drone")
+            return "Move the drone " + ("CLOSER to" if d > 0 else "FURTHER from") + " the screen"
         if i == 3:
-            return "Tip the screen: " + ("TOP edge toward the drone" if d > 0 else "BOTTOM edge toward the drone")
+            return ("Raise the drone ABOVE the screen, nose tipped down at it" if d > 0
+                    else "Lower the drone BELOW the screen, nose tipped up at it")
         if i == 4:
-            return "Turn the screen: " + ("drone's-LEFT edge toward it" if d > 0 else "drone's-RIGHT edge toward it")
+            return ("Move the drone to its LEFT, then turn it back to face the screen" if d > 0
+                    else "Move the drone to its RIGHT, then turn it back to face the screen")
     return "Hold still..."
+
+
+class SlowHint:
+    """Holds each direction long enough to read and act on: a new one shows only
+    once it has held for HINT_SETTLE_SECONDS, and none goes before HINT_MIN_SECONDS."""
+
+    def __init__(self, first: str):
+        self.shown, self.shown_at = first, -HINT_MIN_SECONDS
+        self.pending, self.pending_at = first, 0.0
+
+    def update(self, wanted: str, now: float) -> str:
+        if wanted != self.pending:
+            self.pending, self.pending_at = wanted, now
+        if (wanted != self.shown and now - self.pending_at >= HINT_SETTLE_SECONDS
+                and now - self.shown_at >= HINT_MIN_SECONDS):
+            self.shown, self.shown_at = wanted, now
+        return self.shown
 
 
 def find_board(gray: np.ndarray, fast: bool):
@@ -678,7 +700,7 @@ def calibrate(folder: Path, square_mm: float) -> None:
     images = sorted(folder.glob("calib_*.png"))
     objp = np.zeros((BOARD_CORNERS[0] * BOARD_CORNERS[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:BOARD_CORNERS[0], 0:BOARD_CORNERS[1]].T.reshape(-1, 2) * square_mm / 1000
-    obj_points, img_points, size = [], [], None
+    names, img_points, sigs, size = [], [], [], None
     for path in images:
         gray = cv2.cvtColor(cv2.imread(str(path)), cv2.COLOR_BGR2GRAY)
         size = gray.shape[::-1]
@@ -688,19 +710,34 @@ def calibrate(folder: Path, square_mm: float) -> None:
             continue
         corners = cv2.cornerSubPix(gray, corners.reshape(-1, 1, 2).astype(np.float32), (5, 5), (-1, -1),
                                    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001))
-        obj_points.append(objp)
+        names.append(path.name)
         img_points.append(corners)
-    if len(img_points) < 8:
-        print(f"Only {len(img_points)} usable views. Need at least 8, ideally 20.")
-        return
-    rms, K, dist, _, _ = cv2.calibrateCamera(obj_points, img_points, size, None, None)
+        sigs.append(pose_signature(corners.reshape(-1, 2), *size))
+
+    # Fit, drop views over 1 px (blur, a missed corner), refit, until none are.
+    while True:
+        if len(img_points) < 8:
+            print(f"Only {len(img_points)} usable views. Need at least 8, ideally 15 or more.")
+            return
+        rms, K, dist, _, _, std, _, per_view = cv2.calibrateCameraExtended(
+            [objp] * len(img_points), img_points, size, None, None)
+        worst = int(np.argmax(per_view))
+        if per_view[worst, 0] <= 1.0:
+            break
+        print(f"  dropped {names[worst]}: {per_view[worst, 0]:.2f} px, probably blurred")
+        for items in (names, img_points, sigs):
+            del items[worst]
+
+    std = std.ravel()
     print(f"\nCalibrated from {len(img_points)} views at {size[0]}x{size[1]}")
     print(f"  RMS reprojection error {rms:.3f} px  (under 0.5 good, under 1.0 usable)")
-    print(f"  fx {K[0, 0]:.1f}  fy {K[1, 1]:.1f}  cx {K[0, 2]:.1f}  cy {K[1, 2]:.1f}   "
-          f"(guessed 920, 920, 480, 360)")
+    print(f"  fx {K[0, 0]:.1f} +- {std[0]:.1f}   fy {K[1, 1]:.1f} +- {std[1]:.1f}")
+    print(f"  cx {K[0, 2]:.1f} +- {std[2]:.1f}   cy {K[1, 2]:.1f} +- {std[3]:.1f}")
     print(f"  dist {np.round(dist.ravel(), 4)}")
-    hfov = np.degrees(2 * np.arctan(size[0] / (2 * K[0, 0])))
-    print(f"  horizontal field of view {hfov:.1f} deg")
+    print(f"  horizontal field of view {np.degrees(2 * np.arctan(size[0] / (2 * K[0, 0]))):.1f} deg")
+    missing = missing_targets(sigs)
+    print("  coverage: all 15 views" if not missing else
+          "  coverage: missing " + ", ".join(TARGET_NAMES[i] for i in missing))
     np.savez(folder / "calib.npz", K=K, dist=dist, size=np.array(size), rms=rms)
     if rms < 1.0:
         np.savez(CALIB_PATH, K=K, dist=dist, size=np.array(size), rms=rms)
@@ -720,13 +757,21 @@ def run_calib(args) -> None:
     square_mm = square_mm_arg(args)
     session = Session("calib", args.host)
     taken: list = []
-    previous = None
+    previous, still_since = None, None
     flash_until = 0.0
-    hint = "Waiting for video..."
+    hint = SlowHint("Point the drone at the screen")
     try:
-        while len(taken) < args.frames:
-            status = f"{len(taken)}/{args.frames} captured. Hold still at a new angle.  Esc stop, C calibrate now"
-            show_board(status, flash=session.now() < flash_until, hint=hint)
+        while True:
+            missing = missing_targets(taken)
+            if not missing and len(taken) >= args.frames:
+                break
+            target = CALIB_TARGETS[missing[0]] if missing else None
+            step = f"view {len(taken) + 1}: {TARGET_NAMES[missing[0]]}" if missing else "extras"
+            status = (f"{len(CALIB_TARGETS) - len(missing)}/{len(CALIB_TARGETS)} views. "
+                      f"Now: {step}.  Esc stop, C finish")
+            if session.now() < flash_until:
+                status = "Got it! Next one..."
+            show_board(status, flash=session.now() < flash_until, hint=hint.shown)
             key = cv2.waitKey(1) & 0xFF
             if key == KEY_ESC:
                 return
@@ -736,19 +781,25 @@ def run_calib(args) -> None:
                 continue
             frame = session.frame_bgr
             height, width = frame.shape[:2]
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            corners = find_board(gray, fast=True)
+            corners = find_board(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), fast=True)
             sig = None if corners is None else pose_signature(corners, width, height)
-            hint = direction(sig, next_target(taken))
-            if corners is not None:
-                still = previous is not None and np.abs(corners - previous).mean() < 1.5
-                new = all(np.abs(sig - other).max() > 0.08 for other in taken)
-                if still and new:
-                    cv2.imwrite(str(session.dir / f"calib_{len(taken):02d}.png"), frame)
-                    taken.append(sig)
-                    flash_until = session.now() + 0.4
-                    session.event(f"captured view {len(taken)}")
+            hint.update(direction(sig, target), session.now())
+            if corners is None:
+                previous, still_since = None, None
+                continue
+            moving = previous is None or np.abs(corners - previous).mean() > 1.5
             previous = corners
+            if moving:
+                still_since = None
+                continue
+            still_since = still_since or session.now()
+            fills = meets(sig, target) if target is not None else \
+                all(np.abs(sig - other).max() > 0.08 for other in taken)
+            if fills and session.now() - still_since >= STILL_SECONDS and session.now() > flash_until:
+                cv2.imwrite(str(session.dir / f"calib_{len(taken):02d}.png"), frame)
+                taken.append(sig)
+                flash_until = session.now() + 1.5
+                session.event(f"captured view {len(taken)} ({step})")
     finally:
         session.close()
     calibrate(session.dir, square_mm)
@@ -1202,7 +1253,7 @@ def main(argv=None) -> None:
     p = sub.add_parser("calib", help="no flight: point the Tello at the on-screen board")
     p.add_argument("--host", default=default_host())
     p.add_argument("--square-mm", type=float, help="square size on this screen (default: from the screen size)")
-    p.add_argument("--frames", type=int, default=20, help="views to capture (default 20)")
+    p.add_argument("--frames", type=int, default=18, help="views to capture, at least the 15 targets (default 18)")
     p.add_argument("--from-dir", help="recompute from a saved calib run folder, no drone")
     p.set_defaults(fn=run_calib)
 
