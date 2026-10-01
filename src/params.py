@@ -51,10 +51,10 @@ class Camera:
     """Intrinsics at the Tello's 960x720 stream. calib.npz replaces these when it exists."""
     width: int = 960           # MEASURED 2026-10-01: stream frames are 960x720
     height: int = 720          # MEASURED 2026-10-01
-    fx: float = 920.0          # UNMEASURED: stage 0 chessboard calibration
-    fy: float = 920.0          # UNMEASURED: stage 0 chessboard calibration
-    cx: float = 480.0          # UNMEASURED: stage 0 chessboard calibration
-    cy: float = 360.0          # UNMEASURED: stage 0 chessboard calibration
+    fx: float = 908.9  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
+    fy: float = 909.6  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
+    cx: float = 488.7  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
+    cy: float = 356.0  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
     pitch_deg: float = 0.0     # UNMEASURED: camera tilt below horizontal
     offset_forward: float = 0.05  # UNMEASURED: camera ahead of the drone's centre
 
