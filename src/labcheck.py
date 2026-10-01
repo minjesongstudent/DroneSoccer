@@ -507,14 +507,67 @@ def board_image() -> np.ndarray:
     return img
 
 
-def show_board(status: str = "", flash: bool = False) -> None:
+def show_board(status: str = "", flash: bool = False, hint: str = "") -> None:
     img = cv2.cvtColor(board_image(), cv2.COLOR_GRAY2BGR)
     if flash:
         cv2.rectangle(img, (0, 0), (img.shape[1] - 1, img.shape[0] - 1), (0, 200, 0), 30)
     if status:
         cv2.putText(img, status, (BOARD_SQUARE_PX, BOARD_SQUARE_PX // 2 + 8),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 200), 2, cv2.LINE_AA)
+    if hint:  # in the bottom margin, large enough to read with the laptop held out
+        cv2.putText(img, hint, (BOARD_SQUARE_PX // 2, img.shape[0] - BOARD_SQUARE_PX // 2 + 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (200, 0, 0), 2, cv2.LINE_AA)
     cv2.imshow("board", img)
+
+
+# Views calibration wants, as pose_signature entries {index: value}: the board
+# in each of nine places in the frame, near and far, and tipped four ways.
+# Index 0, 1: centre x, y as a fraction of the frame; 2: width as a fraction;
+# 3: top wider than bottom; 4: left taller than right.
+CALIB_TARGETS = [{0: x, 1: y, 2: 0.35} for y in (0.25, 0.5, 0.75) for x in (0.25, 0.5, 0.75)] + [
+    {0: 0.5, 1: 0.5, 2: 0.2}, {0: 0.5, 1: 0.5, 2: 0.55},
+    {0: 0.5, 1: 0.5, 3: 0.15}, {0: 0.5, 1: 0.5, 3: -0.15},
+    {0: 0.5, 1: 0.5, 4: 0.15}, {0: 0.5, 1: 0.5, 4: -0.15},
+]
+TARGET_TOL = {0: 0.12, 1: 0.12, 2: 0.08, 3: 0.07, 4: 0.07}
+
+
+def meets(sig: np.ndarray, target: dict) -> bool:
+    return all(abs(sig[i] - v) < TARGET_TOL[i] for i, v in target.items())
+
+
+def next_target(taken: list) -> Optional[dict]:
+    for target in CALIB_TARGETS:
+        if not any(meets(sig, target) for sig in taken):
+            return target
+    return None
+
+
+def direction(sig: Optional[np.ndarray], target: Optional[dict]) -> str:
+    """One instruction, for someone holding the laptop in front of the drone.
+
+    Left and right are the drone's: the board sits further left in its picture
+    when the laptop moves to the drone's left, which is your right as you face it.
+    """
+    if target is None:
+        return "All views covered. Any extra angle helps, or press C"
+    if sig is None:
+        return "Board not seen: point the screen at the drone, 40-80 cm away"
+    for i, v in target.items():  # fix position first, then size, then tilt
+        d = v - sig[i]
+        if abs(d) < TARGET_TOL[i]:
+            continue
+        if i == 0:
+            return "Move laptop to the drone's " + ("RIGHT (your left)" if d > 0 else "LEFT (your right)")
+        if i == 1:
+            return "Move laptop " + ("DOWN" if d > 0 else "UP")
+        if i == 2:
+            return "Move laptop " + ("CLOSER to the drone" if d > 0 else "FURTHER from the drone")
+        if i == 3:
+            return "Tip the screen: " + ("TOP edge toward the drone" if d > 0 else "BOTTOM edge toward the drone")
+        if i == 4:
+            return "Turn the screen: " + ("drone's-LEFT edge toward it" if d > 0 else "drone's-RIGHT edge toward it")
+    return "Hold still..."
 
 
 def find_board(gray: np.ndarray, fast: bool):
@@ -586,10 +639,11 @@ def run_calib(args) -> None:
     taken: list = []
     previous = None
     flash_until = 0.0
+    hint = "Waiting for video..."
     try:
         while len(taken) < args.frames:
             status = f"{len(taken)}/{args.frames} captured. Hold still at a new angle.  Esc stop, C calibrate now"
-            show_board(status, flash=session.now() < flash_until)
+            show_board(status, flash=session.now() < flash_until, hint=hint)
             key = cv2.waitKey(1) & 0xFF
             if key == KEY_ESC:
                 return
@@ -602,10 +656,11 @@ def run_calib(args) -> None:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             corners = find_board(gray, fast=True)
             view = frame.copy()
+            sig = None if corners is None else pose_signature(corners, width, height)
+            hint = direction(sig, next_target(taken))
             if corners is not None:
                 cv2.drawChessboardCorners(view, BOARD_CORNERS, corners.reshape(-1, 1, 2), True)
                 still = previous is not None and np.abs(corners - previous).mean() < 1.5
-                sig = pose_signature(corners, width, height)
                 new = all(np.abs(sig - other).max() > 0.08 for other in taken)
                 if still and new:
                     cv2.imwrite(str(session.dir / f"calib_{len(taken):02d}.png"), frame)
@@ -882,9 +937,10 @@ def run_tilt(args) -> None:
     cv2.moveWindow("tello", board_image().shape[1] + 10, 0)
     pitches, distances = [], []
     imu = None
+    hint = "Waiting for video..."
     try:
         while len(pitches) < args.frames:
-            show_board(f"{len(pitches)}/{args.frames} frames. Do not touch the drone. Esc stop")
+            show_board(f"{len(pitches)}/{args.frames} frames. Do not touch the drone. Esc stop", hint=hint)
             if cv2.waitKey(1) & 0xFF == KEY_ESC:
                 return
             if not session.poll_frame():
@@ -893,6 +949,8 @@ def run_tilt(args) -> None:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             corners = find_board(gray, fast=True)
             view = frame.copy()
+            hint = "Measuring, keep still" if corners is not None else \
+                "Board not seen: move laptop closer or in line with the camera"
             if corners is not None:
                 corners = cv2.cornerSubPix(gray, corners.reshape(-1, 1, 2).astype(np.float32), (5, 5), (-1, -1),
                                            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.001))
