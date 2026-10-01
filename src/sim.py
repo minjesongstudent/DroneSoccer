@@ -244,10 +244,12 @@ class HoopEnv(gym.Env):
         self.pos = self.pos + self.vel * dt
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
         self.steps += 1
-        on_wall = self._clamp_to_fence()
+        on_wall, net = self._touch_walls()
         self.wall_steps += on_wall
 
         outcome = self._outcome(prev)
+        if net and outcome == "running":
+            outcome = "net"
         if outcome == "passed":
             self.passes += 1
         obs = self.observe()
@@ -337,27 +339,29 @@ class HoopEnv(gym.Env):
                 return False   # a separating axis: no contact
         return True
 
-    def _clamp_to_fence(self) -> bool:
-        """Hold the drone inside the geofence, and say whether it had to.
-
-        The fence is not in contract.FIELDS, so the policy cannot see a wall
-        coming. Ending the episode there teaches it nothing, so the wall stops
-        the drone and costs R_WALL a step instead.
+    def _touch_walls(self) -> tuple[bool, bool]:
+        """Stop the drone's box at the net or the floor. Say whether it touched
+        either, and whether it touched the net, which ends the episode. The floor
+        is min_altitude, with nothing there to catch on.
         """
-        m = self.cage.margin
-        low = np.array([m, m, self.cage.min_altitude])
-        high = np.array([self.cage.length - m, self.cage.width - m, self.cage.height - m])
+        c, s = abs(np.cos(self.heading)), abs(np.sin(self.heading))
+        forward, left, up = self._half_box
+        reach = np.array([c * forward + s * left, s * forward + c * left])
+        low = np.array([*reach, self.cage.min_altitude])
+        high = np.array([self.cage.length - reach[0], self.cage.width - reach[1],
+                         self.cage.height - up])
         inside = np.clip(self.pos, low, high)
         if np.array_equal(inside, self.pos):
-            return False
+            return False, False
+        net = (self.pos > high).any() or (self.pos[:2] < low[:2]).any()
         self.vel = np.where(inside == self.pos, self.vel, 0.0)
         self.pos = inside
-        return True
+        return True, bool(net)
 
     def _outcome(self, prev) -> str:
         """Front to back through the ring scores; back through the ring is wrong_way.
         Crossing the plane outside the ring is how the drone gets round, so it is neutral.
-        The hanger counts as part of the hoop. The geofence never ends an episode."""
+        The hanger counts as part of the hoop."""
         self.route = None
         if self._hit() or self._hits_hanger():
             return "hit"

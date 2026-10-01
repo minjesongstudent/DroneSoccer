@@ -22,10 +22,10 @@ def edited(old, new):
 @pytest.mark.parametrize("new", [
     edited("R_PASS = 40.0", "R_PASS = 55.5"),
     edited("GAMMA = 0.995", "GAMMA = 0.99"),
-    edited("R_WALL = 0.5", "R_WALL = 0.5\nR_SMOOTH = 0.1   # a new term"),
+    edited("R_WALL = 5.0", "R_WALL = 5.0\nR_SMOOTH = 0.1   # a new term"),
     edited(REWARD_BODY, "            - R_WALL * on_wall\n"
                         "            - R_SMOOTH * float(np.square(action[0]) + abs(action[3])))").replace(
-        "R_WALL = 0.5", "R_WALL = 0.5\nR_SMOOTH = 0.1"),
+        "R_WALL = 5.0", "R_WALL = 5.0\nR_SMOOTH = 0.1"),
     edited(REWARD_BODY, "            - R_WALL * on_wall - 0.02 * (1.0 - obs[6]))"),
     edited("# Reward per step", "# A new comment\n# Reward per step"),
 ])
@@ -39,7 +39,7 @@ def test_sum_is_not_on_the_numpy_whitelist():
 
 
 @pytest.mark.parametrize("new", [
-    edited('CRASHES = ("hit", "wrong_way")', 'CRASHES = ("wrong_way",)'),
+    edited('CRASHES = ("hit", "wrong_way", "net")', 'CRASHES = ("wrong_way",)'),
     edited("LAPS_MAX_STEPS = 600", "LAPS_MAX_STEPS = 1200"),
     edited("OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)", "OBS_LAGS = (8, 4, 2, 1, 0)"),
     edited("    ratio = minor / major", "    ratio = minor / major * 1.1"),
@@ -63,7 +63,7 @@ def test_everything_else_is_rejected(new):
 
 def test_removing_reward_is_rejected():
     start = ORIGINAL.index("def reward(")
-    end = ORIGINAL.index("# Only what the policy can see")
+    end = ORIGINAL.index("CRASHES = (")
     assert check(ORIGINAL, ORIGINAL[:start] + ORIGINAL[end:])
 
 

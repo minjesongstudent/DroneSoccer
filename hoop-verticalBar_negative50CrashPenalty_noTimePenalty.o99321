@@ -1,0 +1,7 @@
+pass rates on held-out episodes:
+seed 0  policy    passes/min  0.00  crashed  27.5%  first pass   never  (hit 0%  wrong_way 0%  left_cage 27%  timeout 72%)
+seed 1  policy    passes/min  0.02  crashed  59.0%  first pass  16.7s  (hit 24%  wrong_way 0%  left_cage 34%  timeout 41%)
+seed 2  policy    passes/min  0.00  crashed  41.0%  first pass   never  (hit 2%  wrong_way 0%  left_cage 39%  timeout 59%)
+seed 3  policy    passes/min  0.00  crashed  44.0%  first pass   never  (hit 2%  wrong_way 0%  left_cage 42%  timeout 56%)
+baseline  passes/min  1.44  crashed  94.5%  first pass   5.8s  (hit 41%  wrong_way 0%  left_cage 54%  timeout 6%)
+best seed 1: keeping runs/verticalBar_negative50CrashPenalty_noTimePenalty_s1/model.zip, deleting the rest

@@ -23,8 +23,8 @@ class Cage:
     length: float = 2.05       # MEASURED 2026-09-24
     width: float = 2.05        # MEASURED 2026-09-24
     height: float = 2.05       # MEASURED 2026-09-24
-    margin: float = 0.15       # DESIGN: geofence inset from the net on every side. 0.25 put
-                               # the pad start on the fence; the drone still clears the net by ~7 cm
+    margin: float = 0.15       # DESIGN: hoop and way round kept this far in from the net. 0.25
+                               # put the pad start outside it
     min_altitude: float = 0.5  # MEASURED 2026-10-01: holds pad x/y to 1 cm at tof 50 cm; lower untested
 
 

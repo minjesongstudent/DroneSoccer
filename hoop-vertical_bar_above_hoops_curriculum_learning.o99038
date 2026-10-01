@@ -1,0 +1,2 @@
+seed 0 FAILED, see runs/vertical_bar_above_hoops_curriculum_learning_s0.log:
+tail: cannot open 'runs/vertical_bar_above_hoops_curriculum_learning_s0.log' for reading: No such file or directory

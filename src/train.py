@@ -168,8 +168,11 @@ def settings(**args) -> str:
     even after contract.py or sim.py is edited for the next experiment."""
     constants = {k: v for scope in (vars(contract), vars(sim), globals()) for k, v in scope.items()
                  if k.isupper() and isinstance(v, (int, float, str, tuple))}
-    git = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
-                         capture_output=True, text=True).stdout.strip() or "unknown"
+    try:  # compute nodes have no git
+        git = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
+                             capture_output=True, text=True).stdout.strip() or "unknown"
+    except FileNotFoundError:
+        git = "unknown"
     pairs = [*args.items(), *constants.items(), ("git", git)]
     return "settings " + " ".join(
         f"{k}={','.join(map(str, v)) if isinstance(v, tuple) else v}" for k, v in pairs)

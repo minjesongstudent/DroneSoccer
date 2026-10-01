@@ -1,0 +1,41 @@
+pass rates on held-out episodes:
+seed 0  policy    passes/min  0.00  crashed   1.5%  wall 6%  first pass   never  (hit 2%  wrong_way 0%  timeout 98%)
+seed 1  policy    passes/min  1.92  crashed  83.5%  wall 17%  first pass   7.0s  (hit 46%  wrong_way 37%  timeout 16%)
+baseline  passes/min  1.55  crashed  85.5%  wall 4%  first pass   5.4s  (hit 86%  wrong_way 0%  timeout 14%)
+best seed 1: keeping runs/softwallv2_s1/model.zip, deleting the rest
+copied to trainedModels/softwallv2.zip
+softwallv2
+job 103309   git unknown   seeds 2/2   steps 800,000
+written 2026-09-28 12:51
+
+SETTINGS
+args      --envs 4
+run       steps 800000  level 0.0  randomise False  resume False  envs 4
+          R_PASS              90.0          R_CRASH             15.0          POT_SCALE           0.25
+          PROGRESS_UNIT       0.1           R_HIDDEN            0.02          R_STEP              0.02
+          R_WALL              0.5           GAMMA               0.995         CRASHES             hit,wrong_way
+          LAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,markerOBS_DIM             8
+          ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4             OBS_LAGS            24,20,16,12,8,4,2,1,0
+          OBS_STACK           9             FRAME_HISTORY       25            ACTION_HISTORY      3
+          POLICY_INPUT_DIM    84            MIN_ARC_FRACTION    0.25          MIN_POINTS          5
+          MIN_RATIO           0.2           CLIP                3.0           _FIT_SCALE          1000.0
+          HOOP_HEIGHT         0.6,1.4       PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0
+          CLEARANCE           0.4           SIDE_GAP            0.35          CENTRELINE_POINTS   256
+          DEFAULT_EPISODES    200           CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000
+          LEVEL_STEP          0.25          LEVEL_WINDOW        200           LEVEL_UP            0.7
+          LEVEL_PASSES        2
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status    pass/min  crashed     wall      hit    wrong  timeout  1st pass  level      steps   time
+0     done          0.00     1.5%     6.0%     2.0%     0.0%    98.0%     never   0.00       800k    38m
+1*    done          1.92    83.5%    17.0%    46.0%    37.0%    16.0%      7.0s   0.00       800k    38m
+base                1.55    85.5%     4.0%    86.0%     0.0%    14.0%      5.4s
+best      seed 1 -> trainedModels/softwallv2.zip
+
+FLAGS
+  !  seed 0: hovering - mostly timeouts, under 0.1 passes/min; it learned to avoid the hoop
+  !  seed 1: crash-heavy - 50%+ of episodes crash
+  !  only seed 1 learned anything: the result may be luck
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up)
+     seed 1: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)
