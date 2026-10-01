@@ -521,6 +521,10 @@ def screen() -> Optional[tuple]:
 
 
 SCREEN = screen()
+# Where board saves the ruler-checked square size. On a MacBook with a notch the
+# fullscreen board is drawn about 4% smaller than the screen size predicts, and
+# OpenCV cannot tell, so the ruler has the last word.
+SQUARE_PATH = OUT / "square_mm.json"
 
 
 def board_layout() -> tuple:
@@ -551,19 +555,33 @@ def board_image() -> np.ndarray:
 
 
 def screen_square_mm() -> Optional[float]:
-    """Board square size when shown fullscreen on the main display. Assumes the
-    full screen height is drawn to (no notch strip), hence the ruler check."""
+    """Board square size predicted from the screen's size. A few percent too big
+    on a MacBook with a notch; board asks for a ruler check and saves the truth."""
     return board_layout()[2] * SCREEN[2] if SCREEN else None
 
 
+def saved_square_mm() -> Optional[float]:
+    """The square size board saved, if it was measured on this screen."""
+    try:
+        saved = json.loads(SQUARE_PATH.read_text())
+        return float(saved["square_mm"]) if saved.get("screen") == list(board_layout()[:2]) else None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
 def square_mm_arg(args) -> float:
-    """--square-mm if given, else the size worked out from the screen."""
+    """--square-mm if given, else what board saved, else the screen's prediction."""
     if args.square_mm:
         return args.square_mm
+    saved = saved_square_mm()
+    if saved:
+        print(f"Using square size {saved:.2f} mm, ruler-checked with board (--square-mm overrides)")
+        return saved
     estimate = screen_square_mm()
     if estimate is None:
-        sys.exit("Could not read the screen size. Run board, measure, and pass --square-mm.")
-    print(f"Using square size {estimate:.2f} mm from the screen (check it with board; --square-mm overrides)")
+        sys.exit("Could not read the screen size. Run board first, or pass --square-mm.")
+    print(f"! Using square size {estimate:.2f} mm predicted from the screen, not checked.\n"
+          f"  Run board first to check it with a ruler.")
     return estimate
 
 
@@ -698,9 +716,9 @@ def run_calib(args) -> None:
     if args.from_dir:
         calibrate(Path(args.from_dir), square_mm_arg(args))
         return
+    open_board_window()
     square_mm = square_mm_arg(args)
     session = Session("calib", args.host)
-    open_board_window()
     taken: list = []
     previous = None
     flash_until = 0.0
@@ -986,6 +1004,7 @@ def run_tilt(args) -> None:
         return
     data = np.load(CALIB_PATH)
     K, dist = data["K"], data["dist"]
+    open_board_window()
     objp = np.zeros((BOARD_CORNERS[0] * BOARD_CORNERS[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:BOARD_CORNERS[0], 0:BOARD_CORNERS[1]].T.reshape(-1, 2)
     objp[:, :2] -= objp[:, :2].mean(axis=0)  # origin at the board centre
@@ -993,7 +1012,6 @@ def run_tilt(args) -> None:
     dh = (args.board_cm - args.lens_cm) / 100
 
     session = Session("tilt", args.host)
-    open_board_window()
     pitches, distances = [], []
     imu = None
     hint = "Waiting for video..."
@@ -1093,25 +1111,31 @@ def run_check(args) -> None:
 
 
 def run_board(args) -> None:
-    total = (BOARD_CORNERS[0] + 1)
+    total = BOARD_CORNERS[0] + 1
     estimate = screen_square_mm()
-    if estimate is None:
-        print(f"Could not read the screen size. Measure the top row of {total} squares end to end\n"
-              f"with a ruler, in mm, divide by {total}, and pass that as --square-mm. Esc closes the board.")
-        status = f"Measure the top row ({total} squares), divide by {total}. Esc closes."
-    else:
-        row = estimate * total
-        print(f"From the screen size, the top row of {total} squares should be {row:.0f} mm\n"
-              f"(one square {estimate:.2f} mm). Check it with a ruler along the grey outline.\n"
-              f"If it matches, calib and tilt need no --square-mm. If not, measure, divide by\n"
-              f"{total}, and pass --square-mm. Esc closes the board.")
-        status = f"Top row should be {row:.0f} mm. Check with a ruler. Esc closes."
+    expected = f"should be about {estimate * total:.0f} mm" if estimate else "measure it"
+    print(f"Measure the top row of {total} squares along the grey outline with a ruler.\n"
+          f"Press Esc on the board, then type the length here.")
     open_board_window()
     while True:
-        show_board(status)
+        show_board(f"Top row: {total} squares, {expected}. Measure, then Esc.")
         if cv2.waitKey(30) & 0xFF == KEY_ESC:
             break
     cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    while True:
+        answer = input(f"Top row of {total} squares, in mm: ").strip()
+        try:
+            row = float(answer)
+            break
+        except ValueError:
+            print("  a number, please")
+    square = row / total
+    SQUARE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SQUARE_PATH.write_text(json.dumps({"square_mm": square, "row_mm": row,
+                                       "screen": list(board_layout()[:2]),
+                                       "date": f"{datetime.now():%Y-%m-%d}"}) + "\n")
+    print(f"Saved: one square {square:.2f} mm. calib and tilt use this without --square-mm.")
 
 
 def run_steps(args) -> None:
