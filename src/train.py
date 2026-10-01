@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import time
 from collections import deque
 from pathlib import Path
@@ -29,12 +30,14 @@ import numpy as np
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from src import baseline
+from src import baseline, contract, sim
+from src.contract import CRASHES
 from src.evaluate import DEFAULT_EPISODES, load_policy, report, run_episodes
 from src.params import ROOT, Drone
 from src.plots import save_plots
-from src.sim import CRASHES, HoopEnv
+from src.sim import HoopEnv
 
 RUNS = ROOT / "runs"
 CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
@@ -61,6 +64,7 @@ class Progress(BaseCallback):
     def _on_training_start(self) -> None:
         self.start = time.time()
         self.start_steps = self.num_timesteps   # non-zero after --resume
+        self.printed = self.num_timesteps // self.every
         self.level = self.training_env.get_attr("level")[0]
 
     def _on_step(self) -> bool:
@@ -68,7 +72,10 @@ class Progress(BaseCallback):
             if done:
                 self.recent.append(info)
                 self._record()
-        if self.num_timesteps % self.every == 0:
+        # N parallel envs raise the count by N, so an exact multiple may never
+        # come round. Fire on the step that crosses one instead.
+        if self.num_timesteps // self.every > self.printed:
+            self.printed = self.num_timesteps // self.every
             elapsed = time.time() - self.start
             done = max(1, self.num_timesteps - self.start_steps)
             eta = elapsed / done * (self.total - self.num_timesteps)
@@ -129,8 +136,12 @@ class Snapshot(BaseCallback):
         super().__init__()
         self.folder, self.total = folder, total
 
+    def _on_training_start(self) -> None:
+        self.saved = self.num_timesteps // CHECKPOINT_EVERY
+
     def _on_step(self) -> bool:
-        if self.num_timesteps % CHECKPOINT_EVERY == 0:
+        if self.num_timesteps // CHECKPOINT_EVERY > self.saved:
+            self.saved = self.num_timesteps // CHECKPOINT_EVERY
             self.save()
         return True
 
@@ -150,13 +161,41 @@ class Snapshot(BaseCallback):
         print(f"snapshot at step {self.num_timesteps}", flush=True)
 
 
+def settings(**args) -> str:
+    """One `settings` line for the log: the run's options, every constant in
+    contract.py and sim.py, the constants here, and the git commit.
+    src.report reads it back, so a report shows what the run was trained with
+    even after contract.py or sim.py is edited for the next experiment."""
+    constants = {k: v for scope in (vars(contract), vars(sim), globals()) for k, v in scope.items()
+                 if k.isupper() and isinstance(v, (int, float, str, tuple))}
+    git = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
+                         capture_output=True, text=True).stdout.strip() or "unknown"
+    pairs = [*args.items(), *constants.items(), ("git", git)]
+    return "settings " + " ".join(
+        f"{k}={','.join(map(str, v)) if isinstance(v, tuple) else v}" for k, v in pairs)
+
+
+def make_env(level: float, randomise: bool, envs: int):
+    """One environment, or `envs` of them in their own processes.
+
+    Stepping is numpy and the policy runs on CPU, so copies scale nearly
+    linearly. train_freq and gradient_steps rise with them, which keeps the
+    ratio of steps flown to gradients taken the same as with one.
+    """
+    def one():
+        return Monitor(HoopEnv(level=level, randomise=randomise))
+    return one() if envs == 1 else SubprocVecEnv([one] * envs)
+
+
 def train(steps: int, name: str, seed: int, level: float, randomise: bool,
-          resume: bool = False) -> Path:
+          resume: bool = False, envs: int = 1) -> Path:
+    print(settings(steps=steps, seed=seed, level=level, randomise=randomise, resume=resume,
+                   envs=envs), flush=True)
     out = RUNS / name
     snapshot = out / "resume"
     if resume:
         level = json.loads((snapshot / "state.json").read_text())["level"]
-    env = Monitor(HoopEnv(level=level, randomise=randomise))
+    env = make_env(level, randomise, envs)
     if resume:
         model = SAC.load(snapshot / "model.zip", env=env, device="cpu")
         model.load_replay_buffer(snapshot / "replay_buffer.pkl")
@@ -165,13 +204,13 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
         print(f"resumed  from step {model.num_timesteps} at level {level:.2f}", flush=True)
     else:
         model = SAC("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
-                    # A lap takes ~100 steps, so the next pass must still be
-                    # worth chasing from the far side of the hoop.
-                    gamma=0.995,
+                    gamma=contract.GAMMA,
+                    train_freq=envs, gradient_steps=envs,
                     learning_starts=5_000,   # fill the buffer with random flying first
                     buffer_size=BUFFER_SIZE,
                     tensorboard_log=str(RUNS))
-    checkpoints = CheckpointCallback(CHECKPOINT_EVERY, str(out / "checkpoints"), name_prefix="model")
+    checkpoints = CheckpointCallback(CHECKPOINT_EVERY // envs, str(out / "checkpoints"),
+                                     name_prefix="model")
     # With reset_num_timesteps=False, learn() counts total_timesteps on from the
     # loaded step count and appends to the same tensorboard run.
     model.learn(total_timesteps=steps - model.num_timesteps,
@@ -190,12 +229,14 @@ if __name__ == "__main__":
                         help="starting curriculum level; evaluation is always at 1")
     parser.add_argument("--randomise", action="store_true", help="draw dynamics per episode")
     parser.add_argument("--eval-episodes", type=int)
+    parser.add_argument("--envs", type=int, default=1,
+                        help="parallel environments; needs one core each")
     parser.add_argument("--resume", action="store_true",
                         help="carry on from runs/<name>/resume/ up to --steps in total")
     args = parser.parse_args()
 
     path = train(args.steps, args.name, args.seed, args.level, args.randomise,
-                 args.resume)
+                 args.resume, args.envs)
     print(f"saved {path}")
     episodes = args.eval_episodes or DEFAULT_EPISODES
 

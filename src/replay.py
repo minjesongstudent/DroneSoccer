@@ -31,6 +31,7 @@ from matplotlib.patches import Ellipse, Rectangle
 from src.evaluate import EVAL_SEED, load_policy
 from src.baseline import Lapper
 from src.plots import GRID, INK, SURFACE
+from src import contract
 from src.sim import HoopEnv
 
 TIME = LinearSegmentedColormap.from_list("time", ["#b7d3f6", "#0d366b"])  # blue 150 -> 700
@@ -91,7 +92,7 @@ def draw(env: HoopEnv, run: dict, title: str, path: Path):
     _timeline(top, xyz[:, :2])
     top.plot(*xyz[0, :2], "o", color=TIME(0.0), mec=INK, ms=8)
     top.text(xyz[0, 0], xyz[0, 1] + 0.07, "start", color=INK, fontsize=8, ha="center")
-    crashed = run["outcome"] in ("hit", "wrong_way", "left_cage")
+    crashed = run["outcome"] in contract.CRASHES
     if crashed:
         top.plot(*xyz[-1, :2], "X", color=CRASH, mec=HOOP, ms=11)
     top.set_xlim(-0.05, cage.length + 0.05)

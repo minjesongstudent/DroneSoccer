@@ -18,7 +18,8 @@ import numpy as np
 
 from src import baseline
 from src.params import Drone
-from src.sim import CRASHES, HoopEnv
+from src.contract import CRASHES
+from src.sim import HoopEnv
 
 EVAL_SEED = 1_000_000
 ENDINGS = (*CRASHES, "timeout")
@@ -42,7 +43,8 @@ def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None) -> l
             if first_pass is None and info["passes"]:
                 first_pass = info["steps"]
         results.append({"outcome": info["outcome"], "passes": info["passes"],
-                        "steps": info["steps"], "first_pass": first_pass})
+                        "steps": info["steps"], "wall_steps": info["wall_steps"],
+                        "first_pass": first_pass})
     return results
 
 
@@ -58,11 +60,12 @@ def report(results: list[dict], dt: float = Drone().dt) -> str:
     minutes = sum(r["steps"] for r in results) * dt / 60
     per_min = sum(r["passes"] for r in results) / minutes
     crashed = sum(outcomes[name] for name in CRASHES) / total
+    wall = sum(r["wall_steps"] for r in results) / sum(r["steps"] for r in results)
     firsts = [r["first_pass"] * dt for r in results if r["first_pass"] is not None]
     first = f"{np.mean(firsts):5.1f}s" if firsts else "  never"
     endings = "  ".join(f"{name} {outcomes[name] / total:.0%}" for name in ENDINGS)
-    return (f"passes/min {per_min:5.2f}  crashed {crashed:6.1%}  first pass {first}"
-            f"  ({endings})")
+    return (f"passes/min {per_min:5.2f}  crashed {crashed:6.1%}  wall {wall:.0%}"
+            f"  first pass {first}  ({endings})")
 
 
 if __name__ == "__main__":
