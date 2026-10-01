@@ -1,0 +1,22 @@
+verticalBar_negative50CrashPenalty_noTimePenalty
+job 99321   git ?   seeds 4/4   steps 3,500,000
+written 2026-09-26 17:23
+
+SETTINGS
+args      (none)
+          settings not logged (run predates the settings line)
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status    pass/min  crashed      hit    wrong     left  timeout  1st pass  level      steps   time
+0     done          0.00    27.5%     0.0%     0.0%    27.0%    72.0%     never   0.00      3500k   656m
+1*    done          0.02    59.0%    24.0%     0.0%    34.0%    41.0%     16.7s   0.00      3500k   660m
+2     done          0.00    41.0%     2.0%     0.0%    39.0%    59.0%     never   0.00      3500k   661m
+3     done          0.00    44.0%     2.0%     0.0%    42.0%    56.0%     never   0.00      3500k   648m
+base                1.44    94.5%    41.0%     0.0%    54.0%     6.0%      5.8s
+best      seed 1 -> trainedModels/verticalBar_negative50CrashPenalty_noTimePenalty.zip
+
+FLAGS
+  !! best seed below baseline (0.02 vs 1.44)
+  !  seed 0,2,3: hovering - mostly timeouts, under 0.1 passes/min; it learned to avoid the hoop
+  !  seed 1: crash-heavy - 50%+ of episodes crash
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up), 2 (never levelled up), 3 (never levelled up)

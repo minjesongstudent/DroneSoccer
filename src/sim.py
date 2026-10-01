@@ -9,6 +9,17 @@ recent actions). The true hoop position is used for reward and termination only.
 """
 from __future__ import annotations
 
+# ----- START LAYOUT (logged into trainingReports/ by every run) -------------
+# The reward, the actions, the state, the discount and the episode ends all live
+# in contract.py. This file is only the physics.
+# The curriculum level blends from easy (0) to real (1).
+HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
+PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
+LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad, level 0 and 1
+CLEARANCE = 0.4                # free space in front of and behind the hoop
+SIDE_GAP = 0.35                # side waypoint's distance beyond the rim
+# -----------------------------------------------------------------------------
+
 import dataclasses
 from collections import deque
 
@@ -18,45 +29,9 @@ import numpy as np
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Pad, Randomise, load_camera
 
-# Layout. The hoop goes anywhere with room to fly round it; its front faces
-# the pad. The curriculum level blends each start from easy (0) to real (1).
-HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
-PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
-LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad's line of sight, level 0 and 1.
-                               # Past ~78 degrees the detector cannot see the hoop at all.
-CLEARANCE = 0.4                # free space in front of and behind the hoop
-SIDE_GAP = 0.35                # the side waypoint's distance beyond the rim
-LAPS_MAX_STEPS = 600           # 60 s; a cut-off, not a failure: the real run goes on
-
 # Collision checks use this many points along the noodle's centreline. At ~5 mm
 # spacing, a contact can be missed by at most ~0.1 mm.
 CENTRELINE_POINTS = 256
-
-MIN_ARC_FRACTION = 0.25        # UNMEASURED: share of the hoop's edge the detector needs in frame, B3
-
-# Reward weights.
-# R_PROGRESS pays for closing the straight-line distance to the hoop centre, not
-# for closing the axial gap. Axial progress rated the rim and the centre alike,
-# so SAC charged the plane and hit. Distance to the centre falls fastest on the
-# line that passes through, which is the behaviour we want.
-# Behind the hoop the target is a side waypoint instead: distance to the
-# centre from behind would pay for flying back through the hole.
-PROGRESS_UNIT = 0.10           # metres
-R_PROGRESS = 1.0               # per PROGRESS_UNIT closer to the target
-# Per step the hoop is not visible. Kept small: going round the outside hides the
-# hoop, and at 0.1 a minute of lapping cost more than crashing out.
-R_HIDDEN = 0.02
-# There is no per-step time cost. With one, a 60 s episode cost -30 and a crash
-# only -10, so ending the episode early was the cheap way out. Passes (+25) are
-# what keep the drone from hovering, and the curriculum needs 2+ per minute.
-# A pass pays and the episode goes on. The crash endings (a hit, including the
-# hanger; back through the hole; crossing the geofence, Cage.margin inside the net)
-# cost more than a pass pays, so trading the rest of the minute for a quick pass
-# does not pay.
-R_PASS = 25.0
-R_CRASH = 40.0
-CRASHES = ("hit", "wrong_way", "left_cage")
-
 
 def _wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -193,6 +168,11 @@ class HoopEnv(gym.Env):
         # the geofence count; a layout from place() may have none, so keep both then.
         gates = [hoop_centre + s * (radius_h + SIDE_GAP) * self._axis_h for s in (1, -1)]
         self._gates = [g for g in gates if self._in_fence(g)] or gates
+        # The open hole inside the noodle, and the point out front to line up on.
+        self._hole_h, self._hole_v = self._line_h - half_t, self._line_v - half_t
+        self._approach = hoop_centre - CLEARANCE * n
+        # Sideways from the centre, past which the drone clears the rim going round.
+        self._beside = radius_h + SIDE_GAP / 2
 
     def _start_episode(self):
         # Randomised dynamics are drawn once per episode into a copy of the drone.
@@ -207,6 +187,7 @@ class HoopEnv(gym.Env):
         self.yaw_rate = 0.0
         self.steps = 0
         self.passes = 0
+        self.wall_steps = 0
         self.route = None   # which way the drone last went round, for replay.py
         self._pending = deque([np.zeros(contract.ACTION_DIM, np.float32)] * self.dyn.delay_steps)
         self._frames = deque([self.observe()] * contract.FRAME_HISTORY,
@@ -235,10 +216,11 @@ class HoopEnv(gym.Env):
         self.yaw_rate += (yaw_cmd - self.yaw_rate) * alpha
 
         prev = self.pos.copy()
-        target = self._progress_target(prev)
         self.pos = self.pos + self.vel * dt
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
         self.steps += 1
+        on_wall = self._clamp_to_fence()
+        self.wall_steps += on_wall
 
         outcome = self._outcome(prev)
         if outcome == "passed":
@@ -247,20 +229,45 @@ class HoopEnv(gym.Env):
         self._frames.append(obs)
         self._actions.append(action)
 
-        progress = float(np.linalg.norm(prev - target) - np.linalg.norm(self.pos - target))
-        terminated = outcome in CRASHES
-        reward = (R_PROGRESS * progress / PROGRESS_UNIT - R_HIDDEN * (1.0 - obs[6])
-                  + R_PASS * (outcome == "passed") - R_CRASH * terminated)
-        truncated = not terminated and self.steps >= LAPS_MAX_STEPS
+        terminated = outcome in contract.CRASHES
+        reward = contract.reward(outcome, self._to_go(prev), self._to_go(self.pos),
+                                 on_wall, obs.copy(), action.copy())
+        truncated = not terminated and self.steps >= contract.LAPS_MAX_STEPS
         if truncated:
             outcome = "timeout"
         return self._policy_input(), float(reward), terminated, truncated, self._info(outcome)
 
-    def _progress_target(self, pos):
-        """The hoop centre, or from behind the hoop, the nearest side waypoint."""
-        if (pos - self.hoop_centre) @ self.hoop_normal >= 0.0:
-            return min(self._gates, key=lambda g: np.linalg.norm(pos - g))
-        return self.hoop_centre
+    def _to_go(self, pos) -> float:
+        """Metres left round the lap to the next pass, along a route that keeps
+        off the noodle. A straight line at the hoop centre from the side, or at
+        a side gate from just behind the ring, runs into the rim.
+
+        In front, lined up with the hole: straight to the centre.
+        In front, not lined up: to the approach point CLEARANCE out front, then in.
+        Behind, still within the rim's width: out to a point CLEARANCE behind a
+        side gate, so the drone backs off the rim. Beside the rim: straight to
+        the gate, then round to the approach point.
+        Crossing the plane outside the ring never raises the distance to go, so
+        the only jump up is at a pass, which R_PASS pays for.
+        """
+        rel = pos - self.hoop_centre
+        along = rel @ self.hoop_normal
+        h = rel @ self._axis_h
+        if along < 0.0:
+            v = rel @ self._axis_v
+            if (h / self._hole_h) ** 2 + (v / self._hole_v) ** 2 < 1.0:
+                return float(np.linalg.norm(rel))
+            return float(np.linalg.norm(pos - self._approach)) + CLEARANCE
+        best = np.inf
+        for gate in self._gates:
+            rest = float(np.linalg.norm(gate - self._approach)) + CLEARANCE
+            if h * ((gate - self.hoop_centre) @ self._axis_h) >= self._beside ** 2:
+                to_gate = float(np.linalg.norm(pos - gate))
+            else:
+                back_off = gate + CLEARANCE * self.hoop_normal
+                to_gate = float(np.linalg.norm(pos - back_off)) + CLEARANCE
+            best = min(best, to_gate + rest)
+        return best
 
     def _crossing(self, prev):
         """None, or (direction, inside, rel) if this step crossed the hoop's plane.
@@ -305,14 +312,27 @@ class HoopEnv(gym.Env):
                 return False   # a separating axis: no contact
         return True
 
-    def _left_cage(self) -> bool:
-        z = self.pos[2]
-        return not (self._in_fence(self.pos) and self.cage.min_altitude <= z <= self.cage.height - self.cage.margin)
+    def _clamp_to_fence(self) -> bool:
+        """Hold the drone inside the geofence, and say whether it had to.
+
+        The fence is not in contract.FIELDS, so the policy cannot see a wall
+        coming. Ending the episode there teaches it nothing, so the wall stops
+        the drone and costs R_WALL a step instead.
+        """
+        m = self.cage.margin
+        low = np.array([m, m, self.cage.min_altitude])
+        high = np.array([self.cage.length - m, self.cage.width - m, self.cage.height - m])
+        inside = np.clip(self.pos, low, high)
+        if np.array_equal(inside, self.pos):
+            return False
+        self.vel = np.where(inside == self.pos, self.vel, 0.0)
+        self.pos = inside
+        return True
 
     def _outcome(self, prev) -> str:
         """Front to back through the ring scores; back through the ring is wrong_way.
         Crossing the plane outside the ring is how the drone gets round, so it is neutral.
-        The hanger counts as part of the hoop."""
+        The hanger counts as part of the hoop. The geofence never ends an episode."""
         self.route = None
         if self._hit() or self._hits_hanger():
             return "hit"
@@ -321,8 +341,6 @@ class HoopEnv(gym.Env):
             return "passed" if crossing[0] == 1 else "wrong_way"
         if crossing is not None and crossing[0] == -1:
             self.route = self._route(crossing[2])
-        if self._left_cage():
-            return "left_cage"
         return "running"
 
     def _route(self, rel) -> str:
@@ -347,7 +365,7 @@ class HoopEnv(gym.Env):
         cam_pos, cam_axes = self._camera_pose()
         xn, yn, in_frame = self._project(self._sight_points, cam_pos, cam_axes)
         edge = in_frame[:-1]
-        if edge.mean() < MIN_ARC_FRACTION:
+        if edge.mean() < contract.MIN_ARC_FRACTION:
             return contract.NOT_VISIBLE.copy()
         return contract.observe(np.stack([xn[:-1], yn[:-1]], axis=1)[edge], self.camera.half_extent,
                                 marker=self._marker_seen(cam_pos, in_frame[-1]))
@@ -388,7 +406,8 @@ class HoopEnv(gym.Env):
         return np.concatenate([*frames, *self._actions]).astype(np.float32)
 
     def _info(self, outcome):
-        return {"outcome": outcome, "passes": self.passes, "steps": self.steps, "route": self.route,
+        return {"outcome": outcome, "passes": self.passes, "steps": self.steps,
+                "wall_steps": self.wall_steps, "route": self.route,
                 "level": self.level, "drone_pos": self.pos.copy(),
                 "heading": self.heading, "hoop_centre": self.hoop_centre.copy(),
                 "hoop_normal": self.hoop_normal.copy()}
