@@ -26,7 +26,7 @@ class Cage:
     height: float = 2.05       # MEASURED 2026-09-24
     margin: float = 0.15       # DESIGN: geofence inset from the net on every side. 0.25 put
                                # the pad start on the fence; the drone still clears the net by ~7 cm
-    min_altitude: float = 0.3  # UNMEASURED: lowest height the downward sensor holds position at, B2
+    min_altitude: float = 0.5  # MEASURED 2026-10-01: holds pad x/y to 1 cm at tof 50 cm; lower untested
 
 
 @dataclass
@@ -49,8 +49,8 @@ class Hoop:
 @dataclass
 class Camera:
     """Intrinsics at the Tello's 960x720 stream. calib.npz replaces these when it exists."""
-    width: int = 960           # UNMEASURED: the Tello's stated stream size; B1 checks the frame shape
-    height: int = 720          # UNMEASURED
+    width: int = 960           # MEASURED 2026-10-01: stream frames are 960x720
+    height: int = 720          # MEASURED 2026-10-01
     fx: float = 920.0          # UNMEASURED: stage 0 chessboard calibration
     fy: float = 920.0          # UNMEASURED: stage 0 chessboard calibration
     cx: float = 480.0          # UNMEASURED: stage 0 chessboard calibration
@@ -69,12 +69,13 @@ class Drone:
     width: float = 0.17        # MEASURED 2026-09-24, side to side
     height: float = 0.035      # MEASURED 2026-09-24
     length: float = 0.105      # MEASURED 2026-09-24, from the 20 cm diagonal: sqrt(0.20^2 - 0.17^2)
-    max_speed: float = 0.4     # DESIGN: m/s at full command; B2 finds the RC value that gives it
-    max_yaw_rate_deg: float = 60.0  # DESIGN
-    tau: float = 0.3           # UNMEASURED: velocity response time, B2 step flights
-    delay_steps: int = 0       # UNMEASURED: command delay in control steps, B2
-    dt: float = 0.1            # DESIGN: 10 Hz control; B2 checks the laptop holds it
-    takeoff_height: float = 0.8  # UNMEASURED: hover height after `takeoff`, B2
+    max_speed: float = 0.4     # DESIGN: m/s at full command. MEASURED 2026-10-01: rc ~50 gives it on
+                               # fb and lr (0.32-0.41 m/s at rc 45); ud only reaches 0.26 m/s at rc 60
+    max_yaw_rate_deg: float = 60.0  # DESIGN. MEASURED 2026-10-01: rc 50 = 40, rc 100 = 80-92 deg/s, so rc ~70
+    tau: float = 0.55          # MEASURED 2026-10-01: fb/lr steps at rc 45 (0.52-0.66 s); ud 0.25 s
+    delay_steps: int = 2       # MEASURED 2026-10-01: command to camera 150-200 ms (yaw steps, video)
+    dt: float = 0.1            # DESIGN: 10 Hz control. MEASURED 2026-10-01: laptop holds 10.0 Hz
+    takeoff_height: float = 0.8  # MEASURED 2026-10-01: tof 79-84 cm after settling
 
 
 @dataclass
@@ -87,9 +88,9 @@ class Pad:
 @dataclass
 class Randomise:
     """Ranges drawn per episode when HoopEnv(randomise=True). Stage 3 of the laps plan."""
-    delay_steps: tuple[int, int] = (0, 3)       # UNMEASURED: B2, 100-300 ms expected
-    tau: tuple[float, float] = (0.15, 0.5)      # UNMEASURED: B2 step flights
-    rate_hz: tuple[float, float] = (8.0, 12.0)  # UNMEASURED: B2 logs the real loop rate; drawn every step
+    delay_steps: tuple[int, int] = (1, 4)       # MEASURED 2026-10-01: 2 steps, +-1 plus WiFi spikes
+    tau: tuple[float, float] = (0.25, 0.7)      # MEASURED 2026-10-01: 0.25 (ud) to 0.66 (fb)
+    rate_hz: tuple[float, float] = (8.0, 12.0)  # MEASURED 2026-10-01: 10.0 Hz mean, worst tick 126 ms; drawn every step
 
 
 def load_camera() -> Camera:

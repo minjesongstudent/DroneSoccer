@@ -9,12 +9,14 @@ from src.sim import LAPS_MAX_STEPS, R_CRASH, SIDE_GAP, HoopEnv
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
 EXACT = Hoop(diameter_tolerance=0.0)
+IDEAL = Drone(tau=0.3, delay_steps=0)  # scripted paths assume no lag, not the measured drone
 U, V, MAJOR, RATIO, SIN, COS, VISIBLE, MARKER = range(8)
 
 
 def make_env(**kwargs):
     kwargs.setdefault("cage", BIG)
     kwargs.setdefault("hoop", EXACT)
+    kwargs.setdefault("drone", IDEAL)
     kwargs.setdefault("camera", Camera())
     return HoopEnv(**kwargs)
 
