@@ -4,7 +4,7 @@
     python -m src.labcheck board            no drone: draw the chessboard so you can measure it
     python -m src.labcheck calib
                                             no flight: Tello held at this screen, writes calib.npz
-    python -m src.labcheck tilt --lens-cm 4.2 --board-cm 4.2
+    python -m src.labcheck tilt
                                             no flight: drone level, laptop 1 m ahead, camera pitch
     python -m src.labcheck tape             no drone: type in the tape measurements
     python -m src.labcheck steps --axis fb  flies: rc steps on one axis (fb, lr, ud or yaw)
@@ -992,6 +992,14 @@ def set_param(name: str, value: str, note: str) -> None:
 # Camera tilt
 # ---------------------------------------------------------------------------
 
+def ask_cm(question: str) -> float:
+    while True:
+        try:
+            return float(input(question).strip())
+        except ValueError:
+            print("  a number, please")
+
+
 def run_tilt(args) -> None:
     """Pitch of the camera below horizontal, from where the board centre appears.
 
@@ -1004,12 +1012,16 @@ def run_tilt(args) -> None:
         return
     data = np.load(CALIB_PATH)
     K, dist = data["K"], data["dist"]
+    lens_cm = args.lens_cm if args.lens_cm is not None else ask_cm(
+        "Camera lens height above the table or floor the drone sits on (cm): ")
+    board_cm = args.board_cm if args.board_cm is not None else ask_cm(
+        "Middle of the laptop screen, height above the same surface (cm): ")
     open_board_window()
     objp = np.zeros((BOARD_CORNERS[0] * BOARD_CORNERS[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:BOARD_CORNERS[0], 0:BOARD_CORNERS[1]].T.reshape(-1, 2)
     objp[:, :2] -= objp[:, :2].mean(axis=0)  # origin at the board centre
     objp *= square_mm_arg(args) / 1000
-    dh = (args.board_cm - args.lens_cm) / 100
+    dh = (board_cm - lens_cm) / 100
 
     session = Session("tilt", args.host)
     pitches, distances = [], []
@@ -1197,8 +1209,8 @@ def main(argv=None) -> None:
     p = sub.add_parser("tilt", help="no flight: drone level, board on the laptop ahead, camera pitch")
     p.add_argument("--host", default=default_host())
     p.add_argument("--square-mm", type=float, help="square size on this screen (default: from the screen size)")
-    p.add_argument("--lens-cm", type=float, required=True, help="camera lens height above the floor")
-    p.add_argument("--board-cm", type=float, required=True, help="board centre height above the floor")
+    p.add_argument("--lens-cm", type=float, help="camera lens height above the floor (asked for if left out)")
+    p.add_argument("--board-cm", type=float, help="board centre height above the floor (asked for if left out)")
     p.add_argument("--frames", type=int, default=60, help="frames to average (default 60)")
     p.set_defaults(fn=run_tilt)
 
