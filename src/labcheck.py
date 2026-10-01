@@ -1013,9 +1013,9 @@ def run_tilt(args) -> None:
     data = np.load(CALIB_PATH)
     K, dist = data["K"], data["dist"]
     lens_cm = args.lens_cm if args.lens_cm is not None else ask_cm(
-        "Camera lens height above the table or floor the drone sits on (cm): ")
+        "Camera lens height above the floor (cm): ")
     board_cm = args.board_cm if args.board_cm is not None else ask_cm(
-        "Middle of the laptop screen, height above the same surface (cm): ")
+        "Middle of the laptop screen, height above the floor (cm): ")
     open_board_window()
     objp = np.zeros((BOARD_CORNERS[0] * BOARD_CORNERS[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:BOARD_CORNERS[0], 0:BOARD_CORNERS[1]].T.reshape(-1, 2)
