@@ -2,9 +2,9 @@
 
     python -m src.labcheck check            no flight: link, battery, frame size, rates, live view
     python -m src.labcheck board            no drone: draw the chessboard so you can measure it
-    python -m src.labcheck calib --square-mm 21.5
+    python -m src.labcheck calib
                                             no flight: Tello held at this screen, writes calib.npz
-    python -m src.labcheck tilt --square-mm 21.5 --lens-cm 4.2 --board-cm 4.2
+    python -m src.labcheck tilt --lens-cm 4.2 --board-cm 4.2
                                             no flight: drone level, laptop 1 m ahead, camera pitch
     python -m src.labcheck tape             no drone: type in the tape measurements
     python -m src.labcheck steps --axis fb  flies: rc steps on one axis (fb, lr, ud or yaw)
@@ -504,7 +504,47 @@ def board_image() -> np.ndarray:
         for c in range(cols):
             if (r + c) % 2 == 0:
                 img[(r + 1) * sq:(r + 2) * sq, (c + 1) * sq:(c + 2) * sq] = 0
+    # Grey outline round the grid, so the outer white squares have an edge to
+    # measure to. The detector only uses inner corners, so it does not see this.
+    cv2.rectangle(img, (sq, sq), ((cols + 1) * sq - 1, (rows + 1) * sq - 1), 128, 2)
     return img
+
+
+def screen_square_mm() -> Optional[float]:
+    """Board square size on the main display, from its physical size (macOS only).
+
+    Assumes OpenCV draws one image pixel per screen point, which is why the
+    board command asks for a ruler check.
+    """
+    try:
+        import ctypes
+        import ctypes.util
+
+        class Size(ctypes.Structure):
+            _fields_ = [("width", ctypes.c_double), ("height", ctypes.c_double)]
+
+        cg = ctypes.cdll.LoadLibrary(ctypes.util.find_library("CoreGraphics"))
+        cg.CGMainDisplayID.restype = ctypes.c_uint32
+        cg.CGDisplayScreenSize.restype = Size
+        cg.CGDisplayScreenSize.argtypes = [ctypes.c_uint32]
+        cg.CGDisplayPixelsWide.restype = ctypes.c_size_t
+        cg.CGDisplayPixelsWide.argtypes = [ctypes.c_uint32]
+        display = cg.CGMainDisplayID()
+        width_mm, points = cg.CGDisplayScreenSize(display).width, cg.CGDisplayPixelsWide(display)
+        return BOARD_SQUARE_PX * width_mm / points if width_mm > 0 and points > 0 else None
+    except Exception:
+        return None
+
+
+def square_mm_arg(args) -> float:
+    """--square-mm if given, else the size worked out from the screen."""
+    if args.square_mm:
+        return args.square_mm
+    estimate = screen_square_mm()
+    if estimate is None:
+        sys.exit("Could not read the screen size. Run board, measure, and pass --square-mm.")
+    print(f"Using square size {estimate:.2f} mm from the screen (check it with board; --square-mm overrides)")
+    return estimate
 
 
 def show_board(status: str = "", flash: bool = False, hint: str = "") -> None:
@@ -629,8 +669,9 @@ def calibrate(folder: Path, square_mm: float) -> None:
 
 def run_calib(args) -> None:
     if args.from_dir:
-        calibrate(Path(args.from_dir), args.square_mm)
+        calibrate(Path(args.from_dir), square_mm_arg(args))
         return
+    square_mm = square_mm_arg(args)
     session = Session("calib", args.host)
     cv2.namedWindow("board", cv2.WINDOW_AUTOSIZE)
     cv2.moveWindow("board", 0, 0)
@@ -671,7 +712,7 @@ def run_calib(args) -> None:
             cv2.imshow("tello", cv2.resize(view, (width // 2, height // 2)))
     finally:
         session.close()
-    calibrate(session.dir, args.square_mm)
+    calibrate(session.dir, square_mm)
 
 
 # ---------------------------------------------------------------------------
@@ -927,7 +968,7 @@ def run_tilt(args) -> None:
     objp = np.zeros((BOARD_CORNERS[0] * BOARD_CORNERS[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:BOARD_CORNERS[0], 0:BOARD_CORNERS[1]].T.reshape(-1, 2)
     objp[:, :2] -= objp[:, :2].mean(axis=0)  # origin at the board centre
-    objp *= args.square_mm / 1000
+    objp *= square_mm_arg(args) / 1000
     dh = (args.board_cm - args.lens_cm) / 100
 
     session = Session("tilt", args.host)
@@ -1038,12 +1079,22 @@ def run_check(args) -> None:
 
 def run_board(args) -> None:
     total = (BOARD_CORNERS[0] + 1)
-    print(f"Measure the top row of {total} squares end to end with a ruler, in mm,\n"
-          f"divide by {total}, and pass that as --square-mm to calib. Esc closes the board.")
+    estimate = screen_square_mm()
+    if estimate is None:
+        print(f"Could not read the screen size. Measure the top row of {total} squares end to end\n"
+              f"with a ruler, in mm, divide by {total}, and pass that as --square-mm. Esc closes the board.")
+        status = f"Measure the top row ({total} squares), divide by {total}. Esc closes."
+    else:
+        row = estimate * total
+        print(f"From the screen size, the top row of {total} squares should be {row:.0f} mm\n"
+              f"(one square {estimate:.2f} mm). Check it with a ruler along the grey outline.\n"
+              f"If it matches, calib and tilt need no --square-mm. If not, measure, divide by\n"
+              f"{total}, and pass --square-mm. Esc closes the board.")
+        status = f"Top row should be {row:.0f} mm. Check with a ruler. Esc closes."
     cv2.namedWindow("board", cv2.WINDOW_AUTOSIZE)
     cv2.moveWindow("board", 0, 0)
     while True:
-        show_board(f"Measure the top row ({total} squares), divide by {total}. Esc closes.")
+        show_board(status)
         if cv2.waitKey(30) & 0xFF == KEY_ESC:
             break
     cv2.destroyAllWindows()
@@ -1100,14 +1151,14 @@ def main(argv=None) -> None:
 
     p = sub.add_parser("calib", help="no flight: point the Tello at the on-screen board")
     p.add_argument("--host", default=default_host())
-    p.add_argument("--square-mm", type=float, required=True, help="measured square size on this screen")
+    p.add_argument("--square-mm", type=float, help="square size on this screen (default: from the screen size)")
     p.add_argument("--frames", type=int, default=20, help="views to capture (default 20)")
     p.add_argument("--from-dir", help="recompute from a saved calib run folder, no drone")
     p.set_defaults(fn=run_calib)
 
     p = sub.add_parser("tilt", help="no flight: drone level, board on the laptop ahead, camera pitch")
     p.add_argument("--host", default=default_host())
-    p.add_argument("--square-mm", type=float, required=True, help="measured square size on this screen")
+    p.add_argument("--square-mm", type=float, help="square size on this screen (default: from the screen size)")
     p.add_argument("--lens-cm", type=float, required=True, help="camera lens height above the floor")
     p.add_argument("--board-cm", type=float, required=True, help="board centre height above the floor")
     p.add_argument("--frames", type=int, default=60, help="frames to average (default 60)")
