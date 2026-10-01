@@ -9,12 +9,15 @@
     python -m src.labcheck tape             no drone: type in the tape measurements
     python -m src.labcheck steps --axis fb  flies: rc steps on one axis (fb, lr, ud or yaw)
     python -m src.labcheck hover            flies: hands-off hover, then an optional descent ladder
+    python -m src.labcheck hoop             no flight: the hoop detector on the live video
+    python -m src.labcheck baseline         flies: the hand-written baseline, camera to rc
     python -m src.labcheck summary runs/lab/<folder>
                                             re-print the numbers from an earlier run
 
 Each run writes a folder under runs/lab/: state.csv (every telemetry packet),
 commands.csv (every rc sent), frames.csv (every video frame and its image shift),
-events.txt, summary.txt, and video.mp4 with --record.
+events.txt, summary.txt, and video.mp4 with --record. hoop and baseline add
+detect.csv (the eight numbers per frame, and the rc sent under baseline).
 
 Keys in the video window (click it first so it has focus):
     Space    emergency: motors off at once, the drone drops
@@ -27,6 +30,7 @@ with today's date.
 from __future__ import annotations
 
 import argparse
+import collections
 import csv
 import functools
 import json
@@ -44,6 +48,8 @@ import cv2
 import numpy as np
 from djitellopy import Tello
 
+from src import baseline, contract
+from src.detect import CONFIRM_FRAMES, HoopDetector, draw
 from src.params import CALIB_PATH, ROOT
 
 PARAMS_PATH = ROOT / "src" / "params.py"
@@ -86,7 +92,7 @@ class Hold:
     """Send one rc for some seconds. rc=None sends nothing (on the ground)."""
     label: str
     seconds: float
-    rc: Optional[tuple] = (0, 0, 0, 0)
+    rc: Optional[tuple] = (0, 0, 0, 0)   # or a function called each tick for the rc
 
 
 @dataclass
@@ -112,6 +118,7 @@ class Session:
         self._last_small = None
         self.frame_bgr = None
         self._placeholder_at = -1.0
+        self.decorate: Optional[Callable[[np.ndarray], np.ndarray]] = None   # draws on the view
 
         self._events = open(self.dir / "events.txt", "w")
         self._state_file = open(self.dir / "state.csv", "w", newline="")
@@ -237,6 +244,8 @@ class Session:
             fresh = True
         if fresh:
             view = self.frame_bgr.copy() if self.frame_bgr is not None else np.zeros((360, 480, 3), np.uint8)
+            if self.decorate is not None and self.frame_bgr is not None:
+                view = self.decorate(view)
             for i, text in enumerate(lines):
                 cv2.putText(view, text, (12, 28 + 26 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.65,
                             (0, 0, 0), 4, cv2.LINE_AA)
@@ -388,7 +397,7 @@ def fly(session: Session, items: list, fence_cm: float, max_height_cm: float) ->
                 until, rc = now + item.seconds, item.rc
 
             if rc is not None and now >= next_tick:
-                session.send_rc(rc)
+                session.send_rc(rc() if callable(rc) else rc)
                 next_tick += DT
                 if now - next_tick > DT:  # fell behind: restart the deadline, don't burst
                     next_tick = now + DT
@@ -895,6 +904,8 @@ def summarise(folder: Path) -> str:
         gaps = np.diff(frames["t"])
         say(f"  video        {int(frames['width'][0])}x{int(frames['height'][0])},"
             f" {1 / np.median(gaps):4.1f} fps (median), worst gap {gaps.max() * 1000:.0f} ms")
+    if (folder / "detect.csv").exists():
+        out += summarise_detect(load(folder / "detect.csv"))
     if not state:
         return "\n".join(out)
 
@@ -1011,6 +1022,148 @@ def summarise(folder: Path) -> str:
             say("  -> yaw: " + ", ".join(f"rc {r['amp']:+d} = {r['gain']:+.0f} deg/s" for r in yaw)
                 + f"; tau {np.median([r['tau'] for r in yaw]):.2f} s")
     return "\n".join(out)
+
+
+# ---------------------------------------------------------------------------
+# The hoop detector, and the baseline flown on it
+# ---------------------------------------------------------------------------
+
+# Policy action to rc, per axis in send_rc_control order (contract.ACTION_FIELDS).
+# Full action is params.Drone.max_speed (0.4 m/s) and max_yaw_rate_deg (60 deg/s).
+# MEASURED 2026-10-01: fb and lr reach 0.4 m/s at rc ~50, yaw 60 deg/s at rc ~70.
+# ud only reached 0.26 m/s at rc 60, so up gets the whole range and still falls short.
+RC_FULL = (50, 50, 100, 70)
+
+
+class Watcher:
+    """Runs the detector on each new frame, logs it to detect.csv, draws it."""
+
+    def __init__(self, session: "Session"):
+        self.session = session
+        self.detector = HoopDetector(confirm=CONFIRM_FRAMES)
+        self.det = None
+        self.obs = contract.NOT_VISIBLE.copy()
+        self.rc = (0, 0, 0, 0)
+        self.in_view = True     # the operator's say: is the hoop in view? h toggles
+        self._frame = None
+        self._file = open(session.dir / "detect.csv", "w", newline="")
+        self._csv = csv.writer(self._file)
+        self._csv.writerow(["t", "phase", "in_view", "ms", *contract.FIELDS, "rc_lr", "rc_fb", "rc_ud", "rc_yaw"])
+        session.decorate = self.draw
+
+    def update(self) -> bool:
+        """Detect on the newest frame, if it is new. True when it was."""
+        frame = self.session.frame_bgr
+        if frame is None or frame is self._frame:
+            return False
+        self._frame = frame
+        t0 = time.perf_counter()
+        self.det = self.detector(frame)
+        ms = (time.perf_counter() - t0) * 1000
+        self.obs = self.det.obs
+        self._csv.writerow([f"{self.session.now():.4f}", self.session.phase, int(self.in_view), f"{ms:.1f}",
+                            *(f"{v:.4f}" for v in self.obs), *self.rc])
+        return True
+
+    def draw(self, view: np.ndarray) -> np.ndarray:
+        if self.det is None:
+            return view
+        view = draw(view, self.det)
+        if not self.in_view:
+            cv2.putText(view, "operator: hoop NOT in view (h)", (12, view.shape[0] - 50),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2, cv2.LINE_AA)
+        return view
+
+    def close(self) -> None:
+        self._file.close()
+
+
+def summarise_detect(d: dict) -> list:
+    """Detection rate, marker rate, jitter and cost, for B3's done-when."""
+    if not d:
+        return []
+    out = []
+    say = out.append
+    vis, marker, in_view = d["visible"] > 0, d["marker"] > 0, d["in_view"] > 0
+    say(f"  detector     {len(vis)} frames, {np.median(d['ms']):.0f} ms median, p95 {np.percentile(d['ms'], 95):.0f} ms")
+    if in_view.any():
+        say(f"  detected     {vis[in_view].mean():6.1%} of frames the operator marked in view (target > 95%)")
+    if (~in_view).any():
+        say(f"  false hoop   {vis[~in_view].mean():6.1%} of frames marked not in view")
+    if vis.any():
+        say(f"  marker       {marker[vis].mean():6.1%} of frames with the hoop seen")
+        # Jitter: frame-to-frame change over runs of detections. On a still hoop
+        # this is noise; std of a difference is sqrt(2) times the per-frame noise.
+        both = vis[1:] & vis[:-1]
+        if both.sum() >= 5:
+            jit = {k: np.std(np.diff(d[k])[both]) / np.sqrt(2) for k in ("u", "v", "major", "ratio")}
+            say("  jitter       " + "  ".join(f"{k} {v:.4f}" for k, v in jit.items())
+                + "   (per frame; hold still for this to mean noise)")
+        # Dropout runs: how long the hoop goes missing between sightings.
+        gaps, run = [], 0
+        for seen in vis[np.argmax(vis):]:
+            if seen:
+                if run:
+                    gaps.append(run)
+                run = 0
+            else:
+                run += 1
+        if gaps:
+            say(f"  dropouts     {len(gaps)}, longest {max(gaps)} frames, median {int(np.median(gaps))}")
+    return out
+
+
+def run_hoop(args) -> None:
+    session = Session("hoop", args.host, record=args.record)
+    watcher = Watcher(session)
+    try:
+        session.set_phase("view")
+        session.event("detector live. Point the drone at the hoop; h marks the hoop out of view and back. Esc to stop")
+        while True:
+            watcher.update()
+            key = session.show(session.status_lines()[:1] + ["h: hoop in/out of view   Esc: stop"])
+            if key in (KEY_ESC, ord("q")):
+                break
+            if key in (ord("h"), ord("H")):
+                watcher.in_view = not watcher.in_view
+                session.event(f"operator: hoop {'in' if watcher.in_view else 'out of'} view")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        watcher.close()
+        session.close()
+    finish(session)
+
+
+def run_baseline(args) -> None:
+    """The Lapper from baseline.py on the real drone: the same policy input the
+    simulator builds, from the real detector, sent as rc at 10 Hz."""
+    session = Session("baseline", args.host, record=args.record)
+    watcher = Watcher(session)
+    policy = baseline.Lapper()
+    frames = collections.deque([contract.NOT_VISIBLE.copy()] * contract.FRAME_HISTORY,
+                               maxlen=contract.FRAME_HISTORY)
+    actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
+                                maxlen=contract.ACTION_HISTORY)
+
+    def tick() -> tuple:
+        # One observation per control step, as in the simulator: the newest frame's.
+        watcher.update()
+        frames.append(watcher.obs.copy())
+        x = np.concatenate([*(frames[-1 - lag] for lag in contract.OBS_LAGS), *actions]).astype(np.float32)
+        action = np.clip(policy(x), -1, 1)
+        actions.append(action.astype(np.float32))
+        watcher.rc = tuple(int(round(a * full)) for a, full in zip(action, RC_FULL))
+        return watcher.rc
+
+    try:
+        start = countdown_and_takeoff(session, args.min_battery)
+        if start:
+            fly(session, start + [Hold("baseline", args.seconds, tick)], args.fence_cm, args.max_height_cm)
+    finally:
+        watcher.close()
+        session.close()
+    finish(session)
 
 
 def finish(session: Session) -> None:
@@ -1234,12 +1387,12 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def drone_args(p, flies: bool):
+    def drone_args(p, flies: bool, fence_cm: float = 60):
         p.add_argument("--host", default=default_host(), help="drone IP (default from settings.json)")
         p.add_argument("--record", action="store_true", help="also save video.mp4")
         if flies:
-            p.add_argument("--fence-cm", type=float, default=60,
-                           help="land if the pad reads further than this from the drone (default 60)")
+            p.add_argument("--fence-cm", type=float, default=fence_cm,
+                           help=f"land if the pad reads further than this from the drone (default {fence_cm:g})")
             p.add_argument("--max-height-cm", type=float, default=170, help="land above this tof (default 170)")
             p.add_argument("--min-battery", type=int, default=30, help="refuse to take off below this")
 
@@ -1283,6 +1436,18 @@ def main(argv=None) -> None:
     p.add_argument("--ladder", type=int, default=0, metavar="N",
                    help="then step down 20 cm N times, 8 s each; only moves while tof > 50 cm")
     p.set_defaults(fn=run_hover)
+
+    p = sub.add_parser("hoop", help="no flight: the hoop detector on the live video")
+    drone_args(p, flies=False)
+    p.set_defaults(fn=run_hoop)
+
+    p = sub.add_parser("baseline", help="flies: the hand-written baseline on the real detector")
+    # The hoop is at least 0.6 m from the pad and the far corner ~2.3 m, so the
+    # 60 cm fence would land it on the way in. The net is the wall; this only
+    # catches a drone the pad has lost track of.
+    drone_args(p, flies=True, fence_cm=200)
+    p.add_argument("--seconds", type=float, default=60, help="flight time before landing (default 60)")
+    p.set_defaults(fn=run_baseline)
 
     p = sub.add_parser("summary", help="re-print the numbers from a run folder")
     p.add_argument("folder")
