@@ -1,3 +1,5 @@
+import dataclasses
+
 import numpy as np
 import pytest
 from gymnasium.utils.env_checker import check_env
@@ -9,7 +11,7 @@ from src.sim import SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
-EXACT = Hoop(diameter_tolerance=0.0)
+EXACT = Hoop(diameter_tolerance=0.0, marker_max_angle_deg=70.0)  # tests pin these, not the measured hoop
 IDEAL = Drone(tau=0.3, delay_steps=0)  # scripted paths assume no lag, not the measured drone
 U, V, MAJOR, RATIO, SIN, COS, VISIBLE, MARKER = range(8)
 
@@ -18,7 +20,7 @@ def make_env(**kwargs):
     kwargs.setdefault("cage", BIG)
     kwargs.setdefault("hoop", EXACT)
     kwargs.setdefault("drone", IDEAL)
-    kwargs.setdefault("camera", Camera())
+    kwargs.setdefault("camera", Camera(pitch_deg=0.0))  # level: the geometry tests assume it
     return HoopEnv(**kwargs)
 
 
@@ -437,6 +439,30 @@ def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
         assert env.dyn is dyn
     assert delays == set(range(r.delay_steps[0], r.delay_steps[1] + 1))
 
+
+
+def test_measurement_error_stays_in_range_and_leaves_the_measured_values():
+    env = HoopEnv(randomise=True, camera=Camera())
+    measured = {name: dataclasses.replace(obj) for name, obj in env._measured.items()}
+    fx = set()
+    for seed in range(30):
+        env.reset(seed=seed)
+        for key, error in Randomise().error.items():
+            name, attr = key.split(".")
+            assert abs(getattr(getattr(env, name), attr) - getattr(measured[name], attr)) <= error
+        fx.add(env.camera.fx)
+    assert len(fx) == 30
+    assert env._measured["camera"] == measured["camera"]
+
+
+def test_hanger_bar_is_drawn_per_episode():
+    env = HoopEnv(camera=Camera())
+    low, high = Hoop().hanger_half_width_range
+    widths = []
+    for seed in range(30):
+        env.reset(seed=seed)
+        widths.append(env.hanger_half_width)
+    assert low <= min(widths) and max(widths) <= high and len(set(widths)) == 30
 
 def test_gymnasium_api():
     check_env(HoopEnv(randomise=True, camera=Camera()), skip_render_check=True)

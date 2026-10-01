@@ -9,10 +9,9 @@ Search src/ for UNMEASURED to see what is still guessed.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
-import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 CALIB_PATH = ROOT / "calib.npz"
@@ -33,30 +32,30 @@ class Cage:
 class Hoop:
     outer_diameter: float = 0.45      # MEASURED 2026-09-24, outside edge to outside edge
     diameter_tolerance: float = 0.03  # DESIGN: +- per episode and per axis; the noodle is floppy
-    thickness: float = 0.065          # UNMEASURED: noodle diameter, measure with the tape
+    thickness: float = 0.065  # MEASURED 2026-10-01: tape, 6.5 cm
     n_points: int = 32                # DESIGN: points projected around the outer edge
     # The front marker: a disc on the noodle's front face at 6 o'clock. The noodle
     # hides it from behind, which is how the policy tells front from back.
-    marker_max_angle_deg: float = 70.0  # UNMEASURED: widest view off the hoop's front normal
-                                        # that still shows it; check by eye from the side
+    marker_max_angle_deg: float = 60.0  # MEASURED 2026-10-01: by eye
     # The hanger: the bar on top of the hoop and the straps up to the cage roof.
     # Modelled as a thin strip in the hoop's plane from its top to the ceiling,
     # so the drone cannot go round over the top. Laps only.
-    hanger_half_width: float = 0.2    # UNMEASURED: half the top bar's length; assumes the hoop
-                                      # hangs from the roof. Measure the bar with the tape
+    hanger_half_width: float = 0.08  # MEASURED 2026-10-01: tape, 16 cm / 2
+    hanger_half_width_range: tuple = (0.025, 0.20)  # DESIGN: per episode, a 5-40 cm bar; the
+                                                    # real one varies between hoops
 
 
 @dataclass
 class Camera:
-    """Intrinsics at the Tello's 960x720 stream. calib.npz replaces these when it exists."""
+    """Intrinsics at the Tello's 960x720 stream: defaults, not calibrated."""
     width: int = 960           # MEASURED 2026-10-01: stream frames are 960x720
     height: int = 720          # MEASURED 2026-10-01
-    fx: float = 908.9  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
-    fy: float = 909.6  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
-    cx: float = 488.7  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
-    cy: float = 356.0  # MEASURED 2026-10-01: chessboard, 20 views, rms 0.57 px
-    pitch_deg: float = 0.0     # UNMEASURED: camera tilt below horizontal
-    offset_forward: float = 0.05  # UNMEASURED: camera ahead of the drone's centre
+    fx: float = 920.0     # DEFAULT: typical Tello at 960x720; Randomise.error covers the real one
+    fy: float = 920.0     # DEFAULT: typical Tello at 960x720; Randomise.error covers the real one
+    cx: float = 480.0     # DEFAULT: typical Tello at 960x720; Randomise.error covers the real one
+    cy: float = 360.0     # DEFAULT: typical Tello at 960x720; Randomise.error covers the real one
+    pitch_deg: float = 12.8  # MEASURED 2026-10-01: labcheck tilt at 0.8 m
+    offset_forward: float = 0.045  # MEASURED 2026-10-01: tape, 4.5 cm
 
     @property
     def half_extent(self) -> tuple[float, float]:
@@ -91,20 +90,16 @@ class Randomise:
     delay_steps: tuple[int, int] = (1, 4)       # MEASURED 2026-10-01: 2 steps, +-1 plus WiFi spikes
     tau: tuple[float, float] = (0.25, 0.7)      # MEASURED 2026-10-01: 0.25 (ud) to 0.66 (fb)
     rate_hz: tuple[float, float] = (8.0, 12.0)  # MEASURED 2026-10-01: 10.0 Hz mean, worst tick 126 ms; drawn every step
-
-
-def load_camera() -> Camera:
-    """Camera from calib.npz if it exists, else the guessed one.
-
-    calib.npz holds K (3x3), dist, and size (width, height) as saved after
-    cv2.calibrateCamera. The simulator ignores dist: the detector undistorts,
-    so both sides work in the same ideal pinhole coordinates.
-    """
-    if not CALIB_PATH.exists():
-        return Camera()
-    data = np.load(CALIB_PATH)
-    K = data["K"]
-    width, height = (int(x) for x in data["size"])
-    return Camera(width=width, height=height,
-                  fx=float(K[0, 0]), fy=float(K[1, 1]),
-                  cx=float(K[0, 2]), cy=float(K[1, 2]))
+    # Measurement error: each value here moves by up to +- this much per episode,
+    # so the policy does not lean on any one measurement being exact. DESIGN, sized
+    # to how well each was measured (tape about 1 cm, calibration about 3 px).
+    error: dict = field(default_factory=lambda: {
+        "cage.length": 0.02, "cage.width": 0.02, "cage.height": 0.02,
+        "hoop.thickness": 0.01,
+        "hoop.marker_max_angle_deg": 10.0,
+        "camera.fx": 30.0, "camera.fy": 30.0, "camera.cx": 20.0, "camera.cy": 20.0,
+        "camera.pitch_deg": 2.0, "camera.offset_forward": 0.01,
+        "drone.width": 0.01, "drone.length": 0.01, "drone.height": 0.01,
+        "drone.takeoff_height": 0.05,
+        "drone.max_speed": 0.04, "drone.max_yaw_rate_deg": 6.0,
+    })
