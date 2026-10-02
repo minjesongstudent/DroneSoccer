@@ -1,7 +1,0 @@
-pass rates on held-out episodes:
-seed 0  policy    passed   1.2%  hit  96.0%  missed   2.6%  left_cage   0.2%  timeout   0.0%
-seed 1  policy    passed   0.0%  hit   7.4%  missed   0.6%  left_cage   0.8%  timeout  91.2%
-seed 2  policy    passed   0.0%  hit   0.0%  missed   8.2%  left_cage  17.0%  timeout  74.8%
-seed 3  policy    passed   0.0%  hit   0.8%  missed   0.0%  left_cage   0.4%  timeout  98.8%
-seed 4  policy    passed   1.2%  hit  32.8%  missed   2.4%  left_cage   0.6%  timeout  63.0%
-baseline  passed  82.4%  hit  17.0%  missed   0.0%  left_cage   0.6%  timeout   0.0%
