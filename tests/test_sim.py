@@ -6,7 +6,7 @@ from gymnasium.utils.env_checker import check_env
 
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Randomise
-from src.contract import LAPS_MAX_STEPS, R_CRASH, R_PASS, R_PROGRESS, R_WALL
+from src.contract import GAMMA, LAPS_MAX_STEPS, R_CRASH, R_PASS, R_TIME, R_WALL
 from src.sim import SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
@@ -157,33 +157,33 @@ def test_squashed_hoop_is_scored_as_seen(lateral, vertical, expected):
     assert first_event(env, [0.0, 1.0, 0.0, 0.0]) == expected
 
 
-def test_the_geofence_holds_the_drone_without_ending_the_episode():
+def test_touching_the_net_ends_the_episode():
     env = make_env()
-    env.place([5.0, 5.0, 1.5], 0.0, [6.0, 5.0, 1.5], [1.0, 0.0, 0.0])
-    ceiling = env.cage.height - env.cage.margin
-    for _ in range(200):
-        _, reward, terminated, truncated, info = env.step([0.0, 0.0, 1.0, 0.0])
-        if terminated or truncated:
-            break
-    assert not terminated and info["outcome"] == "running"
-    assert env.pos[2] == pytest.approx(ceiling)
-    assert info["wall_steps"] > 0
-    # Pressed into the ceiling: the drone no longer moves, so the shaping is
-    # zero and only the wall is left.
-    assert reward == pytest.approx(-R_WALL, abs=0.01)
-
-
-def test_the_floor_and_every_wall_hold_too():
-    env = make_env()
-    for action, axis, expected in [([0.0, 0.0, -1.0, 0.0], 2, BIG.min_altitude),
-                                   ([0.0, 1.0, 0.0, 0.0], 0, BIG.length - BIG.margin),
-                                   ([1.0, 0.0, 0.0, 0.0], 1, BIG.margin)]:
-        # The hoop sits out of the way, so only the fence can stop the drone.
+    for action, axis, expected in [([0.0, 1.0, 0.0, 0.0], 0, BIG.length - IDEAL.length / 2),
+                                   ([0.0, -1.0, 0.0, 0.0], 0, IDEAL.length / 2),
+                                   ([1.0, 0.0, 0.0, 0.0], 1, IDEAL.width / 2),
+                                   ([-1.0, 0.0, 0.0, 0.0], 1, BIG.width - IDEAL.width / 2),
+                                   ([0.0, 0.0, 1.0, 0.0], 2, BIG.height - IDEAL.height / 2)]:
+        # The hoop sits out of the way, so only the net can stop the drone.
         env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
         for _ in range(300):
-            terminated = env.step(action)[2]
-            assert not terminated
+            _, reward, terminated, _, info = env.step(action)
+            if terminated:
+                break
+        assert info["outcome"] == "net" and info["wall_steps"] == 1
+        assert reward == pytest.approx(-R_WALL - R_CRASH - R_TIME)
+        # The drone's box is at the net, not its centre.
         assert env.pos[axis] == pytest.approx(expected)
+
+
+def test_the_floor_holds_the_drone_without_ending_the_episode():
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
+    for _ in range(300):
+        _, reward, terminated, _, _ = env.step([0.0, 0.0, -1.0, 0.0])
+        assert not terminated
+    assert env.pos[2] == pytest.approx(BIG.min_altitude)
+    assert reward == pytest.approx(-R_WALL - R_TIME)
 
 
 def test_hit_shortcut_agrees_with_the_full_check():
@@ -246,49 +246,29 @@ def test_a_crash_costs_less_than_a_pass_pays():
 
 
 def test_crashing_is_never_the_cheap_way_out_of_an_episode():
-    """The approach earns some shaping, but never enough to cover R_CRASH, so
-    the drone that flies at the rim loses to the one that waits."""
+    """The drone that flies at the rim must lose to the one that waits, or
+    R_TIME teaches it to crash. Timeouts bootstrap and the policy cannot see the
+    clock, so it values hovering as endless: -R_TIME / (1 - GAMMA)."""
     assert R_CRASH < R_PASS
-
-    env = make_env()
-    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
-    hovering = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
+    hovering = -R_TIME / (1 - GAMMA)
 
     env = make_env()
     env.place([5.0, 5.0 + 0.3, 1.5], 0.0, HOOP_AT, BACK)   # aimed at the rim
     crashing, terminated = 0.0, False
-    for _ in range(LAPS_MAX_STEPS):
+    for k in range(LAPS_MAX_STEPS):
         _, reward, terminated, _, info = env.step([0.0, 1.0, 0.0, 0.0])
-        crashing += reward
+        crashing += GAMMA ** k * reward
         if terminated:
             break
     assert terminated and info["outcome"] == "hit"
     assert crashing < hovering
 
 
-def test_hovering_earns_nothing():
-    """A drone that holds still must earn no shaping at all.
-
-    phi is negative, so discounting it inside the shaping would pay
-    (GAMMA - 1) * phi every step and turn loitering out of reach into income.
-    """
+def test_hovering_costs_only_the_clock():
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
     total = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
-    assert total == pytest.approx(0.0, abs=1e-6)
-
-
-def test_the_shaping_telescopes_and_cannot_be_farmed():
-    """Any loop back to the start must earn nothing, whatever route it takes."""
-    env = make_env()
-    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
-    start = env._to_go(env.pos.copy())
-    total = 0.0
-    for action in ([0.0, 1.0, 0.0, 0.0],) * 20 + ([0.0, -1.0, 0.0, 0.0],) * 20:
-        _, reward, terminated, _, info = env.step(list(action))
-        total += reward
-        assert not terminated and info["outcome"] == "running"
-    assert total == pytest.approx(R_PROGRESS * (start - env._to_go(env.pos)), abs=1e-9)
+    assert total == pytest.approx(-R_TIME * LAPS_MAX_STEPS)
 
 
 def test_crossing_outside_the_ring_never_raises_the_distance_to_go():

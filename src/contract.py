@@ -23,20 +23,17 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-# Reward per step = phi(next state) - phi(state)
-#                 + R_PASS on a pass, - R_CRASH on a crash,
-#                 - R_WALL while the geofence holds the drone back.
+# Reward per step = R_PASS on a pass, - R_CRASH on a crash,
+#                 - R_WALL each step on the floor, - R_TIME always.
 #
-# phi = -R_PROGRESS * metres still to fly round the lap to the next pass (see
-# sim.HoopEnv._to_go). It reads the state alone, so the payments telescope to
-# phi(end) - phi(start): no loop earns anything and holding still earns zero.
-# The distance to go only jumps up at a pass, where R_PASS more than covers it,
-# so a whole lap pays exactly R_PASS.
-R_PASS = 40.0       # the pass step nets ~18: the distance to go jumps ~2.2 m there
-R_CRASH = 30.0      # above that net, so passing then crashing loses; the drone
-                    # must go round to profit. R_PASS 90 vs 15 taught pass-and-die
-R_PROGRESS = 10.0   # per metre still to go
-R_WALL = 0.5
+# No shaping: with free hovering, the route-shaped run settled on hovering.
+# The policy cannot see the clock and timeouts bootstrap, so hovering is worth
+# -R_TIME / (1 - GAMMA) = -20. That beats crashing (-30), so the drone is never
+# paid to crash, but trying beats hovering once a lap passes ~20% of the time.
+R_PASS = 40.0
+R_CRASH = 30.0      # R_PASS 90 vs 15 taught pass-and-die
+R_WALL = 5.0        # each step held at min_altitude; the net is a crash
+R_TIME = 0.1        # keep R_TIME / (1 - GAMMA) below R_CRASH, or crashing beats hovering
 
 GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing
 
@@ -45,21 +42,21 @@ def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
            obs: np.ndarray, action: np.ndarray) -> float:
     """The reward for one step. sim.HoopEnv.step calls this and nothing else scores.
 
-    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way").
+    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way", "net").
     to_go_before, to_go_after: metres left round the lap to the next pass, before
-        and after the step (sim.HoopEnv._to_go).
-    on_wall: the geofence held the drone back this step.
+        and after the step (sim.HoopEnv._to_go). Unused while there is no shaping.
+    on_wall: the drone touched the min_altitude floor or the net this step.
     obs: the eight numbers the camera reports after the step (FIELDS).
     action: the command the policy just gave (ACTION_FIELDS), each in [-1, 1].
     """
-    return (R_PROGRESS * (to_go_before - to_go_after)
-            + R_PASS * (outcome == "passed")
+    return (R_PASS * (outcome == "passed")
             - R_CRASH * (outcome in CRASHES)
+            - R_TIME
             - R_WALL * on_wall)
 
-# Only what the policy can see ends an episode. The geofence is not in the state,
-# so it clamps and charges R_WALL instead.
-CRASHES = ("hit", "wrong_way")
+# "net": the drone touched the net. The net is not in the state, but the hoop
+# is, and the hoop sits well in from it.
+CRASHES = ("hit", "wrong_way", "net")
 LAPS_MAX_STEPS = 600   # 60 s cut-off, not a failure
 
 FIELDS = ("u", "v", "major", "ratio", "sin_2t", "cos_2t", "visible", "marker")
