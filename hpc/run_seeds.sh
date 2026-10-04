@@ -5,8 +5,8 @@
 # Train options go to every seed, e.g. --randomise or --level 0.75.
 # Results: runs/<name>_s<seed>/model.zip, logs in runs/<name>_s<seed>.log
 # Once every seed has finished, only the best seed keeps its model.zip, which is
-# also copied to trainedModels/<name>.zip. Every seed's checkpoints and resume
-# snapshot are deleted; logs, eval.json and plots stay.
+# also copied to trainedModels/<name>.zip. Every seed's resume snapshot is
+# deleted; checkpoints (~3 MB each), logs, eval.json and plots stay.
 # Either way it ends by writing trainingReports/<name>.txt (see src/report.py).
 # Exits non-zero if any seed fails, so the job shows as failed.
 set -euo pipefail
@@ -61,12 +61,14 @@ if [ "$failed" -gt 0 ]; then
     exit 1
 fi
 
-# Best by the curriculum's bar (full minute, enough passes), then passes/min.
+# Best by the curriculum's bar (full minute, enough passes), then passes per episode.
 best=$(.venv/bin/python - "$NAME" "$SEEDS" <<'PY'
 import json, sys
 name, seeds = sys.argv[1], int(sys.argv[2])
 scores = {s: json.load(open(f"runs/{name}_s{s}/eval.json")) for s in range(seeds)}
-print(max(scores, key=lambda s: (scores[s]["ready"], scores[s]["passes_per_min"])))
+# eval.json from before 2026-10-04 has passes_per_min instead.
+print(max(scores, key=lambda s: (scores[s]["ready"],
+                                 scores[s].get("passes_per_ep", scores[s].get("passes_per_min", 0)))))
 PY
 )
 echo "best seed $best: keeping runs/${NAME}_s${best}/model.zip, deleting the rest"
@@ -74,7 +76,7 @@ mkdir -p trainedModels
 cp "runs/${NAME}_s${best}/model.zip" "trainedModels/${NAME}.zip"
 echo "copied to trainedModels/${NAME}.zip"
 for seed in $(seq 0 $((SEEDS - 1))); do
-    rm -rf "runs/${NAME}_s${seed}/checkpoints" "runs/${NAME}_s${seed}/resume"
+    rm -rf "runs/${NAME}_s${seed}/resume"
     [ "$seed" = "$best" ] || rm -f "runs/${NAME}_s${seed}/model.zip"
 done
 report

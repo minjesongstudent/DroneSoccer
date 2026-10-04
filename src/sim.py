@@ -14,6 +14,7 @@ from __future__ import annotations
 # in contract.py. This file is only the physics.
 # The curriculum level blends from easy (0) to real (1).
 HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
+HOOP_FROM_CENTRE = 0.15        # hoop centre this close to the middle of the cage, as set up for real
 PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
 LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad, level 0 and 1
 CLEARANCE = 0.4                # free space in front of and behind the hoop
@@ -122,13 +123,18 @@ class HoopEnv(gym.Env):
         return bool(m <= xy[0] <= self.cage.length - m and m <= xy[1] <= self.cage.width - m)
 
     def _sample_layout(self):
-        """The drone above the pad in a random corner, the hoop anywhere it can be lapped."""
+        """The drone above the pad in a random corner, the hoop near the middle of the
+        cage with room to go round on either side. The policy cannot see the net, so
+        it cannot tell which side has room: both must."""
         rng, cage, pad, m = self.np_random, self.cage, self.pad, self.cage.margin
         max_angle = np.interp(self.level, [0.0, 1.0], LAPS_HOOP_ANGLE_DEG)
+        middle = np.array([cage.length, cage.width]) / 2
         for _ in range(1000):
             start = np.array([rng.choice([pad.inset, cage.length - pad.inset]),
                               rng.choice([pad.inset, cage.width - pad.inset])])
-            centre = rng.uniform([m, m], [cage.length - m, cage.width - m])
+            # Uniform over the disc of radius HOOP_FROM_CENTRE round the middle.
+            r, a = HOOP_FROM_CENTRE * np.sqrt(rng.uniform()), rng.uniform(0.0, 2 * np.pi)
+            centre = middle + r * np.array([np.cos(a), np.sin(a)])
             offset = centre - start
             if np.linalg.norm(offset) < PAD_MIN_DISTANCE:
                 continue
@@ -141,7 +147,7 @@ class HoopEnv(gym.Env):
             must_fit = [centre + radii[0] * side, centre - radii[0] * side,
                         centre + CLEARANCE * normal, centre - CLEARANCE * normal]
             gates = [centre + (radii[0] + SIDE_GAP) * side, centre - (radii[0] + SIDE_GAP) * side]
-            if all(self._in_fence(p) for p in must_fit) and any(self._in_fence(g) for g in gates):
+            if all(self._in_fence(p) for p in must_fit + gates):
                 break
         else:
             raise RuntimeError("cage too small for the layout ranges in sim.py")
@@ -150,7 +156,7 @@ class HoopEnv(gym.Env):
         drone_z = np.clip(np.interp(self.level, [0.0, 1.0], [hoop_z, self.drone.takeoff_height]),
                           cage.min_altitude, cage.height - m)
         # Level 0 faces the hoop; level 1 faces the cage centre, off by the pad's placement.
-        to_centre = np.array([cage.length, cage.width]) / 2 - start
+        to_centre = middle - start
         facing = (np.arctan2(to_centre[1], to_centre[0])
                   + np.deg2rad(rng.uniform(-pad.heading_error_deg, pad.heading_error_deg)))
         heading = _wrap(bearing + self.level * _wrap(facing - bearing))
@@ -217,6 +223,7 @@ class HoopEnv(gym.Env):
         self._pending = deque([np.zeros(contract.ACTION_DIM, np.float32)] * self.dyn.delay_steps)
         self._frames = deque([self.observe()] * contract.FRAME_HISTORY,
                              maxlen=contract.FRAME_HISTORY)
+        self._unseen = not self._frames[-1][contract.VISIBLE]
         self._actions = deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
                               maxlen=contract.ACTION_HISTORY)
         return self._policy_input()
@@ -254,6 +261,7 @@ class HoopEnv(gym.Env):
             self.passes += 1
         obs = self.observe()
         self._frames.append(obs)
+        self._unseen = self._unseen and not obs[contract.VISIBLE]
         self._actions.append(action)
 
         terminated = outcome in contract.CRASHES
@@ -431,8 +439,7 @@ class HoopEnv(gym.Env):
     def _policy_input(self):
         # _frames holds every step. OBS_LAGS picks the strided subset, oldest
         # first, so the newest frame lands last.
-        frames = [self._frames[-1 - lag] for lag in contract.OBS_LAGS]
-        return np.concatenate([*frames, *self._actions]).astype(np.float32)
+        return contract.policy_input(self._frames, self._actions, self._unseen)
 
     def _info(self, outcome):
         return {"outcome": outcome, "passes": self.passes, "steps": self.steps,

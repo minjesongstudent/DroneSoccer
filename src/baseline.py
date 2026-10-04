@@ -57,7 +57,8 @@ GO_ROUND = [           # (steps, action): ~0.6 m right, ~0.8 m back, ~0.6 m left
 def _split(policy_input: np.ndarray):
     n_obs = contract.OBS_STACK * contract.OBS_DIM
     frames = policy_input[:n_obs].reshape(contract.OBS_STACK, contract.OBS_DIM)
-    actions = policy_input[n_obs:].reshape(contract.ACTION_HISTORY, contract.ACTION_DIM)
+    n_act = contract.ACTION_HISTORY * contract.ACTION_DIM   # the seen-hoop flag follows
+    actions = policy_input[n_obs:n_obs + n_act].reshape(contract.ACTION_HISTORY, contract.ACTION_DIM)
     return frames, actions
 
 

@@ -371,3 +371,10 @@ runs/
 
 __pycache__/
 *.pyc
+
+# PBS job stdout/stderr (<jobname>.o<jobid>, <jobname>.e<jobid>)
+*.o[0-9]*
+*.e[0-9]*
+
+# Claude Code worktrees
+.claude/worktrees/
