@@ -23,17 +23,38 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-# Reward per step = R_PASS on a pass, - R_CRASH on a crash,
-#                 - R_WALL each step on the floor, - R_TIME always.
+# Reward per step = R_PROGRESS * (to_go_before - to_go_after)
+#                 + R_PASS on a pass, - R_CRASH on a crash,
+#                 - R_TIME always, - R_WALL each step on the floor.
 #
-# No shaping: with free hovering, the route-shaped run settled on hovering.
-# The policy cannot see the clock and timeouts bootstrap, so hovering is worth
-# -R_TIME / (1 - GAMMA) = -20. That beats crashing (-30), so the drone is never
-# paid to crash, but trying beats hovering once a lap passes ~20% of the time.
+# Shaping: R_PROGRESS per metre flown along the route round the lap to the next
+# pass (sim.HoopEnv._to_go), with no GAMMA. With GAMMA inside the difference
+# (netcrash-routeshaping) the shaping was potential-based: holding still earned
+# (1 - GAMMA) * R_PROGRESS * to_go a step, which over the bootstrapped horizon
+# repaid exactly the progress made, so parking anywhere was worth the same and
+# every seed parked 0.5-0.8 m in front of the hoop. Without GAMMA, holding still
+# earns nothing and progress made is kept, so parking closer to the next pass is
+# worth R_PROGRESS per metre more. Any loop still sums to zero, so it cannot be
+# farmed. The pass takes the route back: to_go jumps ~2.2 m there, so the pass
+# step nets ~+31 and the way round pays the 8.8 back.
+#
+# The policy cannot see the clock and timeouts bootstrap, so hovering anywhere is
+# worth -R_TIME / (1 - GAMMA) = -20. A crash is -30, 10 worse than hovering at the
+# same spot (progress made is kept either way), so crashing is never a cheap way
+# out. Pass then crash nets ~+1, pass then hover ~+11: no pass-and-die.
+# Raising the crash-vs-hover gap stopped learning before the first pass:
+# R_CRASH 50 (crash50-nogamma-progress) and R_CRASH 50 with R_TIME 0.15
+# (time15-crash50-nogamma, cancelled at 450k) both settled into hovering.
+#
+# R_HIDDEN is gone: with every parking spot equal it alone ranked them, and it
+# picked spots where the marker stays in view, outside ~0.45 m. The last
+# 0.35-0.45 m of every pass is blind, so it charged the pass itself.
 R_PASS = 40.0
 R_CRASH = 30.0      # R_PASS 90 vs 15 taught pass-and-die
-R_WALL = 5.0        # each step held at min_altitude; the net is a crash
-R_TIME = 0.1        # keep R_TIME / (1 - GAMMA) below R_CRASH, or crashing beats hovering
+R_PROGRESS = 4.0    # per metre flown along the route
+R_TIME = 0.1        # R_TIME / (1 - GAMMA) must stay below R_CRASH
+R_WALL = 1.0        # each step held at min_altitude, which is no crash; the net is one.
+                    # 5 cost an eighth of a pass a step, and low hoops are 10 cm above it
 
 GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing
 
@@ -44,12 +65,13 @@ def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
 
     outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way", "net").
     to_go_before, to_go_after: metres left round the lap to the next pass, before
-        and after the step (sim.HoopEnv._to_go). Unused while there is no shaping.
+        and after the step (sim.HoopEnv._to_go).
     on_wall: the drone touched the min_altitude floor or the net this step.
     obs: the eight numbers the camera reports after the step (FIELDS).
     action: the command the policy just gave (ACTION_FIELDS), each in [-1, 1].
     """
-    return (R_PASS * (outcome == "passed")
+    return (R_PROGRESS * (to_go_before - to_go_after)
+            + R_PASS * (outcome == "passed")
             - R_CRASH * (outcome in CRASHES)
             - R_TIME
             - R_WALL * on_wall)
@@ -82,7 +104,26 @@ OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
 OBS_STACK = len(OBS_LAGS)
 FRAME_HISTORY = max(OBS_LAGS) + 1
 ACTION_HISTORY = 3
-POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM
+#
+# Last comes the seen-hoop flag: 1 until the detector has first seen the hoop
+# this flight, then 0 for good. Without it, blind at takeoff (hoop above the
+# frame, net 0.3 m behind) and blind for 2.5 s mid-lap (hoop behind, just
+# passed) gave the same input, and the lap's turn-back reversed into the net
+# at takeoff. It reads 1 at takeoff, not 0, so that a policy grown from an
+# 84-input one with a zero weight on it keeps the lap's inputs unchanged.
+POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM + 1
+VISIBLE = FIELDS.index("visible")
+
+
+def policy_input(frames, actions, unseen: bool) -> np.ndarray:
+    """What the policy sees, in the simulator and on the drone alike.
+
+    frames: the last FRAME_HISTORY observations, newest last.
+    actions: the last ACTION_HISTORY actions, newest last.
+    unseen: no frame this flight has had the hoop visible yet.
+    """
+    return np.concatenate([*(frames[-1 - lag] for lag in OBS_LAGS), *actions,
+                           [1.0 if unseen else 0.0]]).astype(np.float32)
 
 MIN_ARC_FRACTION = 0.25  # share of the hoop's edge the detector needs in frame
 MIN_POINTS = 5     # fitEllipse needs at least five

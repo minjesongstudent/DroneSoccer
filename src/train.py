@@ -2,7 +2,7 @@
 
 Run: python -m src.train --steps 3000000 --name laps-v1
 Watch: tensorboard --logdir runs
-    rollout/passes_per_min and curriculum/level are the numbers that matter
+    rollout/passes_per_ep and curriculum/level are the numbers that matter
 
 Saves a checkpoint to runs/<name>/checkpoints/ every CHECKPOINT_EVERY steps and
 runs/<name>/model.zip at the end, then evaluates it against the baseline on the
@@ -27,6 +27,7 @@ from collections import deque
 from pathlib import Path
 
 import numpy as np
+import torch
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
@@ -42,9 +43,16 @@ from src.sim import HoopEnv
 RUNS = ROOT / "runs"
 CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
 BUFFER_SIZE = 1_000_000      # SB3's default; ~700 MB in each resume snapshot
+# --init flies the loaded policy this long, unchanged, before the first update. With
+# SB3's 5k random steps the first 1k updates on so small a buffer wiped out the
+# lap (2.04 passes/ep to 0.28); 200k of its own flying kept it near 2.
+INIT_WARMUP = 200_000
 
-# Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the
-# last LEVEL_WINDOW episodes lasted the full minute with at least LEVEL_PASSES passes.
+# Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the last
+# LEVEL_WINDOW episodes made at least LEVEL_PASSES passes, however they ended.
+# The level only changes the start, so a crash later in the minute does not say
+# the start is still too hard. Lasting the minute is the mission's bar, which
+# scores() ranks seeds by.
 LEVEL_STEP = 0.25
 LEVEL_WINDOW = 200
 LEVEL_UP = 0.7
@@ -84,15 +92,14 @@ class Progress(BaseCallback):
                   f"elapsed {elapsed / 60:.0f}m  eta {eta / 60:.0f}m", flush=True)
         return True
 
-    def _passes_per_min(self) -> float:
-        minutes = sum(i["steps"] for i in self.recent) * Drone().dt / 60
-        return sum(i["passes"] for i in self.recent) / minutes
+    def _passes_per_ep(self) -> float:
+        return float(np.mean([i["passes"] for i in self.recent]))
 
     def _crash_rate(self) -> float:
         return float(np.mean([i["outcome"] in CRASHES for i in self.recent]))
 
     def _record(self):
-        self.logger.record("rollout/passes_per_min", self._passes_per_min())
+        self.logger.record("rollout/passes_per_ep", self._passes_per_ep())
         self.logger.record("rollout/crash_rate", self._crash_rate())
         self.logger.record("curriculum/level", self.level)
         if len(self.recent) == LEVEL_WINDOW and self._ready() >= LEVEL_UP and self.level < 1.0:
@@ -102,9 +109,8 @@ class Progress(BaseCallback):
             print(f"level    {self.level:.2f} at step {self.num_timesteps}", flush=True)
 
     def _ready(self) -> float:
-        """Share of recent episodes that lasted the full minute with LEVEL_PASSES+ passes."""
-        return float(np.mean([i["outcome"] == "timeout" and i["passes"] >= LEVEL_PASSES
-                              for i in self.recent]))
+        """Share of recent episodes with LEVEL_PASSES+ passes, however they ended."""
+        return float(np.mean([i["passes"] >= LEVEL_PASSES for i in self.recent]))
 
     def _summary(self) -> str:
         if not self.recent:
@@ -112,19 +118,20 @@ class Progress(BaseCallback):
         # ready: how close the level-up is. It counts over up to LEVEL_WINDOW
         # episodes, and the level only rises once the window is full.
         ready = f"ready {self._ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
-        # Episodes that end before the minute are crashes; ready needs them to last it.
+        # Episodes that end before the minute are crashes.
         seconds = np.mean([i["steps"] for i in self.recent]) * Drone().dt
-        return (f"passes/min {self._passes_per_min():.2f}  crashed {self._crash_rate():.0%}  "
+        return (f"passes/ep {self._passes_per_ep():.2f}  crashed {self._crash_rate():.0%}  "
                 f"ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
 
 
 def scores(results: list[dict]) -> dict:
-    """What run_seeds.sh ranks seeds by. ready is the curriculum's own bar: the
-    share of episodes that last the full minute with LEVEL_PASSES+ passes."""
-    minutes = sum(r["steps"] for r in results) * Drone().dt / 60
+    """What run_seeds.sh ranks seeds by. ready is the mission's bar: the share of
+    episodes that last the full minute with LEVEL_PASSES+ passes. The curriculum's
+    bar is looser: it ignores how an episode ended. Passes are per episode, not per
+    minute flown, which flattered seeds that pass once and crash within seconds."""
     return {"ready": float(np.mean([r["outcome"] == "timeout" and r["passes"] >= LEVEL_PASSES
                                     for r in results])),
-            "passes_per_min": sum(r["passes"] for r in results) / minutes,
+            "passes_per_ep": float(np.mean([r["passes"] for r in results])),
             "crashed": float(np.mean([r["outcome"] in CRASHES for r in results]))}
 
 
@@ -190,10 +197,62 @@ def make_env(level: float, randomise: bool, envs: int):
     return one() if envs == 1 else SubprocVecEnv([one] * envs)
 
 
+class PolicyWarmup(SAC):
+    """SAC that fills its buffer with its own policy's actions before learning
+    starts, not uniform random ones, so a loaded policy keeps flying as it did."""
+
+    def _sample_action(self, learning_starts, action_noise=None, n_envs=1):
+        return super()._sample_action(0, action_noise, n_envs)
+
+
+def grown(init: str, env, seed: int, envs: int) -> SAC:
+    """A fresh model for `env` with a trained model's networks, optimiser state and
+    entropy coefficient, and an empty replay buffer (fine-tuning). Unlike --resume,
+    this needs only the model.zip.
+
+    If the saved policy input was shorter, the inputs added after it (the seen-hoop
+    flag) get zero weights in the actor and both critics, so the new model acts and
+    values exactly as the old one did until training changes them.
+    """
+    old = SAC.load(init, device="cpu")
+    model = PolicyWarmup("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
+                         gamma=old.gamma, learning_rate=old.learning_rate,
+                         batch_size=old.batch_size, tau=old.tau,
+                         train_freq=envs, gradient_steps=envs,
+                         learning_starts=INIT_WARMUP, buffer_size=BUFFER_SIZE,
+                         tensorboard_log=str(RUNS))
+    n_old = old.observation_space.shape[0]
+    added = model.observation_space.shape[0] - n_old
+    if added < 0:
+        raise ValueError(f"{init} takes {n_old} inputs, more than the {n_old + added} the env gives")
+
+    def widen(old_t, new_t):
+        # First layers read [obs, (action)]: insert zero columns where the old obs ended.
+        if old_t.shape == new_t.shape:
+            return old_t.clone()
+        zeros = old_t.new_zeros(old_t.shape[0], added, *old_t.shape[2:])
+        return torch.cat([old_t[:, :n_old], zeros, old_t[:, n_old:]], dim=1)
+
+    new_state = model.policy.state_dict()
+    model.policy.load_state_dict({k: widen(v, new_state[k]) for k, v in old.policy.state_dict().items()})
+    for name in ("actor", "critic"):
+        old_opt, new_opt = getattr(old, name).optimizer, getattr(model, name).optimizer
+        state = old_opt.state_dict()
+        params = [p for g in new_opt.param_groups for p in g["params"]]
+        for i, slot in state["state"].items():
+            for key in ("exp_avg", "exp_avg_sq"):
+                slot[key] = widen(slot[key], params[i])
+        new_opt.load_state_dict(state)
+    with torch.no_grad():
+        model.log_ent_coef.copy_(old.log_ent_coef)
+    model.ent_coef_optimizer.load_state_dict(old.ent_coef_optimizer.state_dict())
+    return model
+
+
 def train(steps: int, name: str, seed: int, level: float, randomise: bool,
-          resume: bool = False, envs: int = 1) -> Path:
+          resume: bool = False, envs: int = 1, init: str | None = None) -> Path:
     print(settings(steps=steps, seed=seed, level=level, randomise=randomise, resume=resume,
-                   envs=envs), flush=True)
+                   envs=envs, init=init or "none"), flush=True)
     out = RUNS / name
     snapshot = out / "resume"
     if resume:
@@ -205,6 +264,10 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
         # A fresh seed, so the resumed run does not replay its first episode layouts.
         model.set_random_seed(seed + model.num_timesteps)
         print(f"resumed  from step {model.num_timesteps} at level {level:.2f}", flush=True)
+    elif init:
+        model = grown(init, env, seed, envs)
+        print(f"init     from {init} at level {level:.2f}, flying it for {INIT_WARMUP} steps "
+              f"before the first update", flush=True)
     else:
         model = SAC("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
                     gamma=contract.GAMMA,
@@ -236,10 +299,14 @@ if __name__ == "__main__":
                         help="parallel environments; needs one core each")
     parser.add_argument("--resume", action="store_true",
                         help="carry on from runs/<name>/resume/ up to --steps in total")
+    parser.add_argument("--init", help="start from this trained model.zip, with an empty "
+                        "replay buffer (fine-tuning)")
     args = parser.parse_args()
+    if args.init and args.resume:
+        parser.error("--init and --resume do not mix")
 
     path = train(args.steps, args.name, args.seed, args.level, args.randomise,
-                 args.resume, args.envs)
+                 args.resume, args.envs, args.init)
     print(f"saved {path}")
     episodes = args.eval_episodes or DEFAULT_EPISODES
 

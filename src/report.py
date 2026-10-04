@@ -25,8 +25,8 @@ REPORTS = ROOT / "trainingReports"
 MODELS = ROOT / "trainedModels"
 
 STALE_MIN = 10          # a log untouched this long with no result belongs to a dead run
-LEARNED = 0.1           # passes/min a seed needs to count as having learned something
-HOVER_TIMEOUT = 0.5     # this share of timeouts with under LEARNED passes/min is hovering
+LEARNED = 0.1           # passes per episode (per minute in older runs) to count as having learned something
+HOVER_TIMEOUT = 0.5     # this share of timeouts with under LEARNED passes is hovering
 CRASH_HEAVY = 0.5       # crash share that earns a flag
 COLLAPSE = 0.5          # final below this share of the seed's peak is a collapse
 TAIL = 0.3              # "the end of training": this share of the progress lines
@@ -39,9 +39,12 @@ FIRST_PASS = re.compile(r"first pass\s+(never|[\d.]+s)")
 PROGRESS = re.compile(r"^progress\s+(\d+)/(\d+)")
 LEVEL = re.compile(r"^level\s+([\d.]+) at step (\d+)")
 
-# Result columns, in this order when present. The first two are the headline
-# score: passes/min for the laps mission, passed for the older single-pass runs.
-COLUMNS = [("passes/min", "pass/min"), ("passed", "passed"), ("crashed", "crashed"),
+# Result columns, in this order when present. The first three are the headline
+# score: passes/ep for the laps mission, passes/min for its runs before 2026-10-04,
+# passed for the older single-pass runs.
+HEADLINES = ("passes/ep", "passes/min", "passed")
+COLUMNS = [("passes/ep", "pass/ep"), ("passes/min", "pass/min"), ("passed", "passed"),
+           ("never_passed", "never"), ("lap_success", "laps"), ("crashed", "crashed"),
            ("wall", "wall"), ("hit", "hit"), ("wrong_way", "wrong"),
            ("missed", "missed"), ("timeout", "timeout")]
 
@@ -87,17 +90,17 @@ def parse_log(path: Path) -> dict:
 
 
 def score(result: dict | None) -> float | None:
-    """The headline number: passes/min, or the pass share for older runs."""
+    """The headline number: passes/ep, or passes/min or the pass share for older runs."""
     if not result:
         return None
-    return result.get("passes/min", result.get("passed"))
+    return next((result[k] for k in HEADLINES if k in result), None)
 
 
 def curve(seed: dict) -> list[tuple[int, float]]:
     """The training score over steps, from the progress lines."""
     points = []
     for step, _, values in seed["progress"]:
-        value = values.get("passes/min", values.get("pass_rate"))
+        value = next((values[k] for k in ("passes/ep", "passes/min", "pass_rate") if k in values), None)
         if value is not None:
             points.append((step, value))
     return points
@@ -115,13 +118,13 @@ def final_level(seed: dict) -> float | None:
 
 
 def best_seed(seeds: dict[int, dict], name: str) -> int | None:
-    """run_seeds.sh's pick: eval.json's (ready, passes_per_min). Else the best log score."""
+    """run_seeds.sh's pick: eval.json's (ready, passes_per_ep). Else the best log score."""
     evals = {}
     for s in seeds:
         path = RUNS / f"{name}_s{s}" / "eval.json"
         if path.exists():
             e = json.loads(path.read_text())
-            evals[s] = (e.get("ready", 0.0), e.get("passes_per_min", 0.0))
+            evals[s] = (e.get("ready", 0.0), e.get("passes_per_ep", e.get("passes_per_min", 0.0)))
     if evals:
         return max(evals, key=evals.get)
     scored = {s: score(d["policy"]) for s, d in seeds.items() if score(d["policy"]) is not None}
@@ -150,17 +153,17 @@ def flags(seeds: dict[int, dict], expected: int | None, best: int | None) -> lis
             out.append(f"!! best seed below baseline ({top:.2f} vs {base:.2f})")
 
     done = {s: d for s, d in seeds.items() if d["policy"]}
-    laps = {s: d for s, d in done.items() if "passes/min" in d["policy"]}
+    laps = {s: d for s, d in done.items() if any(k in d["policy"] for k in ("passes/ep", "passes/min"))}
     hovering = [s for s, d in laps.items()
-                if d["policy"].get("timeout", 0) >= HOVER_TIMEOUT and d["policy"]["passes/min"] < LEARNED]
+                if d["policy"].get("timeout", 0) >= HOVER_TIMEOUT and score(d["policy"]) < LEARNED]
     if hovering:
-        out.append(f"!  seed {_list(hovering)}: hovering - mostly timeouts, under {LEARNED} passes/min; "
+        out.append(f"!  seed {_list(hovering)}: hovering - mostly timeouts, under {LEARNED} passes; "
                    "it learned to avoid the hoop")
     crashy = [s for s, d in done.items() if d["policy"].get("crashed", 0) >= CRASH_HEAVY]
     if crashy:
         out.append(f"!  seed {_list(crashy)}: crash-heavy - {CRASH_HEAVY:.0%}+ of episodes crash")
     if len(laps) > 1:
-        learned = [s for s, d in laps.items() if d["policy"]["passes/min"] >= LEARNED]
+        learned = [s for s, d in laps.items() if score(d["policy"]) >= LEARNED]
         if len(learned) == 1:
             out.append(f"!  only seed {learned[0]} learned anything: the result may be luck")
 
@@ -211,7 +214,7 @@ def _constants(line: str) -> str:
 def _fmt(key: str, value) -> str:
     if value is None:
         return "-"
-    if key == "passes/min":
+    if key in ("passes/ep", "passes/min"):
         return f"{value:.2f}"
     return f"{value:.1%}"
 
@@ -240,8 +243,8 @@ def results_table(seeds: dict[int, dict], best: int | None) -> list[str]:
     for label, status, result, d in rows:
         result = result or {}
         if not d["policy"] and d["progress"]:   # running: show the training numbers
-            result = {"passes/min": d["progress"][-1][2].get("passes/min"),
-                      "crashed": d["progress"][-1][2].get("crashed")}
+            last = d["progress"][-1][2]
+            result = {k: last.get(k) for k in ("passes/ep", "passes/min", "crashed") if k in last}
         level = final_level(d)
         steps = f"{d['progress'][-1][0] // 1000}k" if d["progress"] else "-"
         elapsed = d["progress"][-1][2].get("elapsed") if d["progress"] else None

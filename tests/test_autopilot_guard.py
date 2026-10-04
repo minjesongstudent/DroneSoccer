@@ -22,10 +22,10 @@ def edited(old, new):
 @pytest.mark.parametrize("new", [
     edited("R_PASS = 40.0", "R_PASS = 55.5"),
     edited("GAMMA = 0.995", "GAMMA = 0.99"),
-    edited("R_WALL = 5.0", "R_WALL = 5.0\nR_SMOOTH = 0.1   # a new term"),
+    edited("R_WALL = 1.0", "R_WALL = 1.0\nR_SMOOTH = 0.1   # a new term"),
     edited(REWARD_BODY, "            - R_WALL * on_wall\n"
                         "            - R_SMOOTH * float(np.square(action[0]) + abs(action[3])))").replace(
-        "R_WALL = 5.0", "R_WALL = 5.0\nR_SMOOTH = 0.1"),
+        "R_WALL = 1.0", "R_WALL = 1.0\nR_SMOOTH = 0.1"),
     edited(REWARD_BODY, "            - R_WALL * on_wall - 0.02 * (1.0 - obs[6]))"),
     edited("# Reward per step", "# A new comment\n# Reward per step"),
 ])

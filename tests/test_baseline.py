@@ -13,7 +13,7 @@ def policy_input(frame, marker_seen=True, forward=0.0):
         frames[:, 7] = 0.0
     actions = np.zeros((contract.ACTION_HISTORY, contract.ACTION_DIM), np.float32)
     actions[-1][1] = forward
-    return np.concatenate([frames.ravel(), actions.ravel()]).astype(np.float32)
+    return np.concatenate([frames.ravel(), actions.ravel(), [0.0]]).astype(np.float32)
 
 
 def hoop_ahead():

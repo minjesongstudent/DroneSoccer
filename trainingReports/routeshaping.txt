@@ -1,6 +1,6 @@
 routeshaping
 job -   git unknown   seeds 4   steps 5,000,000
-written 2026-09-30 21:19
+written 2026-10-01 21:49
 
 SETTINGS
 args      --randomise
@@ -35,11 +35,13 @@ NOTES
 
 RESULTS   (* best seed; score is on held-out episodes at level 1)
 seed  status     1st pass  level      steps   time
-0     running           -   0.00        10k     1m
-1     running           -   0.00        10k     1m
-2     running           -   0.00        10k     1m
-3     running           -   0.00        10k     1m
+0     failed            -   0.00      4650k   912m
+1     failed            -   0.00      4690k   911m
+2     failed            -   0.00      4600k   911m
+3     failed            -   0.00      4520k   911m
 
 FLAGS
-  .. seed 0,1,2,3: running
+  !! seed 0,1,2,3: failed (see logs)
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up), 2 (never levelled up), 3 (never levelled up)
+     seed 2: still improving at the end - more steps may help
   !  seeds started with different settings (sim.py edited mid-launch?)
