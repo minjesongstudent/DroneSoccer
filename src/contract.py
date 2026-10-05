@@ -95,12 +95,12 @@ ACTION_DIM = len(ACTION_FIELDS)
 # delay. OBS_LAGS holds the lags in control steps, oldest first, so the newest
 # frame stays last and frames[-1] still means "now".
 #
-# The hoop leaves the frame about 0.40 m out, and the drone needs about 0.5 m to
-# carry its body through. At 0.2 m/s that is 25 steps at 10 Hz, so the window
-# spans 24 lags. Close lags give velocity, far lags hold the last sighting
-# through the blind final approach. Striding covers 2.5 s with 9 frames instead
-# of 25, which keeps POLICY_INPUT_DIM at 84 rather than 212.
-OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
+# Close lags give velocity, far lags hold the last sighting through blind
+# stretches. On a lap the hoop leaves view 0.8 s before the pass and is back
+# about 3.7 s after it (seenflag-s1-level1: median 45 steps, max 53), so the
+# window spans 60 lags: the old 24 left the go-round with no hoop frame for
+# ~2 s of every lap. Striding covers 6 s with 12 frames instead of 61.
+OBS_LAGS = (60, 50, 40, 32, 24, 16, 12, 8, 4, 2, 1, 0)
 OBS_STACK = len(OBS_LAGS)
 FRAME_HISTORY = max(OBS_LAGS) + 1
 ACTION_HISTORY = 3
