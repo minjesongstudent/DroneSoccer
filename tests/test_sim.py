@@ -6,8 +6,8 @@ from gymnasium.utils.env_checker import check_env
 
 from src import contract
 from src.params import Cage, Camera, Drone, Hoop, Randomise
-from src.contract import GAMMA, LAPS_MAX_STEPS, R_CRASH, R_PASS, R_TIME, R_WALL
-from src.sim import SIDE_GAP, HoopEnv
+from src.contract import GAMMA, LAPS_MAX_STEPS, R_CRASH, R_PASS
+from src.sim import HOOP_FROM_CENTRE, SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
@@ -48,6 +48,12 @@ def first_event(env, action, max_steps=200):
         if info["outcome"] != "running":
             return info["outcome"]
     return "running"
+
+
+def newest(policy_input):
+    """The latest camera frame in a policy input: what contract.reward was given."""
+    n = contract.OBS_STACK * contract.OBS_DIM
+    return policy_input[n - contract.OBS_DIM:n]
 
 
 # --- observation geometry ---------------------------------------------------
@@ -167,11 +173,15 @@ def test_touching_the_net_ends_the_episode():
         # The hoop sits out of the way, so only the net can stop the drone.
         env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
         for _ in range(300):
-            _, reward, terminated, _, info = env.step(action)
+            before = env._to_go(env.pos)
+            policy_input, reward, terminated, _, info = env.step(action)
             if terminated:
                 break
         assert info["outcome"] == "net" and info["wall_steps"] == 1
-        assert reward == pytest.approx(-R_WALL - R_CRASH - R_TIME)
+        # Scored as a crash and a wall touch, whatever the reward makes of them.
+        args = before, env._to_go(env.pos), True, newest(policy_input), np.float32(action)
+        assert reward == pytest.approx(contract.reward("net", *args))
+        assert reward < contract.reward("running", *args)
         # The drone's box is at the net, not its centre.
         assert env.pos[axis] == pytest.approx(expected)
 
@@ -179,11 +189,17 @@ def test_touching_the_net_ends_the_episode():
 def test_the_floor_holds_the_drone_without_ending_the_episode():
     env = make_env()
     env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
+    down = [0.0, 0.0, -1.0, 0.0]
     for _ in range(300):
-        _, reward, terminated, _, _ = env.step([0.0, 0.0, -1.0, 0.0])
+        before = env._to_go(env.pos)
+        policy_input, reward, terminated, _, info = env.step(down)
         assert not terminated
     assert env.pos[2] == pytest.approx(BIG.min_altitude)
-    assert reward == pytest.approx(-R_WALL - R_TIME)
+    # Held there, it is scored as a wall touch that costs something, not a crash.
+    assert info["outcome"] == "running"
+    after, obs = env._to_go(env.pos), newest(policy_input)
+    assert reward == pytest.approx(contract.reward("running", before, after, True, obs, np.float32(down)))
+    assert reward < contract.reward("running", before, after, False, obs, np.float32(down))
 
 
 def test_hit_shortcut_agrees_with_the_full_check():
@@ -246,14 +262,15 @@ def test_a_crash_costs_less_than_a_pass_pays():
 
 
 def test_crashing_is_never_the_cheap_way_out_of_an_episode():
-    """The drone that flies at the rim must lose to the one that waits, or
-    R_TIME teaches it to crash. Timeouts bootstrap and the policy cannot see the
-    clock, so it values hovering as endless: -R_TIME / (1 - GAMMA)."""
+    """The drone that flies at the rim must lose to the one that waits, or the
+    per-step costs teach it to crash. Timeouts bootstrap and the policy cannot see
+    the clock, so it values hovering as endless: its step reward / (1 - GAMMA)."""
     assert R_CRASH < R_PASS
-    hovering = -R_TIME / (1 - GAMMA)
-
     env = make_env()
     env.place([5.0, 5.0 + 0.3, 1.5], 0.0, HOOP_AT, BACK)   # aimed at the rim
+    hovering = env.step([0.0, 0.0, 0.0, 0.0])[1] / (1 - GAMMA)
+
+    env.place([5.0, 5.0 + 0.3, 1.5], 0.0, HOOP_AT, BACK)
     crashing, terminated = 0.0, False
     for k in range(LAPS_MAX_STEPS):
         _, reward, terminated, _, info = env.step([0.0, 1.0, 0.0, 0.0])
@@ -264,11 +281,25 @@ def test_crashing_is_never_the_cheap_way_out_of_an_episode():
     assert crashing < hovering
 
 
-def test_hovering_costs_only_the_clock():
-    env = make_env()
-    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
-    total = sum(env.step([0.0, 0.0, 0.0, 0.0])[1] for _ in range(LAPS_MAX_STEPS))
-    assert total == pytest.approx(-R_TIME * LAPS_MAX_STEPS)
+def test_holding_still_never_pays():
+    """Anywhere in the real cage, a step of hovering must cost something, or the
+    drone earns by waiting. The shaping pays (1 - GAMMA) * R_PROGRESS * to_go a step
+    for holding still, so the per-step costs must stay above it."""
+    env = HoopEnv()
+    rng = np.random.default_rng(0)
+    cage = env.cage
+    for seed in range(100):
+        env.reset(seed=seed)
+        spots = rng.uniform([0.1, 0.1, cage.min_altitude], [cage.length - 0.1, cage.width - 0.1,
+                                                            cage.height - 0.1], (300, 3))
+        front = [p for p in spots if (p - env.hoop_centre) @ env.hoop_normal < 0.0]
+        # The furthest spot earns the most for holding still. In front, facing the
+        # hoop, the marker can be in view too, so nothing else is charged there.
+        for pos in (max(spots, key=env._to_go), max(front, key=env._to_go), *spots[:5]):
+            to_hoop = env.hoop_centre - pos
+            for heading in (np.arctan2(to_hoop[1], to_hoop[0]), rng.uniform(-np.pi, np.pi)):
+                env.pos, env.heading = pos.copy(), heading
+                assert env.step([0.0, 0.0, 0.0, 0.0])[1] < 0.0
 
 
 def test_crossing_outside_the_ring_never_raises_the_distance_to_go():
@@ -389,7 +420,9 @@ def test_pad_layouts_fit_the_real_cage():
         assert env.observation_space.contains(obs)
         assert env._in_fence(env.pos)
         assert (env.pos - env.hoop_centre) @ env.hoop_normal < 0   # starts in front
-        assert all(env._in_fence(g) for g in env._gates)           # room to go round
+        assert len(env._gates) == 2                                 # room to go round either side
+        middle = np.array([env.cage.length, env.cage.width]) / 2
+        assert np.linalg.norm(env.hoop_centre[:2] - middle) <= HOOP_FROM_CENTRE + 1e-9
         # Level 1 is the real start: take-off height, above a pad in a corner.
         assert env.pos[2] == pytest.approx(env.drone.takeoff_height)
         inset = env.pad.inset
@@ -453,3 +486,18 @@ def test_hanger_can_be_left_out():
     env.place([6.6, 5.0, 2.0], 0.0, HOOP_AT, BACK)
     routes = [env.step([0.0, -1.0, 0.0, 0.0])[4]["route"] for _ in range(20)]
     assert [r for r in routes if r] == ["over"]
+
+
+def test_seen_hoop_flag_reads_1_until_the_first_sighting_then_0_for_good():
+    """The policy input's last number: blind at takeoff must not look like blind mid-lap."""
+    env = make_env()
+    x = env.place([5.0, 5.0, 1.5], np.pi, HOOP_AT, BACK)   # facing away from the hoop
+    assert x[-1] == 1.0 and not newest(x)[VISIBLE]
+    seen = []
+    for _ in range(200):   # turn on the spot: the hoop comes into view, then leaves it
+        x = env.step([0.0, 0.0, 0.0, 1.0])[0]
+        seen.append(bool(newest(x)[VISIBLE]))
+        if seen[-1]:
+            assert x[-1] == 0.0
+    assert any(seen) and not seen[-1]
+    assert x[-1] == 0.0

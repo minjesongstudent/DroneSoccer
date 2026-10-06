@@ -1145,12 +1145,14 @@ def run_baseline(args) -> None:
                                maxlen=contract.FRAME_HISTORY)
     actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
                                 maxlen=contract.ACTION_HISTORY)
+    unseen = [True]   # the seen-hoop flag, latched off at the first sighting
 
     def tick() -> tuple:
         # One observation per control step, as in the simulator: the newest frame's.
         watcher.update()
         frames.append(watcher.obs.copy())
-        x = np.concatenate([*(frames[-1 - lag] for lag in contract.OBS_LAGS), *actions]).astype(np.float32)
+        unseen[0] = unseen[0] and not frames[-1][contract.VISIBLE]
+        x = contract.policy_input(frames, actions, unseen[0])
         action = np.clip(policy(x), -1, 1)
         actions.append(action.astype(np.float32))
         watcher.rc = tuple(int(round(a * full)) for a, full in zip(action, RC_FULL))

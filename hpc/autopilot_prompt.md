@@ -36,7 +36,8 @@ randomised dynamics, and is scored on held-out episodes at curriculum level 1.
 
 ## How to decide
 1. Read the reports, oldest to newest, and the last run's logs. For each run, work out what its
-   MDP was (NOTES, settings, contracts) and how it behaved: passes/min, crash types, wall share,
+   MDP was (NOTES, settings, contracts) and how it behaved: passes per episode (passes/min in
+   runs before 2026-10-04, which flatters short crashing flights), crash types, wall share,
    timeouts, whether seeds levelled up, and the trend over training, not just the final number.
 2. Diagnose the last run's main failure. Typical failures: hovering (timeouts, no passes); pass
    then crash; crash-heavy; riding the geofence; only one seed learning (luck); stuck at level 0.

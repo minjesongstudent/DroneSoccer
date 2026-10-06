@@ -1,0 +1,121 @@
+nogamma-progress
+job 106468   git unknown   seeds 4/4   steps 5,000,000
+written 2026-10-02 23:27
+
+SETTINGS
+args      --randomise
+run       steps 5000000  level 0.0  randomise True  resume False  envs 1
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          4.0
+          R_TIME              0.1           R_WALL              1.0           GAMMA               0.995
+          CRASHES             hit,wrong_way,netLAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,marker
+          OBS_DIM             8             ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4
+          OBS_LAGS            24,20,16,12,8,4,2,1,0OBS_STACK           9             FRAME_HISTORY       25
+          ACTION_HISTORY      3             POLICY_INPUT_DIM    84            MIN_ARC_FRACTION    0.25
+          MIN_POINTS          5             MIN_RATIO           0.2           CLIP                3.0
+          _FIT_SCALE          1000.0        HOOP_HEIGHT         0.6,1.4       HOOP_FROM_CENTRE    0.15
+          PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0     CLEARANCE           0.4
+          SIDE_GAP            0.35          CENTRELINE_POINTS   256           DEFAULT_EPISODES    200
+          CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000       LEVEL_STEP          0.25
+          LEVEL_WINDOW        200           LEVEL_UP            0.7           LEVEL_PASSES        2
+
+NOTES
+  PROPOSED WITH CLAUDE CODE at the user's request, not by the cron autopilot (MDP-only change, verified by hpc/mdp_guard.py)
+  DIAGNOSIS: netcrash-routeshaping parked 0.5-0.8 m in front of the hoop on every seed, 0 passes
+    (replay findings in its notes). With GAMMA inside the progress difference, parking anywhere was
+    worth the same, so R_HIDDEN chose the spot: where the marker stays in view, outside ~0.45 m.
+  CHANGE: progress R_PROGRESS * (to_go_before - to_go_after), no GAMMA. R_HIDDEN removed. R_TIME 0.08 -> 0.1.
+    R_PASS 40, R_CRASH 30, R_PROGRESS 4, R_WALL 1, GAMMA 0.995 unchanged.
+  WHY: holding still earns nothing, so parking closer to the next pass is worth 4 per metre more.
+    Hover -20 anywhere vs crash -30; pass then crash ~+1 vs pass then hover ~+11. Loops sum to zero.
+  EXPECT: confirmed if seeds park closer and on the axis, then pass: passes/min above 0 by ~500k and
+    rising. Refuted if they still park at 0.5 m+ with 0 passes, or approach and hit the rim (hit share up).
+
+  contract.py diff against netcrash-routeshaping:
+  @@ -23,38 +23,33 @@
+   import cv2
+   import numpy as np
+
+  -# Reward per step = R_PROGRESS * (to_go_before - GAMMA * to_go_after)
+  +# Reward per step = R_PROGRESS * (to_go_before - to_go_after)
+   #                 + R_PASS on a pass, - R_CRASH on a crash,
+  -#                 - R_TIME always, - R_HIDDEN while the front marker is out of view,
+  -#                 - R_WALL each step on the floor.
+  +#                 - R_TIME always, - R_WALL each step on the floor.
+   #
+  -# Shaping: phi = -R_PROGRESS * metres still to fly round the lap to the next pass
+  -# (sim.HoopEnv._to_go), paid as GAMMA * phi(after) - phi(before). With the GAMMA
+  -# it is potential-based, so apart from crashes it ranks policies as the unshaped
+  -# reward does and only gives learning a guide. phi is not zeroed at a crash, so a
+  -# crash also forfeits GAMMA * R_PROGRESS * to_go there. Without a guide only a
+  -# pass pays: random flying meets the net in ~15 s and never passes, and nothing
+  -# leads the drone round after a pass. The route reads the true position, so it
+  -# guides the search (towards the hoop's height and position), the line-up (off
+  -# the axis, it goes via a point CLEARANCE out front) and the way round. The pass
+  -# takes it all back, as the distance to go jumps ~2.2 m there. Holding still earns
+  -# (1 - GAMMA) * R_PROGRESS * to_go, at most 0.07 a step (to_go < 3.4 m anywhere in
+  -# the cage): less than R_TIME, so hovering never pays.
+  +# Shaping: R_PROGRESS per metre flown along the route round the lap to the next
+  +# pass (sim.HoopEnv._to_go), with no GAMMA. With GAMMA inside the difference
+  +# (netcrash-routeshaping) the shaping was potential-based: holding still earned
+  +# (1 - GAMMA) * R_PROGRESS * to_go a step, which over the bootstrapped horizon
+  +# repaid exactly the progress made, so parking anywhere was worth the same and
+  +# every seed parked 0.5-0.8 m in front of the hoop. Without GAMMA, holding still
+  +# earns nothing and progress made is kept, so parking closer to the next pass is
+  +# worth R_PROGRESS per metre more. Any loop still sums to zero, so it cannot be
+  +# farmed. The pass takes the route back: to_go jumps ~2.2 m there, so the pass
+  +# step nets ~+31 and the way round pays the 8.8 back.
+   #
+  -# The policy cannot see the clock and timeouts bootstrap, so it values hovering as
+  -# endless: -(R_TIME + R_HIDDEN) / (1 - GAMMA) = -20 blind, -16 with the front in
+  -# view. A crash is worse: -30, and the shaping it forfeits. But a crash also stops
+  -# the clock, so it costs only R_CRASH - 20 = 10 more than hovering blind, plus the
+  -# passes it forfeits. That is what makes trying beat hovering early on.
+  +# The policy cannot see the clock and timeouts bootstrap, so hovering anywhere is
+  +# worth -R_TIME / (1 - GAMMA) = -20. A crash is -30, 10 worse than hovering at the
+  +# same spot (progress made is kept either way), so crashing is never a cheap way
+  +# out. Pass then crash nets ~+1, pass then hover ~+11: no pass-and-die.
+   #
+  -# The route has no heading, so turning to find the hoop earns no shaping; R_HIDDEN
+  -# pays for that. Only the front marker ends it: the hoop seen from behind leads to
+  -# wrong_way.
+  +# R_HIDDEN is gone: with every parking spot equal it alone ranked them, and it
+  +# picked spots where the marker stays in view, outside ~0.45 m. The last
+  +# 0.35-0.45 m of every pass is blind, so it charged the pass itself.
+   R_PASS = 40.0
+   R_CRASH = 30.0      # R_PASS 90 vs 15 taught pass-and-die
+  -R_PROGRESS = 4.0    # per metre to go; keep (1 - GAMMA) * R_PROGRESS * 3.4 below R_TIME
+  -R_TIME = 0.08       # (R_TIME + R_HIDDEN) / (1 - GAMMA) must stay below R_CRASH
+  -R_HIDDEN = 0.02     # each step without the front marker in view
+  +R_PROGRESS = 4.0    # per metre flown along the route
+  +R_TIME = 0.1        # R_TIME / (1 - GAMMA) must stay below R_CRASH
+   R_WALL = 1.0        # each step held at min_altitude, which is no crash; the net is one.
+                       # 5 cost an eighth of a pass a step, and low hoops are 10 cm above it
+
+  @@ -72,11 +67,10 @@
+       obs: the eight numbers the camera reports after the step (FIELDS).
+       action: the command the policy just gave (ACTION_FIELDS), each in [-1, 1].
+       """
+  -    return (R_PROGRESS * (to_go_before - GAMMA * to_go_after)
+  +    return (R_PROGRESS * (to_go_before - to_go_after)
+               + R_PASS * (outcome == "passed")
+               - R_CRASH * (outcome in CRASHES)
+               - R_TIME
+  -            - R_HIDDEN * (1.0 - float(obs[7]))
+               - R_WALL * on_wall)
+
+   # "net": the drone touched the net. The net is not in the state, but the hoop
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status    pass/min  crashed     wall      hit    wrong  timeout  1st pass  level      steps   time
+0     done          0.33   100.0%     2.0%    14.0%     0.0%     0.0%      4.3s   0.00      5000k   891m
+1*    done          4.83    62.5%     0.0%    12.0%     0.0%    38.0%      5.9s   0.75      5000k   926m
+2     done          0.35   100.0%     1.0%    28.0%     0.0%     0.0%      3.5s   0.00      5000k   930m
+3     done          0.64   100.0%     1.0%    23.0%     0.0%     0.0%      3.5s   0.00      5000k   898m
+base                0.41    79.5%     0.0%     4.0%     0.0%    20.0%     10.9s
+best      seed 1 -> trainedModels/nogamma-progress.zip
+
+FLAGS
+  !  seed 0,1,2,3: crash-heavy - 50%+ of episodes crash
+  !  curriculum stuck - seed 0 (never levelled up), 2 (never levelled up), 3 (never levelled up)
+     seed 0,2,3: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)

@@ -2,7 +2,7 @@
 
 Evaluation seeds start at EVAL_SEED so they never overlap training episodes,
 and every policy sees the same layouts, so the numbers compare directly. It reports
-passes per minute, how many runs crashed, and the time to the first pass.
+passes per episode, how many runs crashed, and the time to the first pass.
 
 Run: python -m src.evaluate --baseline
      python -m src.evaluate --model runs/sac/model.zip
@@ -57,14 +57,21 @@ def load_policy(model_path: str) -> Policy:
 def report(results: list[dict], dt: float = Drone().dt) -> str:
     outcomes = Counter(r["outcome"] for r in results)
     total = len(results)
-    minutes = sum(r["steps"] for r in results) * dt / 60
-    per_min = sum(r["passes"] for r in results) / minutes
+    per_ep = np.mean([r["passes"] for r in results])
+    never = np.mean([r["passes"] == 0 for r in results])
+    # A lap is each try after the first pass: done if it passed again, failed if it
+    # crashed. A lap the clock cut short counts as neither.
+    passed = [r for r in results if r["passes"]]
+    laps = sum(r["passes"] - 1 for r in passed)
+    failed = sum(r["outcome"] in CRASHES for r in passed)
+    lap_success = laps / (laps + failed) if laps + failed else 0.0
     crashed = sum(outcomes[name] for name in CRASHES) / total
     wall = sum(r["wall_steps"] for r in results) / sum(r["steps"] for r in results)
     firsts = [r["first_pass"] * dt for r in results if r["first_pass"] is not None]
     first = f"{np.mean(firsts):5.1f}s" if firsts else "  never"
     endings = "  ".join(f"{name} {outcomes[name] / total:.0%}" for name in ENDINGS)
-    return (f"passes/min {per_min:5.2f}  crashed {crashed:6.1%}  wall {wall:.0%}"
+    return (f"passes/ep {per_ep:5.2f}  never_passed {never:.0%}  lap_success {lap_success:.0%}"
+            f"  crashed {crashed:6.1%}  wall {wall:.0%}"
             f"  first pass {first}  ({endings})")
 
 

@@ -27,7 +27,8 @@ RUNS = ROOT / "runs"
 # TensorBoard tag, file name, title; charts a run did not log are skipped. Progress first, then the training-health
 # diagnostics, which say whether training is stable but not whether it is working.
 CHARTS = [
-    ("rollout/passes_per_min", "passes_per_min", "Passes per minute (last 200 episodes)"),
+    ("rollout/passes_per_ep", "passes_per_ep", "Passes per episode (last 200 episodes)"),
+    ("rollout/passes_per_min", "passes_per_min", "Passes per minute (last 200 episodes)"),   # runs before 2026-10-04
     ("curriculum/level", "curriculum_level", "Curriculum level"),
     ("rollout/crash_rate", "crash_rate", "Crash rate (last 200 episodes)"),
     ("rollout/ep_rew_mean", "episode_reward", "Episode reward"),
