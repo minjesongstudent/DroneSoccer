@@ -9,6 +9,11 @@ and open http://127.0.0.1:8793/ for a learned-policy replay. See
 [simulator comparison and limitations](SIMULATOR_COMPARISON.md) for the selection,
 input compatibility, tests and differences in passage scoring. Training remains paused.
 
+For Mac lab camera recording, overlays and saved-video replay, see the
+[camera pipeline report](experiments/faisal/lab-tools/Mac-Lab-Recorder/CAMERA_PIPELINE_20261006.md).
+The preview shows learned-policy suggestions without sending movement commands.
+Build the portable package with `python tools/build_mac_lab_preview.py`.
+
 - [Latest optimized experiments](experiments/faisal/optimized/README.md): current code, seven trial histories, failed checkpoints and next steps.
 - [Faisal's local GPU experiment](experiments/faisal/README.md): standalone simulator, one live training policy, saved models and reproducible evaluation.
 - [Development process](experiments/faisal/docs/DEVELOPMENT_PROCESS.md): the steps from the initial baseline through the A/B/C experiments and unified training.

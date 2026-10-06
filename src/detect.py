@@ -48,6 +48,8 @@ YELLOW_MIN_S = 80
 BLACK_MAX_V = 70          # the net, and shadow
 WHITE_MIN_V = 150         # UNMEASURED: from one photo; B3 tunes on cage footage
 WHITE_MAX_S = 60
+WARM_WHITE_MAX_S = 120   # Warm-lit disc in 2026-10-06 capture: S=103-113.
+                        # Fallback still requires geometry, position and dark cross.
 DARK_MAX_V = 90
 # A fit is the hoop only above all three. From cage footage 2026-10-01: front views
 # score band >= 0.78, hole 0, backdrop >= 0.74; door glass, straps and a blue
@@ -105,6 +107,7 @@ class HoopDetector:
         self._open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self._close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
         self._rng = np.random.default_rng(0)
+        self._edge_hint = None
 
     def __call__(self, frame_bgr: np.ndarray) -> Detection:
         if frame_bgr.shape[1::-1] != self.size:
@@ -113,9 +116,10 @@ class HoopDetector:
         small = cv2.GaussianBlur(small, (5, 5), 0)
 
         mask = self._mask(small)
-        edge = self._outer_edge(mask)
+        edge = self._outer_edge(mask, small)
         if edge is None:
             self._streak = 0
+            self._edge_hint = None
             return Detection(contract.NOT_VISIBLE.copy(), None, None, None)
         ellipse = cv2.fitEllipse(edge.astype(np.float32))
         (cx, cy), (w, h), ang = ellipse
@@ -126,6 +130,7 @@ class HoopDetector:
         why = self._reject(mask, small, ellipse)
         if why:
             self._streak = 0
+            self._edge_hint = None
             return Detection(contract.NOT_VISIBLE.copy(), edge_px, ellipse_px, None, why)
 
         marker = self._marker(small, ellipse)
@@ -133,7 +138,9 @@ class HoopDetector:
         obs = contract.observe(norm, self.half_extent, marker=marker is not None)
         if not obs[6]:
             self._streak = 0
+            self._edge_hint = None
             return Detection(obs, edge_px, ellipse_px, None, "too flat")
+        self._edge_hint = ellipse
         if self._streak < self.confirm:
             return Detection(contract.NOT_VISIBLE.copy(), edge_px, ellipse_px, None,
                              f"confirming {self._streak}/{self.confirm}")
@@ -165,7 +172,7 @@ class HoopDetector:
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, self._open)
         return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, self._close)
 
-    def _outer_edge(self, mask: np.ndarray) -> Optional[np.ndarray]:
+    def _outer_edge(self, mask: np.ndarray, small: np.ndarray) -> Optional[np.ndarray]:
         """Points on the noodle's outer edge, at WORK_WIDTH scale."""
 
         # Every arc above the area floor, not the largest: the net, the pole and the
@@ -177,6 +184,27 @@ class HoopDetector:
         pts = np.concatenate(arcs).astype(np.float64)
         if len(pts) < contract.MIN_POINTS:
             return None
+
+        # Use the previous accepted ellipse only to select fresh outer-edge pixels.
+        # Refit and rerun every ring test on this image; never emit a cached detection.
+        # If the current image does not support it, use the ordinary global search.
+        if self._edge_hint is not None:
+            near = pts[_inliers(pts, self._edge_hint, 4 * RANSAC_TOL_PX)]
+            if len(near) >= contract.MIN_POINTS:
+                tracked = _refine(near, self._edge_hint)
+                if tracked is not None:
+                    old_c, old_size, _ = self._edge_hint
+                    new_c, new_size, _ = tracked
+                    shift = np.linalg.norm(np.asarray(new_c)-old_c)
+                    ratio = max(new_size)/max(max(old_size), 1e-6)
+                    band, hole, backdrop = ring_scores(mask, small, tracked)
+                    keep = near[_inliers(near, tracked)]
+                    if (shift < AGREE_SHIFT*max(old_size)
+                            and 1/AGREE_SIZE < ratio < AGREE_SIZE
+                            and band >= MIN_BAND and hole <= MAX_HOLE and backdrop >= MIN_BACKDROP
+                            and _coverage(keep, tracked) >= contract.MIN_ARC_FRACTION*COVER_BINS
+                            and len(keep) >= contract.MIN_POINTS):
+                        return keep
 
         # The straps are blue too and join the ring into one blob, so RANSAC finds
         # the ellipse whose points reach furthest round it: roughly the ring, though
@@ -213,6 +241,11 @@ class HoopDetector:
         return keep if len(keep) >= contract.MIN_POINTS else None
 
     def _marker(self, small: np.ndarray, ellipse) -> Optional[tuple]:
+        primary = self._marker_with_saturation(small, ellipse, WHITE_MAX_S)
+        return primary if primary is not None else self._marker_with_saturation(
+            small, ellipse, WARM_WHITE_MAX_S)
+
+    def _marker_with_saturation(self, small: np.ndarray, ellipse, max_s: int) -> Optional[tuple]:
         """(x, y, radius) of a white disc with dark strokes by the hoop's bottom, or None."""
         (cx, cy), (w, h), ang = ellipse
         major = max(w, h)
@@ -225,7 +258,7 @@ class HoopDetector:
 
         # White: bright and unsaturated. The yellow wall is as bright but saturated.
         hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
-        white = cv2.inRange(hsv, (0, 0, WHITE_MIN_V), (180, WHITE_MAX_S, 255))
+        white = cv2.inRange(hsv, (0, 0, WHITE_MIN_V), (180, max_s, 255))
         dark = cv2.inRange(hsv, (0, 0, 0), (180, 255, DARK_MAX_V))
         # Close over the cross so the disc is one blob, then open with a kernel
         # wider than the pole it sits on, which leaves the disc and drops the pole.

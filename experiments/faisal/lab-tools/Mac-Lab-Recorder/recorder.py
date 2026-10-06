@@ -81,7 +81,7 @@ def export(folder):
     print('Transfer this file:', destination)
     return destination
 
-def record(seconds):
+def record(seconds, observer=None):
     root = Path(__file__).resolve().parent
     folder = root / 'sessions' / datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     folder.mkdir(parents=True)
@@ -94,6 +94,8 @@ def record(seconds):
     sockets = []
     start = time.monotonic()
     try:
+        if observer is not None:
+            observer.start(folder)
         for port in (8889, 8890, 11111):
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sockets.append(s)
@@ -121,6 +123,8 @@ def record(seconds):
                         movie.write(data)
                         info['video_packets'] += 1
                         info['video_bytes'] += len(data)
+                        if observer is not None:
+                            observer.feed(data, time.monotonic())
                     else:
                         reply = control_reply(data, address)
                         commands.write(json.dumps(dict(stamp, response=reply,
@@ -145,6 +149,8 @@ def record(seconds):
                 while time.monotonic() < deadline:
                     pump(.1)
                     if time.monotonic() >= report_at:
+                        if observer is not None:
+                            observer.status(dict(info))
                         print('Telemetry packets:', info['state_packets'], 'Video bytes:', info['video_bytes'], flush=True)
                         report_at = time.monotonic() + 5
             finally:
@@ -159,6 +165,11 @@ def record(seconds):
     finally:
         for s in sockets:
             s.close()
+        if observer is not None:
+            try:
+                observer.close()
+            except Exception as exc:
+                info['preview_error'] = str(exc)
         info['ended_utc'] = utc()
         info['elapsed_s'] = time.monotonic() - start
         info['capture_present'] = bool(info['state_packets'] and info['video_bytes'])

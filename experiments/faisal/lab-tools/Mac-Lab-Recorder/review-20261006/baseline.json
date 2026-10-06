@@ -1,0 +1,285 @@
+{
+  "video_sha256": "648a149c92d7ee3c2bc8959c50f9b5c30c82e7c0f9f09091ff7cd738bf3ce3b6",
+  "detector_sha256": "3228358fb46d4e00871caf52ccf36ec373d5f64d912a9d197c6d5279e6375c9c",
+  "confirm": 2,
+  "decoded_frames": 3583,
+  "counts": {
+    "visible": 379,
+    "marker": 151,
+    "no_candidate": 1980,
+    "no ring 0.00": 19,
+    "solid 1.00": 488,
+    "no ring 0.50": 24,
+    "no ring 0.54": 20,
+    "confirming 1/2": 74,
+    "accepted": 379,
+    "no ring 0.53": 35,
+    "no ring 0.49": 27,
+    "solid 0.46": 2,
+    "no ring 0.55": 2,
+    "no ring 0.52": 12,
+    "solid 0.49": 2,
+    "no ring 0.36": 13,
+    "no ring 0.42": 23,
+    "no ring 0.43": 15,
+    "no ring 0.47": 18,
+    "no ring 0.46": 24,
+    "solid 0.97": 5,
+    "no ring 0.51": 38,
+    "no ring 0.38": 19,
+    "solid 0.94": 5,
+    "no ring 0.40": 13,
+    "solid 0.81": 7,
+    "solid 0.68": 3,
+    "solid 0.93": 6,
+    "no ring 0.32": 10,
+    "no ring 0.35": 12,
+    "no ring 0.44": 20,
+    "no ring 0.34": 5,
+    "no ring 0.30": 3,
+    "no ring 0.39": 15,
+    "no ring 0.16": 2,
+    "no ring 0.12": 4,
+    "no ring 0.14": 4,
+    "no ring 0.15": 2,
+    "no ring 0.29": 11,
+    "solid 0.90": 9,
+    "no ring 0.11": 1,
+    "solid 0.91": 6,
+    "solid 0.85": 5,
+    "no ring 0.24": 7,
+    "no ring 0.25": 3,
+    "backdrop 0.14": 1,
+    "no ring 0.33": 9,
+    "solid 0.96": 6,
+    "solid 0.92": 12,
+    "solid 0.87": 3,
+    "solid 0.98": 3,
+    "solid 0.71": 3,
+    "solid 0.72": 2,
+    "solid 0.82": 3,
+    "solid 0.88": 6,
+    "solid 0.51": 1,
+    "solid 0.99": 4,
+    "solid 0.89": 8,
+    "solid 0.44": 1,
+    "solid 0.31": 4,
+    "solid 0.40": 4,
+    "solid 0.38": 2,
+    "solid 0.47": 2,
+    "solid 0.58": 2,
+    "solid 0.60": 3,
+    "solid 0.62": 3,
+    "solid 0.67": 7,
+    "solid 0.74": 4,
+    "solid 0.76": 4,
+    "no ring 0.45": 6,
+    "solid 0.95": 3,
+    "no ring 0.48": 9,
+    "solid 0.56": 4,
+    "solid 0.35": 1,
+    "solid 0.64": 2,
+    "solid 0.63": 2,
+    "solid 0.70": 1,
+    "no ring 0.37": 7,
+    "no ring 0.31": 7,
+    "no ring 0.28": 7,
+    "no ring 0.03": 1,
+    "no ring 0.22": 4,
+    "no ring 0.21": 2,
+    "no ring 0.26": 3,
+    "no ring 0.18": 4,
+    "no ring 0.23": 4,
+    "solid 0.86": 2,
+    "no ring 0.09": 1,
+    "no ring 0.08": 2,
+    "no ring 0.17": 2,
+    "backdrop 0.20": 1,
+    "no ring 0.05": 1,
+    "no ring 0.27": 1,
+    "backdrop 0.06": 1,
+    "solid 0.66": 1,
+    "solid 0.69": 2,
+    "solid 0.65": 1,
+    "solid 0.78": 2,
+    "solid 0.79": 2,
+    "solid 0.80": 3,
+    "solid 0.34": 1,
+    "no ring 0.10": 2,
+    "no ring 0.19": 1,
+    "no ring 0.20": 1,
+    "backdrop 0.22": 1,
+    "solid 0.50": 1,
+    "solid 0.48": 3,
+    "solid 0.54": 1,
+    "solid 0.42": 2,
+    "solid 0.36": 1,
+    "backdrop 0.47": 1,
+    "backdrop 0.53": 1,
+    "backdrop 0.15": 1,
+    "backdrop 0.07": 1,
+    "backdrop 0.17": 1,
+    "backdrop 0.09": 1,
+    "no ring 0.41": 1,
+    "solid 0.83": 2,
+    "backdrop 0.19": 1,
+    "backdrop 0.26": 1
+  },
+  "visible_runs_frames": [
+    [
+      1017,
+      1017
+    ],
+    [
+      1021,
+      1067
+    ],
+    [
+      1071,
+      1071
+    ],
+    [
+      1073,
+      1081
+    ],
+    [
+      1084,
+      1084
+    ],
+    [
+      1090,
+      1090
+    ],
+    [
+      1093,
+      1107
+    ],
+    [
+      1113,
+      1114
+    ],
+    [
+      1117,
+      1117
+    ],
+    [
+      1120,
+      1120
+    ],
+    [
+      1127,
+      1127
+    ],
+    [
+      1140,
+      1151
+    ],
+    [
+      1154,
+      1160
+    ],
+    [
+      1164,
+      1165
+    ],
+    [
+      1170,
+      1183
+    ],
+    [
+      1186,
+      1188
+    ],
+    [
+      1192,
+      1193
+    ],
+    [
+      1581,
+      1589
+    ],
+    [
+      1643,
+      1674
+    ],
+    [
+      1694,
+      1702
+    ],
+    [
+      1705,
+      1705
+    ],
+    [
+      1708,
+      1708
+    ],
+    [
+      1732,
+      1732
+    ],
+    [
+      1743,
+      1766
+    ],
+    [
+      1769,
+      1771
+    ],
+    [
+      1776,
+      1777
+    ],
+    [
+      1794,
+      1798
+    ],
+    [
+      1805,
+      1805
+    ],
+    [
+      2209,
+      2209
+    ],
+    [
+      2217,
+      2220
+    ],
+    [
+      2225,
+      2230
+    ],
+    [
+      2236,
+      2236
+    ],
+    [
+      2251,
+      2318
+    ],
+    [
+      2789,
+      2831
+    ],
+    [
+      2834,
+      2879
+    ],
+    [
+      2882,
+      2882
+    ],
+    [
+      2954,
+      2954
+    ]
+  ],
+  "inference_ms_percentiles": {
+    "p50": 1.110799959860742,
+    "p95": 108.3808600436896,
+    "p99": 122.43075802223748
+  },
+  "timing_note": "Frame indices only; no exposure timestamps or flight calibration.",
+  "evaluation_note": "Detection output counts, not accuracy; no exhaustive labels."
+}

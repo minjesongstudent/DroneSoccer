@@ -1,0 +1,40 @@
+MAC LAB RECORDER WITH CAMERA WINDOW
+
+1. Extract Mac-Lab-Recorder-Live.zip on your Mac. Run 1-Setup.command with
+   normal internet once. It installs a separate environment and runs offline tests.
+2. Join drone Wi-Fi, keep motors OFF and close other drone apps/recorders.
+   Run 2-Record.command. Press Return. A local browser camera window opens.
+   Allow Terminal/Python Local Network access if asked.
+3. Recording stops after two minutes and saves a session export ZIP. The window
+   stays open for review. Ctrl+C closes it. 3-Export-Latest.command re-exports
+   if you add notes or photos later.
+
+TO INSPECT YOUR EXISTING RECORDING WITHOUT CONNECTING TO THE DRONE:
+Run 4-Replay-Latest.command. If this new package has no recordings, a Mac file
+picker opens: select camera.h264 inside your existing session folder. There is
+no need to copy the recording or use extra space. Replay uses approximate 30 fps timing,
+not synchronized camera/telemetry timestamps. Keep the original session unchanged.
+
+The browser window works without internet on drone Wi-Fi. Internet for this chat
+still requires a second connection, such as USB tethering or Ethernet. You can
+paste the printed local URL into the app browser on THIS Mac if desired.
+
+The camera image has ring/marker overlays. The four action values are suggestions
+from the group's compatible 109-input SAC checkpoint; they are never sent to the
+drone. Actual action history is zero because no motion commands are issued.
+Hand carrying cannot validate closed-loop flight. The included model has not
+passed mission acceptance and is not being presented as the best flight policy.
+
+Uses the team's existing measurements and variable ring-height simulator contract.
+Camera intrinsics remain the defaults recorded by the team unless a calib.npz is
+provided. No values are invented for missing sensor data. Only command, streamon,
+and streamoff are allowed on the drone connection. Raw video and telemetry are
+saved independently of preview processing; dropped preview packets and decoder
+errors are counted. Stale video pauses suggestions; long gaps reset history.
+
+If double-click is blocked: in Terminal type bash followed by a space, drag the
+.command file into Terminal, then press Return. No security settings need disabling.
+
+The package was tested on Windows using saved lab packets and offline checks.
+The setup tests verify the local Mac environment; a live Mac connection still needs
+to be checked there. No training, physical flight, or automatic file upload occurs.
