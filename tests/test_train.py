@@ -29,6 +29,15 @@ def test_curriculum_counts_passes_however_the_episode_ended():
     assert callback._ready() == pytest.approx(0.75)
 
 
+def test_one_pass_raises_the_level_but_seeds_rank_on_laps():
+    """The level changes only the start, so one pass meets the curriculum's bar.
+    The same pass, lasting the minute, is not the mission's bar of a lap."""
+    callback = train.Progress(total=1)
+    callback.recent.extend([{"outcome": "timeout", "passes": 1}] * 4)
+    assert callback._ready() == pytest.approx(1.0)
+    assert train.scores(list(callback.recent))["ready"] == pytest.approx(0.0)
+
+
 def test_passing_once_then_crashing_does_not_outscore_lapping():
     """Per minute flown, one pass and a crash at 8 s scored 7.5 against 5 for
     lapping the whole minute. Per episode it scores 1 against 5."""

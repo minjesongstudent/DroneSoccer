@@ -50,13 +50,17 @@ INIT_WARMUP = 200_000
 
 # Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the last
 # LEVEL_WINDOW episodes made at least LEVEL_PASSES passes, however they ended.
-# The level only changes the start, so a crash later in the minute does not say
-# the start is still too hard. Lasting the minute is the mission's bar, which
-# scores() ranks seeds by.
+# The level only changes the start, so its bar is the first pass. A second pass
+# needs the lap, which is the same at every level: at 2 passes, leaving level 0
+# meant lapping as well as the best model yet (seenflag-s1-level1 s1: 2+ passes in
+# 71% of level-0 episodes), and 7 of 8 seeds from scratch never left it. Level 0
+# also never needs a line-up, which the lap's second pass does. Lasting the minute
+# with MISSION_PASSES+ passes is the mission's bar, which scores() ranks seeds by.
 LEVEL_STEP = 0.25
 LEVEL_WINDOW = 200
 LEVEL_UP = 0.7
-LEVEL_PASSES = 2
+LEVEL_PASSES = 1
+MISSION_PASSES = 2
 
 
 class Progress(BaseCallback):
@@ -126,10 +130,10 @@ class Progress(BaseCallback):
 
 def scores(results: list[dict]) -> dict:
     """What run_seeds.sh ranks seeds by. ready is the mission's bar: the share of
-    episodes that last the full minute with LEVEL_PASSES+ passes. The curriculum's
-    bar is looser: it ignores how an episode ended. Passes are per episode, not per
-    minute flown, which flattered seeds that pass once and crash within seconds."""
-    return {"ready": float(np.mean([r["outcome"] == "timeout" and r["passes"] >= LEVEL_PASSES
+    episodes that last the full minute with MISSION_PASSES+ passes. The curriculum's
+    bar is looser: one pass, however the episode ended. Passes are per episode, not
+    per minute flown, which flattered seeds that pass once and crash within seconds."""
+    return {"ready": float(np.mean([r["outcome"] == "timeout" and r["passes"] >= MISSION_PASSES
                                     for r in results])),
             "passes_per_ep": float(np.mean([r["passes"] for r in results])),
             "crashed": float(np.mean([r["outcome"] in CRASHES for r in results]))}
