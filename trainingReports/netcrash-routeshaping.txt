@@ -1,0 +1,173 @@
+netcrash-routeshaping
+job -   git unknown   seeds 4   steps 5,000,000
+written 2026-10-01 21:49
+
+SETTINGS
+args      --randomise
+run       steps 5000000  level 0.0  randomise True  resume False  envs 1
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          4.0
+          R_TIME              0.08          R_HIDDEN            0.02          R_WALL              1.0
+          GAMMA               0.995         CRASHES             hit,wrong_way,netLAPS_MAX_STEPS      600
+          FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,markerOBS_DIM             8             ACTION_FIELDS       right,forward,up,yaw_cw
+          ACTION_DIM          4             OBS_LAGS            24,20,16,12,8,4,2,1,0OBS_STACK           9
+          FRAME_HISTORY       25            ACTION_HISTORY      3             POLICY_INPUT_DIM    84
+          MIN_ARC_FRACTION    0.25          MIN_POINTS          5             MIN_RATIO           0.2
+          CLIP                3.0           _FIT_SCALE          1000.0        HOOP_HEIGHT         0.6,1.4
+          HOOP_FROM_CENTRE    0.15          PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0
+          CLEARANCE           0.4           SIDE_GAP            0.35          CENTRELINE_POINTS   256
+          DEFAULT_EPISODES    200           CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000
+          LEVEL_STEP          0.25          LEVEL_WINDOW        200           LEVEL_UP            0.7
+          LEVEL_PASSES        2
+
+NOTES
+  PROPOSED WITH CLAUDE CODE at the user's request, not by the cron autopilot (MDP-only change, verified by hpc/autopilot_guard.py)
+  DIAGNOSIS: Not after a training run: proposed with Claude Code at the user's request, from probes of the
+  current sim (96c3d4b: the net is a crash, no shaping, only a pass pays). Over 200 layouts, random flying
+  ends in the net in 90% of episodes (~15 s) and never passes. Flying straight ahead passes at level 0 and
+  then hits the net. The baseline Lapper now ends in the net in 84% of level-1 episodes, mostly while
+  strafing to line up. Nothing pays for searching, lining up or the blind way round, so the likely
+  result is one pass and then hovering. The old reports predate the net crash and are not comparable.
+  CHANGE: (1) Route shaping again, as an exact potential: + R_PROGRESS * (to_go_before - GAMMA * to_go_after),
+  R_PROGRESS 4 per metre. (2) R_TIME 0.1 split into R_TIME 0.08 always plus R_HIDDEN 0.02 while the front
+  marker (obs[7]) is out of view. (3) R_WALL, now only the floor since the net is a crash: 5 -> 1.
+  R_PASS 40, R_CRASH 30, GAMMA 0.995 unchanged.
+  WHY: An oracle that descends the shaped route at half speed laps at 5.1 passes/min at level 1 with 0% hits
+  and 4% net; at full speed with the measured lag it hits the rim in 66% of episodes, so the policy has to
+  learn to slow down. GAMMA inside the difference keeps the ranking of policies. Scripted returns at level 1:
+  laps along the route +46.2, one pass then hover +13.6, hover -12.5, straight into the net -27.7, in the
+  same order as under the old reward. Holding still earns at most 0.005 * 4 * 3.4 = 0.068 a step, below
+  R_TIME, so hovering never pays. Hovering is worth -20 blind and -16 with the front in view. A crash costs
+  -30 minus GAMMA * R_PROGRESS * to_go, so crashing is never the cheaper way out. The pass step still nets
+  ~+31 after the ~2.2 m jump in to_go. The route has no heading, so R_HIDDEN gives turning towards the hoop
+  a signal. A floor step at 5 cost an eighth of a pass, and hoops sit 10 cm above the floor.
+  EXPECT: Confirmed if seeds fly laps rather than one pass: passes/min well above the baseline (0.72 at
+  level 1), most episodes timing out with 2+ passes, and the curriculum level rising above 0. Refuted if
+  seeds pass once and then time out (under 1 pass/min, mostly timeouts), or crash in the net after the first
+  pass. The policy cannot see which side of the hoop has room (only one side in ~47% of layouts).
+
+  contract.py diff against 96c3d4b:
+  @@ -23,17 +23,40 @@
+   import cv2
+   import numpy as np
+
+  -# Reward per step = R_PASS on a pass, - R_CRASH on a crash,
+  -#                 - R_WALL each step on the floor, - R_TIME always.
+  +# Reward per step = R_PROGRESS * (to_go_before - GAMMA * to_go_after)
+  +#                 + R_PASS on a pass, - R_CRASH on a crash,
+  +#                 - R_TIME always, - R_HIDDEN while the front marker is out of view,
+  +#                 - R_WALL each step on the floor.
+   #
+  -# No shaping: with free hovering, the route-shaped run settled on hovering.
+  -# The policy cannot see the clock and timeouts bootstrap, so hovering is worth
+  -# -R_TIME / (1 - GAMMA) = -20. That beats crashing (-30), so the drone is never
+  -# paid to crash, but trying beats hovering once a lap passes ~20% of the time.
+  +# Shaping: phi = -R_PROGRESS * metres still to fly round the lap to the next pass
+  +# (sim.HoopEnv._to_go), paid as GAMMA * phi(after) - phi(before). With the GAMMA
+  +# it is potential-based, so apart from crashes it ranks policies as the unshaped
+  +# reward does and only gives learning a guide. phi is not zeroed at a crash, so a
+  +# crash also forfeits GAMMA * R_PROGRESS * to_go there. Without a guide only a
+  +# pass pays: random flying meets the net in ~15 s and never passes, and nothing
+  +# leads the drone round after a pass. The route reads the true position, so it
+  +# guides the search (towards the hoop's height and position), the line-up (off
+  +# the axis, it goes via a point CLEARANCE out front) and the way round. The pass
+  +# takes it all back, as the distance to go jumps ~2.2 m there. Holding still earns
+  +# (1 - GAMMA) * R_PROGRESS * to_go, at most 0.07 a step (to_go < 3.4 m anywhere in
+  +# the cage): less than R_TIME, so hovering never pays.
+  +#
+  +# The policy cannot see the clock and timeouts bootstrap, so it values hovering as
+  +# endless: -(R_TIME + R_HIDDEN) / (1 - GAMMA) = -20 blind, -16 with the front in
+  +# view. A crash is worse: -30, and the shaping it forfeits. But a crash also stops
+  +# the clock, so it costs only R_CRASH - 20 = 10 more than hovering blind, plus the
+  +# passes it forfeits. That is what makes trying beat hovering early on.
+  +#
+  +# The route has no heading, so turning to find the hoop earns no shaping; R_HIDDEN
+  +# pays for that. Only the front marker ends it: the hoop seen from behind leads to
+  +# wrong_way.
+   R_PASS = 40.0
+   R_CRASH = 30.0      # R_PASS 90 vs 15 taught pass-and-die
+  -R_WALL = 5.0        # each step held at min_altitude; the net is a crash
+  -R_TIME = 0.1        # keep R_TIME / (1 - GAMMA) below R_CRASH, or crashing beats hovering
+  +R_PROGRESS = 4.0    # per metre to go; keep (1 - GAMMA) * R_PROGRESS * 3.4 below R_TIME
+  +R_TIME = 0.08       # (R_TIME + R_HIDDEN) / (1 - GAMMA) must stay below R_CRASH
+  +R_HIDDEN = 0.02     # each step without the front marker in view
+  +R_WALL = 1.0        # each step held at min_altitude, which is no crash; the net is one.
+  +                    # 5 cost an eighth of a pass a step, and low hoops are 10 cm above it
+
+   GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing
+
+  @@ -44,14 +67,16 @@
+
+       outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way", "net").
+       to_go_before, to_go_after: metres left round the lap to the next pass, before
+  -        and after the step (sim.HoopEnv._to_go). Unused while there is no shaping.
+  +        and after the step (sim.HoopEnv._to_go).
+       on_wall: the drone touched the min_altitude floor or the net this step.
+       obs: the eight numbers the camera reports after the step (FIELDS).
+       action: the command the policy just gave (ACTION_FIELDS), each in [-1, 1].
+       """
+  -    return (R_PASS * (outcome == "passed")
+  +    return (R_PROGRESS * (to_go_before - GAMMA * to_go_after)
+  +            + R_PASS * (outcome == "passed")
+               - R_CRASH * (outcome in CRASHES)
+               - R_TIME
+  +            - R_HIDDEN * (1.0 - float(obs[7]))
+               - R_WALL * on_wall)
+
+   # "net": the drone touched the net. The net is not in the state, but the hoop
+
+  ALSO IN THIS RUN (sim.py and train.py, changed by hand before the job started):
+    Layout: the hoop centre is within HOOP_FROM_CENTRE = 0.15 m of the middle of the cage (the real
+      setup), and both side gates must fit, so there is room to go round either side. Before, only one
+      side had room in ~47% of layouts and the policy cannot see which. Half-speed oracle on the route:
+      net crashes 3-4% -> 0%; the tighter rim-to-net gap is now at least 0.65 m (was 0.15 m).
+    Curriculum: the level steps up once 70% of the last 200 episodes made 2+ passes, however they
+      ended (was: lasted the full minute with 2+ passes). The level only changes the start, and with
+      the net a crash the old bar was rarely reached. Seeds are still ranked on the full-minute bar.
+
+  OUTCOME (added 2026-10-01 by Claude Code at the user's request): cancelled at 910-920k of 5M steps.
+    Training: crashes fell from 90-97% at 10k steps to 2-8% at the cancel, episodes rose to ~58 s, and
+    passes/min (last 200 episodes) last read above 0 at 150k, 700k, 420k and 620k steps (seeds 0-3).
+    The policy line below each seed log evaluates its step-750k snapshot, as train.py would at the end.
+    REPLAYS of the step-750k snapshots at level 0, randomise on, 36 episodes: 35 timed out with 0
+    passes, 1 hit the net. The drone flies from ~1.1 m to 0.5-0.8 m in front of the hoop and parks there
+    for the rest of the minute, hoop in view the whole time and marker 85-100% of it. Seeds 0, 1 and 3
+    park 25, 15 and 8 cm off the hoop's axis, yawed 21, 29 and 11 degrees to keep it centred.
+    Replay buffers: seed 0 saw 6 passes in 750k steps, all before 100k, against 297 crashes with the
+    hoop close; seed 3 saw 7 against 360. Seed 0's critic is flat at the parking spot: Q -14.74 to
+    -14.77 for the policy's action, forward 0.3 to 1.0, and backward alike.
+    WHY IT PARKS: with GAMMA inside the progress difference the shaping is policy-invariant. Holding
+    still at to_go d earns (1 - GAMMA) * R_PROGRESS * d a step, and over the bootstrapped horizon that
+    repays exactly the progress made, so parking anywhere is worth -R_TIME / (1 - GAMMA) +
+    R_PROGRESS * to_go at the start (-11.6 from 1.1 m with the marker in view; the replays' discounted
+    returns were -10.6 to -11.6). With every parking spot equal, R_HIDDEN alone ranks them, and it picks
+    one where the marker stays in view: on the axis the hoop leaves the frame 0.35-0.45 m out, so the
+    last 0.35-0.45 m of every pass is flown blind.
+    PASSING IS EASY ONCE LINED UP: on the axis 0.4-0.8 m out, flying straight at forward 0.6 passes in
+    100 of 100 layouts (93 when 10 cm high). From the policies' own parking spots it passes in 5 of 20
+    (seed 0), 0 of 12 (seed 1) and 3 of 12 (seed 3); the rest hit the rim.
+    ROUND IS NOT LINED UP: the camera looks 12.8 degrees down, so a lined-up hoop has ratio 0.94, and
+    yawing to look at it from 20-25 cm off the axis makes it rounder (0.986 at 0.6 m out). Within the
+    ~7.5 cm pass tolerance ratio and lean change by under 0.01. Paying for ratio would pay for parking
+    off the axis.
+    FOR COMPARISON: routeshaping (2026-09-30, the old sim: soft net, hoop not centred) paid the same route
+    distance without GAMMA, R_PROGRESS 10 * (to_go_before - to_go_after), with no time cost and no
+    R_HIDDEN. From 1M steps to its end at ~4.6M, seed 0 held ~1.2 passes/min (crashes 65% -> 36%),
+    seeds 1 and 2 made 0.02-0.4, and seed 3 hovered (0.00-0.06, episodes ~55 s by the end). Hovering was free
+    there. Its report shows no numbers because the job never wrote a final evaluation; see
+    runs/routeshaping_s*.log.
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status    pass/min  crashed     wall      hit    wrong  timeout  1st pass  level      steps   time
+0*    done          0.00    50.5%     0.0%    14.0%     0.0%    50.0%     never   0.00       910k   173m
+1     done          0.00    55.5%     0.0%    16.0%     0.0%    44.0%     never   0.00       910k   174m
+2     done          0.00    50.5%     0.0%     4.0%     0.0%    50.0%     never   0.00       920k   174m
+3     done          0.00    45.5%     0.0%     7.0%     0.0%    55.0%     never   0.00       920k   174m
+base                0.41    79.5%     0.0%     4.0%     0.0%    20.0%     10.9s
+best      seed 0
+
+FLAGS
+  !! best seed below baseline (0.00 vs 0.41)
+  !  seed 0,2,3: hovering - mostly timeouts, under 0.1 passes/min; it learned to avoid the hoop
+  !  seed 0,1,2: crash-heavy - 50%+ of episodes crash
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up), 2 (never levelled up), 3 (never levelled up)
+  !  seeds started with different settings (sim.py edited mid-launch?)

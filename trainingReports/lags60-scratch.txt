@@ -1,0 +1,52 @@
+lags60-scratch
+job 112142   git unknown   seeds 4/4   steps 5,000,000
+written 2026-10-06 11:41
+
+SETTINGS
+args      --randomise
+run       steps 5000000  level 0.0  randomise True  resume False  envs 1  init none
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          4.0
+          R_TIME              0.1           R_WALL              1.0           GAMMA               0.995
+          CRASHES             hit,wrong_way,netLAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,marker
+          OBS_DIM             8             ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4
+          OBS_LAGS            60,50,40,32,24,16,12,8,4,2,1,0OBS_STACK           12            FRAME_HISTORY       61
+          ACTION_HISTORY      3             POLICY_INPUT_DIM    109           VISIBLE             6
+          MIN_ARC_FRACTION    0.25          MIN_POINTS          5             MIN_RATIO           0.2
+          CLIP                3.0           _FIT_SCALE          1000.0        HOOP_HEIGHT         0.6,1.4
+          HOOP_FROM_CENTRE    0.15          PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0
+          CLEARANCE           0.4           SIDE_GAP            0.35          CENTRELINE_POINTS   256
+          DEFAULT_EPISODES    200           CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000
+          INIT_WARMUP         200000        LEVEL_STEP          0.25          LEVEL_WINDOW        200
+          LEVEL_UP            0.7           LEVEL_PASSES        2
+
+NOTES
+  PROPOSED WITH CLAUDE CODE at the user's request, not by the cron autopilot
+  DIAGNOSIS: seenflag-s1-level1 (job 110534) fixed the start (never_passed 47% -> 21-34%) but the lap eroded
+    on 2 of 4 seeds (lap_success 81-84%). On a lap the hoop leaves view 0.8 s before the pass and is back
+    ~3.7 s after; a 25-flight sample of the final models put the blind stretch at a median of 45 steps, max 53.
+    OBS_LAGS reached 24 steps back, so for ~2 s of every lap no frame showed the hoop (54% of lap-blind steps
+    covered) and the policy flew a fixed open-loop arc.
+  CHANGE: observation only. OBS_LAGS (24,20,16,12,8,4,2,1,0) -> (60,50,40,32,24,16,12,8,4,2,1,0): 6 s of
+    memory, 12 frames, POLICY_INPUT_DIM 85 -> 109 (seen flag kept). Covers 100% of lap-blind steps in the
+    sample. Reward as nogamma-progress. Trained from scratch (no --init), --randomise, curriculum from level 0,
+    5M steps, as nogamma-progress.
+  EXPECT: compare with nogamma-progress (from scratch, 9 lags, no flag): only seed 1 of 4 left level 0 there.
+    Confirmed if seeds reach level 1 and lap_success holds >= 90% at level 1 without eroding late in training,
+    with lap failures in the blind stretch below seenflag's 5-9% per pass. Refuted if the lap still erodes,
+    or if the larger input slows learning so seeds stay at level 0.
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     pass/ep    never     laps  crashed     wall      hit    wrong  timeout  1st pass  level      steps   time
+0     done          0.03    98.0%     0.0%    95.0%     2.0%    17.0%     0.0%     5.0%      3.7s   0.00      5000k   936m
+1     done          0.04    96.0%     0.0%    60.0%     0.0%    20.0%     0.0%    40.0%      3.6s   0.00      5000k   927m
+2*    done          0.06    95.0%     9.0%   100.0%     1.0%    26.0%     0.0%     0.0%      5.8s   0.00      5000k   932m
+3     done          0.01   100.0%     0.0%   100.0%     1.0%    11.0%     0.0%     0.0%      3.8s   0.00      5000k   944m
+base                0.14    88.0%    44.0%    79.5%     0.0%     4.0%     0.0%    20.0%     10.9s
+best      seed 2 -> trainedModels/lags60-scratch.zip
+
+FLAGS
+  !! best seed below baseline (0.06 vs 0.14)
+  !  seed 0,1,2,3: crash-heavy - 50%+ of episodes crash
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up), 2 (never levelled up), 3 (never levelled up)
+     seed 1: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)

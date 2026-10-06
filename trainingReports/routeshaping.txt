@@ -1,0 +1,47 @@
+routeshaping
+job -   git unknown   seeds 4   steps 5,000,000
+written 2026-10-01 21:49
+
+SETTINGS
+args      --randomise
+run       steps 5000000  level 0.0  randomise True  resume False  envs 1
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          10.0
+          R_WALL              0.5           GAMMA               0.995         CRASHES             hit,wrong_way
+          LAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,markerOBS_DIM             8
+          ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4             OBS_LAGS            24,20,16,12,8,4,2,1,0
+          OBS_STACK           9             FRAME_HISTORY       25            ACTION_HISTORY      3
+          POLICY_INPUT_DIM    84            MIN_ARC_FRACTION    0.25          MIN_POINTS          5
+          MIN_RATIO           0.2           CLIP                3.0           _FIT_SCALE          1000.0
+          HOOP_HEIGHT         0.6,1.4       PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0
+          CLEARANCE           0.4           SIDE_GAP            0.35          CENTRELINE_POINTS   256
+          DEFAULT_EPISODES    200           CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000
+          LEVEL_STEP          0.25          LEVEL_WINDOW        200           LEVEL_UP            0.7
+          LEVEL_PASSES        2
+
+NOTES
+  SIM/REWARD CHANGES vs softwallv3 (physics, observations, collisions, geofence unchanged)
+  Reward simplified to: shaping + R_PASS 40 on a pass - R_CRASH 30 on a crash - R_WALL 0.5 on the fence.
+    Removed R_HIDDEN, R_STEP, POT_SCALE, PROGRESS_UNIT. Shaping is now R_PROGRESS 10 per metre.
+    phi no longer zeroed at terminal states, so a crash costs exactly R_CRASH more than stopping there.
+  Shaping target replaced by a distance-to-go round the lap (sim.HoopEnv._to_go):
+    front + lined up with the hole -> hoop centre; front, not lined up -> approach point CLEARANCE out front;
+    behind, within the rim's width -> back-off point CLEARANCE behind a side gate; beside the rim -> the gate.
+    Why: the old targets (centre from the front, gate from behind) pointed straight into the noodle,
+    from the side and just after a pass. Straight-line checks hit the rim on both.
+    An oracle following the new shaping with true position: 11.6 passes/min, 0% crash, 0% wall at level 1.
+  R_PASS/R_CRASH rebalanced: 90/15 in v3 taught "pass once, then crash" (ep 5s, 100% crash in training).
+  Trained with --randomise (delay 0-3 steps, tau 0.15-0.5 s, rate 8-12 Hz per episode) for realism;
+    earlier runs did not, so their scores are not directly comparable. Evaluation is randomised too.
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     1st pass  level      steps   time
+0     failed            -   0.00      4650k   912m
+1     failed            -   0.00      4690k   911m
+2     failed            -   0.00      4600k   911m
+3     failed            -   0.00      4520k   911m
+
+FLAGS
+  !! seed 0,1,2,3: failed (see logs)
+  !  curriculum stuck - seed 0 (never levelled up), 1 (never levelled up), 2 (never levelled up), 3 (never levelled up)
+     seed 2: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)
