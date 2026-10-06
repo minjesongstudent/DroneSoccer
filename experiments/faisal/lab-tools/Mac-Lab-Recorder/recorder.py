@@ -12,6 +12,34 @@ from pathlib import Path
 
 ALLOWED = frozenset({'command', 'streamon', 'streamoff'})
 
+def control_reply(data, address):
+    """Accept only SDK acknowledgements from the expected command endpoint."""
+    if address != ('192.168.10.1', 8889):
+        return None
+    try:
+        text = data.decode('ascii').strip(' \r\n')
+    except UnicodeDecodeError:
+        return None
+    if not text or any(ord(c) < 32 or ord(c) > 126 for c in text):
+        return None
+    if text.lower() == 'ok' or text.lower() == 'error' or text.lower().startswith('error '):
+        return text
+    return None
+
+def request_sdk(control, command, pump, commands, clock=time.monotonic, timeout=8):
+    send(control, command)
+    commands.write(json.dumps({'utc': utc(), 'command': command}) + '\n')
+    commands.flush()
+    deadline = clock() + timeout
+    while clock() < deadline:
+        for reply in pump(.1):
+            if reply.lower() == 'ok':
+                return
+            raise RuntimeError(command + ': ' + reply)
+    raise TimeoutError(command + ': no valid SDK acknowledgement within eight seconds. '
+                       'Unexpected packets, if any, are saved in commands.jsonl. '
+                       'Check drone Wi-Fi, close other controllers, and retry with motors off.')
+
 def utc():
     return datetime.now(timezone.utc).isoformat()
 
@@ -62,7 +90,7 @@ def record(seconds):
             'python': platform.python_version(), 'mode': 'motors-off hand-carried capture',
             'timing': 'Host receipt timestamps; not exposure time or measured network latency',
             'requested_seconds': seconds, 'state_packets': 0, 'video_packets': 0,
-            'video_bytes': 0, 'error': None}
+            'video_bytes': 0, 'ignored_control_packets': 0, 'recorder_version': 2, 'error': None}
     sockets = []
     start = time.monotonic()
     try:
@@ -94,22 +122,19 @@ def record(seconds):
                         info['video_packets'] += 1
                         info['video_bytes'] += len(data)
                     else:
-                        reply = data.decode('utf-8', errors='replace').strip()
-                        commands.write(json.dumps(dict(stamp, response=reply)) + '\n')
-                        replies.append(reply)
+                        reply = control_reply(data, address)
+                        commands.write(json.dumps(dict(stamp, response=reply,
+                            source_ip=address[0], source_port=address[1],
+                            raw_hex=data.hex(), accepted=reply is not None)) + '\n')
+                        commands.flush()
+                        if reply is not None:
+                            replies.append(reply)
+                        else:
+                            info['ignored_control_packets'] += 1
                 return replies
 
             def request(command):
-                send(control, command)
-                commands.write(json.dumps({'utc': utc(), 'command': command}) + '\n')
-                deadline = time.monotonic() + 8
-                while time.monotonic() < deadline:
-                    replies = pump(.1)
-                    if replies:
-                        if replies[-1].lower() != 'ok':
-                            raise RuntimeError(command + ': ' + replies[-1])
-                        return
-                raise TimeoutError(command + ': no response. Check drone Wi-Fi and macOS Local Network permission.')
+                request_sdk(control, command, pump, commands)
 
             try:
                 request('command')
