@@ -47,7 +47,13 @@ YELLOW_HUE = (15, 40)     # UNMEASURED: the cage wall, from cage footage 2026-10
 YELLOW_MIN_S = 80
 BLACK_MAX_V = 70          # the net, and shadow
 WHITE_MIN_V = 150         # UNMEASURED: from one photo; B3 tunes on cage footage
-WHITE_MAX_S = 60
+WHITE_MAX_S = 60          # white cage pipe, behind the ring (ring_scores)
+# The marker disc reads cream under the cage light: hue ~23, saturation 85-111 close up,
+# so at 60 it was missed 98% of the time closer than 0.8 m. 100 alone lets the bright
+# wall into the disc at 1 m (61% -> 30%), so try 60, then 100. MEASURED 2026-10-06
+# offline (labcheck markercheck, survey 20261006-184318): closer than 0.8 m 2% -> 91%,
+# 0.8 m and further 61% -> 84%. UNMEASURED: false markers from behind (survey --behind).
+MARKER_WHITE_MAX_S = (60, 100)
 DARK_MAX_V = 90
 # A fit is the hoop only above all three. From cage footage 2026-10-01: front views
 # score band >= 0.78, hole 0, backdrop >= 0.74; door glass, straps and a blue
@@ -223,10 +229,19 @@ class HoopDetector:
         xs = cx + a * np.cos(t) * np.cos(th) - b * np.sin(t) * np.sin(th)
         bottom = np.array([xs[ys.argmax()], ys.max()])
 
-        # White: bright and unsaturated. The yellow wall is as bright but saturated.
         hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
-        white = cv2.inRange(hsv, (0, 0, WHITE_MIN_V), (180, WHITE_MAX_S, 255))
         dark = cv2.inRange(hsv, (0, 0, 0), (180, 255, DARK_MAX_V))
+        for max_s in MARKER_WHITE_MAX_S:
+            found = self._disc(hsv, dark, major, bottom, max_s)
+            if found is not None:
+                return found
+        return None
+
+    @staticmethod
+    def _disc(hsv, dark, major, bottom, max_s) -> Optional[tuple]:
+        """The marker disc with whites up to saturation max_s, or None."""
+        # White: bright and unsaturated. The yellow wall is as bright but saturated.
+        white = cv2.inRange(hsv, (0, 0, WHITE_MIN_V), (180, max_s, 255))
         # Close over the cross so the disc is one blob, then open with a kernel
         # wider than the pole it sits on, which leaves the disc and drops the pole.
         disc = cv2.morphologyEx(white, cv2.MORPH_CLOSE, _kernel(major * 0.1))
