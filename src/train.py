@@ -229,6 +229,11 @@ def grown(init: str, env, seed: int, envs: int) -> SAC:
     added = model.observation_space.shape[0] - n_old
     if added < 0:
         raise ValueError(f"{init} takes {n_old} inputs, more than the {n_old + added} the env gives")
+    if added > 1:
+        # Growing only appends inputs at the end (the flag). A different OBS_LAGS
+        # moves every frame, so zero columns at the end would scramble the old weights.
+        raise ValueError(f"{init} takes {n_old} inputs and the env gives {n_old + added}: only the flag can be "
+                         f"added. Set contract.OBS_LAGS to the window the model was trained on")
 
     def widen(old_t, new_t):
         # First layers read [obs, (action)]: insert zero columns where the old obs ended.

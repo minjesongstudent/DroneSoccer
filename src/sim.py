@@ -13,7 +13,8 @@ from __future__ import annotations
 # The reward, the actions, the state, the discount and the episode ends all live
 # in contract.py. This file is only the physics.
 # The curriculum level blends from easy (0) to real (1).
-HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor
+HOOP_HEIGHT = (1.33, 1.73)     # hoop centre above the floor: hung 10-50 cm below the 2.05 m roof
+                               # (top of the hoop to the roof). UNMEASURED by tape: labcheck tape
 HOOP_FROM_CENTRE = 0.15        # hoop centre this close to the middle of the cage, as set up for real
 PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
 LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad, level 0 and 1
@@ -28,7 +29,7 @@ import gymnasium as gym
 import numpy as np
 
 from src import contract
-from src.params import Cage, Camera, Drone, Hoop, Pad, Randomise
+from src.params import Cage, Camera, Detector, Drone, Hoop, Pad, Randomise
 
 # Collision checks use this many points along the noodle's centreline. At ~5 mm
 # spacing, a contact can be missed by at most ~0.1 mm.
@@ -44,18 +45,21 @@ class HoopEnv(gym.Env):
     def __init__(self, level: float = 1.0, randomise: bool = False, hanger: bool = True,
                  cage: Cage | None = None, hoop: Hoop | None = None,
                  camera: Camera | None = None, drone: Drone | None = None,
-                 pad: Pad | None = None, ranges: Randomise | None = None):
+                 pad: Pad | None = None, ranges: Randomise | None = None,
+                 detector: Detector | None = None):
         self.cage = cage or Cage()
         self.hoop = hoop or Hoop()
         self.camera = camera or Camera()
         self.drone = drone or Drone()
         self.pad = pad or Pad()
+        self.detector = detector or Detector()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
         self.hanger = hanger   # off replays models trained before it existed
         # The measured setup. With randomise, each episode works on a copy with
         # ranges.error applied; without, on these.
-        self._measured = {"cage": self.cage, "hoop": self.hoop, "camera": self.camera, "drone": self.drone}
+        self._measured = {"cage": self.cage, "hoop": self.hoop, "camera": self.camera, "drone": self.drone,
+                          "detector": self.detector}
         self.set_level(level)
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, (contract.ACTION_DIM,), np.float32)
@@ -110,7 +114,7 @@ class HoopEnv(gym.Env):
         (horizontal, vertical) for a squashed hoop. hanger_half_width defaults to
         the measured bar.
         """
-        diameter = self.hoop.outer_diameter if hoop_diameter is None else hoop_diameter
+        diameter = (self.hoop.outer_diameter, self.hoop.outer_height) if hoop_diameter is None else hoop_diameter
         radius_h, radius_v = np.broadcast_to(np.asarray(diameter, float), 2) / 2
         self._set_layout(np.asarray(drone_pos, float), float(heading),
                          np.asarray(hoop_centre, float), np.asarray(hoop_normal, float),
@@ -143,7 +147,8 @@ class HoopEnv(gym.Env):
             angle = bearing + np.deg2rad(rng.uniform(-max_angle, max_angle))
             normal = np.array([np.cos(angle), np.sin(angle)])
             side = np.array([-normal[1], normal[0]])
-            radii = (self.hoop.outer_diameter + rng.uniform(-1, 1, 2) * self.hoop.diameter_tolerance) / 2
+            radii = (np.array([self.hoop.outer_diameter, self.hoop.outer_height])
+                     + rng.uniform(-1, 1, 2) * self.hoop.diameter_tolerance) / 2
             must_fit = [centre + radii[0] * side, centre - radii[0] * side,
                         centre + CLEARANCE * normal, centre - CLEARANCE * normal]
             gates = [centre + (radii[0] + SIDE_GAP) * side, centre - (radii[0] + SIDE_GAP) * side]
@@ -221,9 +226,13 @@ class HoopEnv(gym.Env):
         self.wall_steps = 0
         self.route = None   # which way the drone last went round, for replay.py
         self._pending = deque([np.zeros(contract.ACTION_DIM, np.float32)] * self.dyn.delay_steps)
-        self._frames = deque([self.observe()] * contract.FRAME_HISTORY,
+        # As labcheck.fly_policy starts: no frames yet, so every lag is blind, and the
+        # detector has to confirm the hoop before it counts. A hoop in view at the
+        # start is reported from the second step.
+        self._frames = deque([contract.NOT_VISIBLE.copy()] * contract.FRAME_HISTORY,
                              maxlen=contract.FRAME_HISTORY)
-        self._unseen = not self._frames[-1][contract.VISIBLE]
+        self._streak = 0
+        self._unseen = True
         self._actions = deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
                               maxlen=contract.ACTION_HISTORY)
         return self._policy_input()
@@ -241,7 +250,11 @@ class HoopEnv(gym.Env):
         d = self.dyn
         dt = 1.0 / self.np_random.uniform(*self.ranges.rate_hz) if self.randomise else d.dt
         c, s = np.cos(self.heading), np.sin(self.heading)
-        v_cmd = d.max_speed * np.array([forward * c + right * s, forward * s - right * c, up])
+        v_cmd = np.array([d.max_speed * (forward * c + right * s), d.max_speed * (forward * s - right * c),
+                          d.max_up_speed * up])
+        # Small yaw commands barely turn the real drone: scale from the deadband up.
+        db = float(np.clip(d.yaw_deadband, 0.0, 0.5))
+        yaw_cw = np.sign(yaw_cw) * max(0.0, abs(yaw_cw) - db) / (1.0 - db)
         yaw_cmd = -yaw_cw * np.deg2rad(d.max_yaw_rate_deg)  # heading is counter-clockwise
         alpha = 1.0 - np.exp(-dt / d.tau)
         self.vel += (v_cmd - self.vel) * alpha
@@ -259,9 +272,9 @@ class HoopEnv(gym.Env):
             outcome = "net"
         if outcome == "passed":
             self.passes += 1
-        obs = self.observe()
+        obs = self._as_detected(self.observe())
         self._frames.append(obs)
-        self._unseen = self._unseen and not obs[contract.VISIBLE]
+        self._unseen = contract.not_yet_through(self._unseen, self._frames)
         self._actions.append(action)
 
         terminated = outcome in contract.CRASHES
@@ -396,13 +409,28 @@ class HoopEnv(gym.Env):
 
     # --- observation -----------------------------------------------------
 
+    def _as_detected(self, obs: np.ndarray) -> np.ndarray:
+        """What the real detector would report from this view: nothing until the hoop
+        has been fitted in confirm_frames frames in a row, and the marker missed some
+        of the time it is in view."""
+        self._streak = self._streak + 1 if obs[contract.VISIBLE] else 0
+        if self._streak < self.detector.confirm_frames:
+            return contract.NOT_VISIBLE.copy()
+        near = obs[contract.FIELDS.index("major")] >= self.detector.near_major
+        miss = self.detector.marker_miss_near if near else self.detector.marker_miss
+        if obs[contract.FIELDS.index("marker")] and self.np_random.uniform() < miss:
+            obs = obs.copy()
+            obs[contract.FIELDS.index("marker")] = 0.0
+        return obs
+
     def observe(self) -> np.ndarray:
-        """The eight numbers the camera would report in the current state."""
+        """The eight numbers the camera would show in the current state, before
+        _as_detected's confirmation and marker misses."""
         # One projection covers the outer edge and the marker, which is last.
         cam_pos, cam_axes = self._camera_pose()
         xn, yn, in_frame = self._project(self._sight_points, cam_pos, cam_axes)
         edge = in_frame[:-1]
-        if edge.mean() < contract.MIN_ARC_FRACTION:
+        if edge.mean() < max(contract.MIN_ARC_FRACTION, self.detector.min_arc_fraction):
             return contract.NOT_VISIBLE.copy()
         return contract.observe(np.stack([xn[:-1], yn[:-1]], axis=1)[edge], self.camera.half_extent,
                                 marker=self._marker_seen(cam_pos, in_frame[-1]))

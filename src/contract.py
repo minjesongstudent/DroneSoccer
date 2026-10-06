@@ -105,14 +105,34 @@ OBS_STACK = len(OBS_LAGS)
 FRAME_HISTORY = max(OBS_LAGS) + 1
 ACTION_HISTORY = 3
 #
-# Last comes the seen-hoop flag: 1 until the detector has first seen the hoop
-# this flight, then 0 for good. Without it, blind at takeoff (hoop above the
-# frame, net 0.3 m behind) and blind for 2.5 s mid-lap (hoop behind, just
-# passed) gave the same input, and the lap's turn-back reversed into the net
-# at takeoff. It reads 1 at takeoff, not 0, so that a policy grown from an
-# 84-input one with a zero weight on it keeps the lap's inputs unchanged.
+# Last comes the not-yet-through flag: 1 until the hoop has left the frame
+# while big and centred, which is what flying at it looks like, then 0 for good. It separates takeoff
+# (net 0.3 m behind) from mid-lap (hoop behind, just passed): without it the
+# lap's turn-back reversed into the net at takeoff. It used to drop at the first
+# sighting (seenflag-s1-level1), but then the first sighting after a blind climb
+# looked like finding the hoop again after a pass, and every 2026-10-06 flight
+# flew the lap's go-round (strafe left, turn right) from the corner, lost the
+# hoop and backed into the net. A size alone does not work: with the detector
+# needing ~60% of the rim in frame, a hoop approached level is last reported at
+# 0.57-1.08 across, depending on the detector and the height. But on every
+# straight approach it leaves the frame at least PASS_MAJOR across and within
+# PASS_U of the centre, while the flights' losses before any pass were off the
+# top or side at 0.42 or less. It reads 1 at takeoff, not 0, so that a policy
+# grown from an 84-input one with a zero weight on it keeps the lap's inputs
+# unchanged.
+PASS_MAJOR = 0.55   # ~0.8 m from a 0.45 m hoop
+PASS_U = 0.5
 POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM + 1
 VISIBLE = FIELDS.index("visible")
+
+
+def not_yet_through(unseen: bool, frames) -> bool:
+    """The flag after the newest frame: 0 for good once the hoop leaves the frame
+    having last been seen at least PASS_MAJOR across within PASS_U of the centre."""
+    before, now = frames[-2], frames[-1]
+    flew_at_it = (before[VISIBLE] and not now[VISIBLE]
+                  and before[FIELDS.index("major")] >= PASS_MAJOR and abs(before[FIELDS.index("u")]) < PASS_U)
+    return bool(unseen) and not flew_at_it
 
 
 def policy_input(frames, actions, unseen: bool) -> np.ndarray:
@@ -120,7 +140,7 @@ def policy_input(frames, actions, unseen: bool) -> np.ndarray:
 
     frames: the last FRAME_HISTORY observations, newest last.
     actions: the last ACTION_HISTORY actions, newest last.
-    unseen: no frame this flight has had the hoop visible yet.
+    unseen: the hoop has not yet been flown at until it left the frame (not_yet_through).
     """
     return np.concatenate([*(frames[-1 - lag] for lag in OBS_LAGS), *actions,
                            [1.0 if unseen else 0.0]]).astype(np.float32)

@@ -5,13 +5,14 @@ import pytest
 from gymnasium.utils.env_checker import check_env
 
 from src import contract
-from src.params import Cage, Camera, Drone, Hoop, Randomise
+from src.params import Cage, Camera, Detector, Drone, Hoop, Randomise
 from src.contract import GAMMA, LAPS_MAX_STEPS, R_CRASH, R_PASS
 from src.sim import HOOP_FROM_CENTRE, SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
-EXACT = Hoop(diameter_tolerance=0.0, marker_max_angle_deg=70.0)  # tests pin these, not the measured hoop
+EXACT = Hoop(outer_height=0.45, diameter_tolerance=0.0, marker_max_angle_deg=70.0)  # a round hoop: tests pin
+                                                                                   # these, not the measured one
 IDEAL = Drone(tau=0.3, delay_steps=0)  # scripted paths assume no lag, not the measured drone
 U, V, MAJOR, RATIO, SIN, COS, VISIBLE, MARKER = range(8)
 
@@ -430,11 +431,15 @@ def test_pad_layouts_fit_the_real_cage():
 
 
 def test_level_zero_starts_with_hoop_and_marker_in_view():
-    env = HoopEnv(level=0.0, camera=Camera())
+    # Every start is blind, as on the drone; the detector reports the hoop from step 2.
+    env = HoopEnv(level=0.0, camera=Camera(), detector=Detector(marker_miss=0.0, marker_miss_near=0.0))
     seen = []
     for seed in range(200):
-        obs, _ = env.reset(seed=seed)
-        seen.append(obs[(contract.OBS_STACK - 1) * contract.OBS_DIM + MARKER])
+        x, _ = env.reset(seed=seed)
+        assert not newest(x)[VISIBLE] and x[-1] == 1.0
+        for _ in range(Detector().confirm_frames):
+            x = env.step([0.0, 0.0, 0.0, 0.0])[0]
+        seen.append(newest(x)[MARKER])
     assert np.mean(seen) > 0.95
 
 
@@ -488,16 +493,31 @@ def test_hanger_can_be_left_out():
     assert [r for r in routes if r] == ["over"]
 
 
-def test_seen_hoop_flag_reads_1_until_the_first_sighting_then_0_for_good():
-    """The policy input's last number: blind at takeoff must not look like blind mid-lap."""
+def test_flag_stays_1_when_the_hoop_is_only_seen_or_lost_off_the_side():
+    """The policy input's last number: takeoff (and losing the hoop before any pass)
+    must not look like blind mid-lap, just after a pass."""
     env = make_env()
     x = env.place([5.0, 5.0, 1.5], np.pi, HOOP_AT, BACK)   # facing away from the hoop
     assert x[-1] == 1.0 and not newest(x)[VISIBLE]
     seen = []
-    for _ in range(200):   # turn on the spot: the hoop comes into view, then leaves it
+    for _ in range(200):   # turn on the spot: the hoop comes into view, then leaves off the side
         x = env.step([0.0, 0.0, 0.0, 1.0])[0]
         seen.append(bool(newest(x)[VISIBLE]))
-        if seen[-1]:
-            assert x[-1] == 0.0
+        assert x[-1] == 1.0
     assert any(seen) and not seen[-1]
-    assert x[-1] == 0.0
+
+
+def test_flag_drops_once_the_drone_flies_through():
+    env = make_env()
+    x = env.place([4.8, 5.0, 1.5], 0.0, HOOP_AT, BACK)     # 1.2 m in front, facing it
+    flags = []
+    for _ in range(60):
+        x, _, _, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+        flags.append(x[-1])
+        if info["passes"]:
+            break
+    assert info["passes"] == 1
+    assert flags[0] == 1.0 and flags[-1] == 0.0   # dropped as the hoop left the frame, by the pass
+    for _ in range(30):
+        x = env.step([0.0, -1.0, 0.0, 0.0])[0]
+        assert x[-1] == 0.0                        # for good
