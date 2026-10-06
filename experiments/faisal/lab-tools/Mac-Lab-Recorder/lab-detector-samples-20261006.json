@@ -1,0 +1,842 @@
+[
+  {
+    "frame": 0,
+    "approx_seconds": 0.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 30,
+    "approx_seconds": 1.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 60,
+    "approx_seconds": 2.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 90,
+    "approx_seconds": 3.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 120,
+    "approx_seconds": 4.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 150,
+    "approx_seconds": 5.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 180,
+    "approx_seconds": 6.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 210,
+    "approx_seconds": 7.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 240,
+    "approx_seconds": 8.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 270,
+    "approx_seconds": 9.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 300,
+    "approx_seconds": 10.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 330,
+    "approx_seconds": 11.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 360,
+    "approx_seconds": 12.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 390,
+    "approx_seconds": 13.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 420,
+    "approx_seconds": 14.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 450,
+    "approx_seconds": 15.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 480,
+    "approx_seconds": 16.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 510,
+    "approx_seconds": 17.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 540,
+    "approx_seconds": 18.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 570,
+    "approx_seconds": 19.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 600,
+    "approx_seconds": 20.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 630,
+    "approx_seconds": 21.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 660,
+    "approx_seconds": 22.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 690,
+    "approx_seconds": 23.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 720,
+    "approx_seconds": 24.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 750,
+    "approx_seconds": 25.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 780,
+    "approx_seconds": 26.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 810,
+    "approx_seconds": 27.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 840,
+    "approx_seconds": 28.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 870,
+    "approx_seconds": 29.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 900,
+    "approx_seconds": 30.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 930,
+    "approx_seconds": 31.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 960,
+    "approx_seconds": 32.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 990,
+    "approx_seconds": 33.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1020,
+    "approx_seconds": 34.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1050,
+    "approx_seconds": 35.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1080,
+    "approx_seconds": 36.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1110,
+    "approx_seconds": 37.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 1140,
+    "approx_seconds": 38.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1170,
+    "approx_seconds": 39.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1200,
+    "approx_seconds": 40.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1230,
+    "approx_seconds": 41.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.42"
+  },
+  {
+    "frame": 1260,
+    "approx_seconds": 42.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.00"
+  },
+  {
+    "frame": 1290,
+    "approx_seconds": 43.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1320,
+    "approx_seconds": 44.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1350,
+    "approx_seconds": 45.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1380,
+    "approx_seconds": 46.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 1410,
+    "approx_seconds": 47.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 1440,
+    "approx_seconds": 48.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 1470,
+    "approx_seconds": 49.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 1500,
+    "approx_seconds": 50.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.38"
+  },
+  {
+    "frame": 1530,
+    "approx_seconds": 51.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.44"
+  },
+  {
+    "frame": 1560,
+    "approx_seconds": 52.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 0.90"
+  },
+  {
+    "frame": 1590,
+    "approx_seconds": 53.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 0.33"
+  },
+  {
+    "frame": 1620,
+    "approx_seconds": 54.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 1650,
+    "approx_seconds": 55.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1680,
+    "approx_seconds": 56.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.53"
+  },
+  {
+    "frame": 1710,
+    "approx_seconds": 57.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.53"
+  },
+  {
+    "frame": 1740,
+    "approx_seconds": 58.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1770,
+    "approx_seconds": 59.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1800,
+    "approx_seconds": 60.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1830,
+    "approx_seconds": 61.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.51"
+  },
+  {
+    "frame": 1860,
+    "approx_seconds": 62.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1890,
+    "approx_seconds": 63.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1920,
+    "approx_seconds": 64.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1950,
+    "approx_seconds": 65.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 1980,
+    "approx_seconds": 66.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 0.97"
+  },
+  {
+    "frame": 2010,
+    "approx_seconds": 67.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2040,
+    "approx_seconds": 68.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.54"
+  },
+  {
+    "frame": 2070,
+    "approx_seconds": 69.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2100,
+    "approx_seconds": 70.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2130,
+    "approx_seconds": 71.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2160,
+    "approx_seconds": 72.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2190,
+    "approx_seconds": 73.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2220,
+    "approx_seconds": 74.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2250,
+    "approx_seconds": 75.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2280,
+    "approx_seconds": 76.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2310,
+    "approx_seconds": 77.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2340,
+    "approx_seconds": 78.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.02"
+  },
+  {
+    "frame": 2370,
+    "approx_seconds": 79.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2400,
+    "approx_seconds": 80.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2430,
+    "approx_seconds": 81.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2460,
+    "approx_seconds": 82.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2490,
+    "approx_seconds": 83.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 2520,
+    "approx_seconds": 84.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.16"
+  },
+  {
+    "frame": 2550,
+    "approx_seconds": 85.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2580,
+    "approx_seconds": 86.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2610,
+    "approx_seconds": 87.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2640,
+    "approx_seconds": 88.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2670,
+    "approx_seconds": 89.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2700,
+    "approx_seconds": 90.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2730,
+    "approx_seconds": 91.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2760,
+    "approx_seconds": 92.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 0.67"
+  },
+  {
+    "frame": 2790,
+    "approx_seconds": 93.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2820,
+    "approx_seconds": 94.0,
+    "visible": 1.0,
+    "marker": 1.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2850,
+    "approx_seconds": 95.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2880,
+    "approx_seconds": 96.0,
+    "visible": 1.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 2910,
+    "approx_seconds": 97.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.29"
+  },
+  {
+    "frame": 2940,
+    "approx_seconds": 98.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "backdrop 0.53"
+  },
+  {
+    "frame": 2970,
+    "approx_seconds": 99.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 3000,
+    "approx_seconds": 100.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.39"
+  },
+  {
+    "frame": 3030,
+    "approx_seconds": 101.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "no ring 0.44"
+  },
+  {
+    "frame": 3060,
+    "approx_seconds": 102.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3090,
+    "approx_seconds": 103.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3120,
+    "approx_seconds": 104.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3150,
+    "approx_seconds": 105.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3180,
+    "approx_seconds": 106.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 0.89"
+  },
+  {
+    "frame": 3210,
+    "approx_seconds": 107.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3240,
+    "approx_seconds": 108.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3270,
+    "approx_seconds": 109.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 1.00"
+  },
+  {
+    "frame": 3300,
+    "approx_seconds": 110.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3330,
+    "approx_seconds": 111.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3360,
+    "approx_seconds": 112.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": "solid 0.89"
+  },
+  {
+    "frame": 3390,
+    "approx_seconds": 113.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3420,
+    "approx_seconds": 114.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3450,
+    "approx_seconds": 115.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3480,
+    "approx_seconds": 116.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3510,
+    "approx_seconds": 117.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3540,
+    "approx_seconds": 118.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  },
+  {
+    "frame": 3570,
+    "approx_seconds": 119.0,
+    "visible": 0.0,
+    "marker": 0.0,
+    "rejected": ""
+  }
+]
