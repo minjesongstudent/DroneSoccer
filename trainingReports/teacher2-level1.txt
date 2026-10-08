@@ -1,0 +1,39 @@
+teacher2-level1
+job 115000   git unknown   seeds 6/6   steps 5,000,000
+written 2026-10-08 07:58
+
+SETTINGS
+args      --randomise --demos 200000 --demo-share 0.25 --level 1.0
+run       steps 5000000  level 1.0  randomise True  resume False  envs 1  init none  demos 200000  demo_share 0.25
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          4.0
+          R_TIME              0.1           R_WALL              1.0           GAMMA               0.995
+          CRASHES             hit,wrong_way,netLAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,marker
+          OBS_DIM             8             ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4
+          OBS_LAGS            60,50,40,32,24,16,12,8,4,2,1,0OBS_STACK           12            FRAME_HISTORY       61
+          ACTION_HISTORY      3             PASS_MAJOR          0.55          PASS_U              0.5
+          POLICY_INPUT_DIM    109           VISIBLE             6             MIN_ARC_FRACTION    0.25
+          MIN_POINTS          5             MIN_RATIO           0.2           CLIP                3.0
+          _FIT_SCALE          1000.0        HOOP_HEIGHT         1.33,1.73     HOOP_FROM_CENTRE    0.15
+          PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0     CLEARANCE           0.4
+          SIDE_GAP            0.35          CENTRELINE_POINTS   256           DEFAULT_EPISODES    200
+          CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000       INIT_WARMUP         200000
+          DEMO_LEVEL          1.0           DEMO_NOISE          0.1           DEMO_SHARE          0.25
+          DEMO_SEED           2000000       LEVEL_STEP          0.25          LEVEL_WINDOW        200
+          LEVEL_UP            0.7           LEVEL_PASSES        1             MISSION_PASSES      2
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     pass/ep    never     laps  crashed     wall      hit    wrong  timeout  1st pass  level      steps   time
+0     done          0.14    86.0%     0.0%   100.0%     1.0%    16.0%     0.0%     0.0%     10.4s   1.00      5000k   991m
+1     done          0.63    37.0%     0.0%   100.0%     1.0%    16.0%     0.0%     0.0%     10.4s   1.00      5000k  1001m
+2     done          0.34    66.0%     0.0%   100.0%     0.0%    39.0%     0.0%     0.0%     11.5s   1.00      5000k   989m
+3*    done          0.61    66.0%    47.0%    94.0%     0.0%    40.0%     0.0%     6.0%     11.2s   1.00      5000k   995m
+4     done          0.30    73.0%    11.0%    92.5%     7.0%    45.0%     0.0%     8.0%      9.5s   1.00      5000k   982m
+5     done          0.48    55.0%     6.0%   100.0%     0.0%    64.0%     0.0%     0.0%      9.4s   1.00      5000k   989m
+base                0.03    98.0%     0.0%    64.0%     0.0%     2.0%     0.0%    36.0%     38.8s
+best      seed 3 -> trainedModels/teacher2-level1.zip
+
+FLAGS
+  !  seed 0,1,2,3,4,5: crash-heavy - 50%+ of episodes crash
+  !  collapse - seed 0 (peak 0.49 at 1,250,000, ended 0.22), 4 (peak 0.61 at 1,300,000, ended 0.24)
+     seed 2: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)
