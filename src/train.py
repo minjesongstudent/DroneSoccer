@@ -39,6 +39,8 @@ from src.evaluate import DEFAULT_EPISODES, load_policy, report, run_episodes
 from src.params import ROOT, Drone
 from src.plots import save_plots
 from src.sim import HoopEnv
+from src.demo_buffer import DemoReplayBuffer
+from src.teacher import Teacher
 
 RUNS = ROOT / "runs"
 CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
@@ -47,6 +49,19 @@ BUFFER_SIZE = 1_000_000      # SB3's default; ~700 MB in each resume snapshot
 # SB3's 5k random steps the first 1k updates on so small a buffer wiped out the
 # lap (2.04 passes/ep to 0.28); 200k of its own flying kept it near 2.
 INIT_WARMUP = 200_000
+# --demos flies src.teacher before the first update and keeps its flights for the whole
+# run, so the critic sees the whole mission from the start: the blind climb until the
+# hoop is in view, passes, and the way round. From scratch, the first passes came only
+# after 150-240k steps at level 0 (firstpass-curriculum), and the new detector makes
+# them rarer. They fly the real start (level 1), whatever the curriculum level. Noise
+# on the teacher's actions widens what they cover (the first teacher: 0.1 cost little,
+# 0.2 crashed 27% of flights). They go in a buffer of their own (demo_buffer.py) that
+# supplies DEMO_SHARE of every batch: in the ordinary buffer they were gone by 1M steps,
+# before the curriculum reached the start they show.
+DEMO_LEVEL = 1.0
+DEMO_NOISE = 0.1
+DEMO_SHARE = 0.25       # RLPD uses 0.5
+DEMO_SEED = 2_000_000   # layouts apart from training's and evaluate.EVAL_SEED's
 
 # Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the last
 # LEVEL_WINDOW episodes made at least LEVEL_PASSES passes, however they ended.
@@ -209,7 +224,7 @@ class PolicyWarmup(SAC):
         return super()._sample_action(0, action_noise, n_envs)
 
 
-def grown(init: str, env, seed: int, envs: int) -> SAC:
+def grown(init: str, env, seed: int, envs: int, buffer: dict | None = None) -> SAC:
     """A fresh model for `env` with a trained model's networks, optimiser state and
     entropy coefficient, and an empty replay buffer (fine-tuning). Unlike --resume,
     this needs only the model.zip.
@@ -223,7 +238,7 @@ def grown(init: str, env, seed: int, envs: int) -> SAC:
                          gamma=old.gamma, learning_rate=old.learning_rate,
                          batch_size=old.batch_size, tau=old.tau,
                          train_freq=envs, gradient_steps=envs,
-                         learning_starts=INIT_WARMUP, buffer_size=BUFFER_SIZE,
+                         learning_starts=INIT_WARMUP, buffer_size=BUFFER_SIZE, **(buffer or {}),
                          tensorboard_log=str(RUNS))
     n_old = old.observation_space.shape[0]
     added = model.observation_space.shape[0] - n_old
@@ -258,10 +273,55 @@ def grown(init: str, env, seed: int, envs: int) -> SAC:
     return model
 
 
+def demo_buffer(demos: int, share: float) -> dict:
+    """SAC's replay buffer options: with demos, a DemoReplayBuffer to hold them."""
+    if not demos:
+        return {}
+    return {"replay_buffer_class": DemoReplayBuffer,
+            "replay_buffer_kwargs": {"demo_size": demos, "demo_share": share}}
+
+
+def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
+    """Fly src.teacher for `steps` steps into model's teacher buffer, one flight per
+    environment at a time, and say how the flights went."""
+    n = model.n_envs
+    buffer = model.replay_buffer.demos
+    envs = [HoopEnv(level=DEMO_LEVEL, randomise=randomise) for _ in range(n)]
+    rng = np.random.default_rng(DEMO_SEED + seed)
+    teachers = [Teacher(rng) for _ in range(n)]
+    obs = []
+    for k, (env, teacher) in enumerate(zip(envs, teachers)):
+        obs.append(env.reset(seed=DEMO_SEED + 1000 * seed + k)[0])
+        teacher.reset(env)
+    flights = passes = crashes = 0
+    for _ in range(steps // n):
+        before, actions, after, rewards, dones, infos = list(obs), [], [], [], [], []
+        for k, (env, teacher) in enumerate(zip(envs, teachers)):
+            action = np.clip(teacher.act(env) + rng.normal(0.0, DEMO_NOISE, contract.ACTION_DIM),
+                             -1.0, 1.0).astype(np.float32)
+            o, r, terminated, truncated, info = env.step(action)
+            actions.append(action)
+            after.append(o)
+            rewards.append(r)
+            dones.append(terminated or truncated)
+            # As SB3's VecEnv marks it: a timeout bootstraps, a crash does not.
+            infos.append({"TimeLimit.truncated": truncated and not terminated})
+            if terminated or truncated:
+                flights, passes, crashes = flights + 1, passes + info["passes"], crashes + terminated
+                o = env.reset()[0]
+                teacher.reset(env)
+            obs[k] = o
+        buffer.add(np.array(before), np.array(after), np.array(actions),
+                   np.array(rewards), np.array(dones), infos)
+    return (f"{steps // n * n} steps, {flights} flights: {passes / max(flights, 1):.2f} passes/flight, "
+            f"crashed {crashes / max(flights, 1):.0%}")
+
+
 def train(steps: int, name: str, seed: int, level: float, randomise: bool,
-          resume: bool = False, envs: int = 1, init: str | None = None) -> Path:
+          resume: bool = False, envs: int = 1, init: str | None = None, demos: int = 0,
+          demo_share: float = DEMO_SHARE) -> Path:
     print(settings(steps=steps, seed=seed, level=level, randomise=randomise, resume=resume,
-                   envs=envs, init=init or "none"), flush=True)
+                   envs=envs, init=init or "none", demos=demos, demo_share=demo_share), flush=True)
     out = RUNS / name
     snapshot = out / "resume"
     if resume:
@@ -274,7 +334,7 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
         model.set_random_seed(seed + model.num_timesteps)
         print(f"resumed  from step {model.num_timesteps} at level {level:.2f}", flush=True)
     elif init:
-        model = grown(init, env, seed, envs)
+        model = grown(init, env, seed, envs, demo_buffer(demos, demo_share))
         print(f"init     from {init} at level {level:.2f}, flying it for {INIT_WARMUP} steps "
               f"before the first update", flush=True)
     else:
@@ -282,8 +342,10 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
                     gamma=contract.GAMMA,
                     train_freq=envs, gradient_steps=envs,
                     learning_starts=5_000,   # fill the buffer with random flying first
-                    buffer_size=BUFFER_SIZE,
+                    buffer_size=BUFFER_SIZE, **demo_buffer(demos, demo_share),
                     tensorboard_log=str(RUNS))
+    if demos and not resume:   # a resumed run's buffer has them already
+        print(f"demos    {add_demos(model, demos, randomise, seed)}", flush=True)
     checkpoints = CheckpointCallback(CHECKPOINT_EVERY // envs, str(out / "checkpoints"),
                                      name_prefix="model")
     # With reset_num_timesteps=False, learn() counts total_timesteps on from the
@@ -310,12 +372,16 @@ if __name__ == "__main__":
                         help="carry on from runs/<name>/resume/ up to --steps in total")
     parser.add_argument("--init", help="start from this trained model.zip, with an empty "
                         "replay buffer (fine-tuning)")
+    parser.add_argument("--demos", type=int, default=0,
+                        help="fly src.teacher for this many steps first and keep its flights for the whole run")
+    parser.add_argument("--demo-share", type=float, default=DEMO_SHARE,
+                        help="share of every batch drawn from the teacher's flights")
     args = parser.parse_args()
     if args.init and args.resume:
         parser.error("--init and --resume do not mix")
 
     path = train(args.steps, args.name, args.seed, args.level, args.randomise,
-                 args.resume, args.envs, args.init)
+                 args.resume, args.envs, args.init, args.demos, args.demo_share)
     print(f"saved {path}")
     episodes = args.eval_episodes or DEFAULT_EPISODES
 
