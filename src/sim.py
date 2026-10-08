@@ -264,12 +264,12 @@ class HoopEnv(gym.Env):
         self.pos = self.pos + self.vel * dt
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
         self.steps += 1
-        on_wall, net = self._touch_walls()
+        on_wall, face = self._touch_walls()
         self.wall_steps += on_wall
 
         outcome = self._outcome(prev)
-        if net and outcome == "running":
-            outcome = "net"
+        if face and outcome == "running":
+            outcome = face
         if outcome == "passed":
             self.passes += 1
         obs = self._as_detected(self.observe())
@@ -360,10 +360,11 @@ class HoopEnv(gym.Env):
                 return False   # a separating axis: no contact
         return True
 
-    def _touch_walls(self) -> tuple[bool, bool]:
+    def _touch_walls(self) -> tuple[bool, str]:
         """Stop the drone's box at the net or the floor. Say whether it touched
-        either, and whether it touched the net, which ends the episode. The floor
-        is min_altitude, with nothing there to catch on.
+        either, and which net face it touched, which ends the episode: "roof" for
+        the ceiling, "side" for the four walls, "" for neither. The floor is
+        min_altitude, with nothing there to catch on.
         """
         c, s = abs(np.cos(self.heading)), abs(np.sin(self.heading))
         forward, left, up = self._half_box
@@ -373,11 +374,19 @@ class HoopEnv(gym.Env):
                          self.cage.height - up])
         inside = np.clip(self.pos, low, high)
         if np.array_equal(inside, self.pos):
-            return False, False
-        net = (self.pos > high).any() or (self.pos[:2] < low[:2]).any()
+            return False, ""
+        # How far through each face it went. Down is the floor, which is no crash,
+        # so only an overshoot above counts in z. One step can breach two faces at
+        # once, and then the face it went furthest through is the one it met.
+        over = np.abs(self.pos - inside)
+        if self.pos[2] < low[2]:
+            over[2] = 0.0
+        face = ""
+        if over.any():
+            face = "roof" if over[2] > max(over[0], over[1]) else "side"
         self.vel = np.where(inside == self.pos, self.vel, 0.0)
         self.pos = inside
-        return True, bool(net)
+        return True, face
 
     def _outcome(self, prev) -> str:
         """Front to back through the ring scores; back through the ring is wrong_way.

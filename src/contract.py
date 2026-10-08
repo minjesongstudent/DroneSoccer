@@ -63,7 +63,8 @@ def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
            obs: np.ndarray, action: np.ndarray) -> float:
     """The reward for one step. sim.HoopEnv.step calls this and nothing else scores.
 
-    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way", "net").
+    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way",
+        "roof", "side").
     to_go_before, to_go_after: metres left round the lap to the next pass, before
         and after the step (sim.HoopEnv._to_go).
     on_wall: the drone touched the min_altitude floor or the net this step.
@@ -76,9 +77,12 @@ def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
             - R_TIME
             - R_WALL * on_wall)
 
-# "net": the drone touched the net. The net is not in the state, but the hoop
-# is, and the hoop sits well in from it.
-CRASHES = ("hit", "wrong_way", "net")
+# "roof" and "side": the drone touched the net, above or beside it. The net is
+# not in the state, but the hoop is, and the hoop sits well in from it. Both
+# faces cost the same R_CRASH. They carry separate names only so the logs say
+# which one the drone met: the old single "net" hid whether a run died on the
+# ceiling in the blind climb or in the walls on the way round.
+CRASHES = ("hit", "wrong_way", "roof", "side")
 LAPS_MAX_STEPS = 600   # 60 s cut-off, not a failure
 
 FIELDS = ("u", "v", "major", "ratio", "sin_2t", "cos_2t", "visible", "marker")
