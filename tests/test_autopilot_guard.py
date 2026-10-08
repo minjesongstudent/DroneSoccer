@@ -43,7 +43,7 @@ def test_sum_is_not_on_the_numpy_whitelist():
 
 
 @pytest.mark.parametrize("new", [
-    edited('CRASHES = ("hit", "wrong_way", "net")', 'CRASHES = ("wrong_way",)'),
+    edited('CRASHES = ("hit", "wrong_way", "roof", "side")', 'CRASHES = ("wrong_way",)'),
     edited("LAPS_MAX_STEPS = 600", "LAPS_MAX_STEPS = 1200"),
     edited(LAGS, "OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1)"),      # no "now"
     edited(LAGS, "OBS_LAGS = (20, 24, 16, 12, 8, 4, 2, 1, 0)"),   # not oldest first

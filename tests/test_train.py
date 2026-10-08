@@ -24,7 +24,7 @@ def test_curriculum_raises_the_level(monkeypatch):
 def test_curriculum_counts_passes_however_the_episode_ended():
     """The level changes only the start, so passes before a crash still count."""
     callback = train.Progress(total=1)
-    callback.recent.extend([{"outcome": "net", "passes": train.LEVEL_PASSES}] * 3
+    callback.recent.extend([{"outcome": "side", "passes": train.LEVEL_PASSES}] * 3
                            + [{"outcome": "timeout", "passes": 0}])
     assert callback._ready() == pytest.approx(0.75)
 
@@ -41,7 +41,7 @@ def test_one_pass_raises_the_level_but_seeds_rank_on_laps():
 def test_passing_once_then_crashing_does_not_outscore_lapping():
     """Per minute flown, one pass and a crash at 8 s scored 7.5 against 5 for
     lapping the whole minute. Per episode it scores 1 against 5."""
-    crash_fast = [{"outcome": "net", "passes": 1, "steps": 80}] * 10
+    crash_fast = [{"outcome": "side", "passes": 1, "steps": 80}] * 10
     laps = [{"outcome": "timeout", "passes": 5, "steps": LAPS_MAX_STEPS}] * 10
     assert train.scores(crash_fast)["passes_per_ep"] == pytest.approx(1.0)
     assert train.scores(laps)["passes_per_ep"] == pytest.approx(5.0)

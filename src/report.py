@@ -46,6 +46,7 @@ HEADLINES = ("passes/ep", "passes/min", "passed")
 COLUMNS = [("passes/ep", "pass/ep"), ("passes/min", "pass/min"), ("passed", "passed"),
            ("never_passed", "never"), ("lap_success", "laps"), ("crashed", "crashed"),
            ("wall", "wall"), ("hit", "hit"), ("wrong_way", "wrong"),
+           ("roof", "roof"), ("side", "side"), ("net", "net"),
            ("missed", "missed"), ("timeout", "timeout")]
 
 

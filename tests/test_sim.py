@@ -165,12 +165,16 @@ def test_squashed_hoop_is_scored_as_seen(lateral, vertical, expected):
 
 
 def test_touching_the_net_ends_the_episode():
+    """The outcome names the face it met: the four walls are "side", the
+    ceiling is "roof", so the logs say whether a run died climbing or beside
+    the hoop."""
     env = make_env()
-    for action, axis, expected in [([0.0, 1.0, 0.0, 0.0], 0, BIG.length - IDEAL.length / 2),
-                                   ([0.0, -1.0, 0.0, 0.0], 0, IDEAL.length / 2),
-                                   ([1.0, 0.0, 0.0, 0.0], 1, IDEAL.width / 2),
-                                   ([-1.0, 0.0, 0.0, 0.0], 1, BIG.width - IDEAL.width / 2),
-                                   ([0.0, 0.0, 1.0, 0.0], 2, BIG.height - IDEAL.height / 2)]:
+    for action, axis, expected, face in [
+            ([0.0, 1.0, 0.0, 0.0], 0, BIG.length - IDEAL.length / 2, "side"),
+            ([0.0, -1.0, 0.0, 0.0], 0, IDEAL.length / 2, "side"),
+            ([1.0, 0.0, 0.0, 0.0], 1, IDEAL.width / 2, "side"),
+            ([-1.0, 0.0, 0.0, 0.0], 1, BIG.width - IDEAL.width / 2, "side"),
+            ([0.0, 0.0, 1.0, 0.0], 2, BIG.height - IDEAL.height / 2, "roof")]:
         # The hoop sits out of the way, so only the net can stop the drone.
         env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
         for _ in range(300):
@@ -178,10 +182,10 @@ def test_touching_the_net_ends_the_episode():
             policy_input, reward, terminated, _, info = env.step(action)
             if terminated:
                 break
-        assert info["outcome"] == "net" and info["wall_steps"] == 1
+        assert info["outcome"] == face and info["wall_steps"] == 1
         # Scored as a crash and a wall touch, whatever the reward makes of them.
         args = before, env._to_go(env.pos), True, newest(policy_input), np.float32(action)
-        assert reward == pytest.approx(contract.reward("net", *args))
+        assert reward == pytest.approx(contract.reward(face, *args))
         assert reward < contract.reward("running", *args)
         # The drone's box is at the net, not its centre.
         assert env.pos[axis] == pytest.approx(expected)
