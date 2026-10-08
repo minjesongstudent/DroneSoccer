@@ -1,0 +1,6 @@
+{
+  "reference_episodes_exactly_reproduced": 75,
+  "frozen_source_hashes_verified": true,
+  "compared": "All episode records and all saved trajectory arrays, including actor observations/actions and separate truth diagnostics",
+  "acceptance": false
+}

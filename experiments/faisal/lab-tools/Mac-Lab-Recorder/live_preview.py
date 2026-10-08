@@ -17,41 +17,68 @@ from stable_baselines3 import SAC
 
 import recorder
 from src.camera_history import CameraHistory
-from src.contract import POLICY_INPUT_DIM
+from src.camera_calibration import default_calibration, load_calibration
+from src.policy_runtime import LearnedPolicy, SPECS
 from src.detect import HoopDetector, draw, CONFIRM_FRAMES
 
 ROOT = Path(__file__).resolve().parent
 PAGE = '''<!doctype html><meta charset="utf-8"><title>Lab camera</title>
 <style>body{margin:24px;background:#101827;color:#eee;font:17px system-ui}img{max-width:100%;max-height:70vh}p{max-width:1000px}.card{background:#1c2940;padding:12px;border-radius:8px}#error{color:#ffb1a9}</style>
 <h1>Live lab camera</h1><p class="card">Motors-off preview. Policy suggestions are displayed only. No movement commands are sent.</p>
-<p id="status">Connecting…</p><p id="error"></p><img id="camera" alt="Waiting for a decoded camera frame">
+<p id="status">Connecting…</p><p id="calibration"></p><p id="error"></p><img id="camera" alt="Waiting for a decoded camera frame">
 <p id="policy"></p><p>Green: accepted ring. Pink: detected front marker. Red: rejected candidate.
 The model is a simulation checkpoint, not a validated flight controller.</p>
 <script>async function poll(){try{let s=await(await fetch('/state')).json();
 document.getElementById('status').textContent=`${s.mode||'Starting'} · camera age ${s.age_s==null?'—':s.age_s.toFixed(2)+'s'} · telemetry ${s.state_packets||0} · video ${(s.video_bytes||0).toLocaleString()} bytes · decoded ${s.decoded||0} · dropped preview packets ${s.dropped||0}`;
 document.getElementById('error').textContent=s.error||(s.stale?'Video stale: policy suggestions paused.':'');
-document.getElementById('policy').textContent=s.stale?'':`Ring ${s.ring?'visible':'not detected'} · marker ${s.marker?'detected':'not detected'} · suggested right / forward / up / yaw: ${(s.suggestion||[]).map(v=>v.toFixed(2)).join(' / ')} · actual movement commands: none`;
+document.getElementById('calibration').textContent=`Camera: ${s.camera_calibration?.label||'Unknown'} · source: ${s.camera_calibration?.selected_by||'unknown'}`;
+document.getElementById('policy').textContent=s.stale?'':`${s.model||''} · Ring ${s.ring?'visible':'not detected'} · marker ${s.marker?'detected':'not detected'} · suggested right / forward / up / yaw: ${(s.suggestion||[]).map(v=>v.toFixed(2)).join(' / ')} · actual movement commands: none`;
 if(s.decoded)document.getElementById('camera').src='/frame.jpg?v='+s.frame_id;
 }catch(e){document.getElementById('error').textContent='Preview disconnected'}setTimeout(poll,200)}poll();</script>'''
 
 
+def select_calibration(manifest, explicit_path=None, root=None):
+    """Select once; never pick up an unrecorded calibration from the working folder."""
+    root = ROOT if root is None else Path(root)
+    if explicit_path is not None:
+        calibration = load_calibration(explicit_path)
+        selected_by = 'explicit --calibration'
+    else:
+        declared = manifest.get('camera_calibration', {})
+        bundled = declared.get('bundled_file')
+        if bundled is not None:
+            if bundled != 'calib.npz':
+                raise ValueError('Unexpected bundled calibration path')
+            calibration = load_calibration(root / bundled)
+            if calibration.sha256 != declared.get('sha256'):
+                raise ValueError('Bundled calibration hash does not match the manifest')
+            selected_by = 'package manifest'
+        else:
+            if declared.get('status', 'defaults') != 'defaults':
+                raise ValueError('Manifest declares calibration without a bundled file')
+            calibration = default_calibration()
+            selected_by = 'explicit team defaults'
+    return calibration, dict(calibration.status(), selected_by=selected_by)
+
+
 class Preview:
-    def __init__(self, model_path):
+    def __init__(self, model_path, calibration_path=None):
         torch.set_num_threads(1)
-        self.model = SAC.load(str(model_path), device='cpu')
-        if self.model.observation_space.shape != (POLICY_INPUT_DIM,):
-            raise ValueError('Model does not match the current group observation contract')
-        expected = json.loads((ROOT/'preview-manifest.json').read_text())['model_sha256']
-        if hashlib.sha256(model_path.read_bytes()).hexdigest() != expected:
-            raise ValueError('Bundled checkpoint hash mismatch')
-        self.model_hash = expected
+        manifest = json.loads((ROOT/'preview-manifest.json').read_text())
+        self.spec = SPECS[manifest['model']]
+        if manifest['model_sha256'] != self.spec.sha256 or manifest['policy_inputs'] != self.spec.inputs:
+            raise ValueError('Manifest does not match the named policy profile')
+        self.calibration, self.calibration_status = select_calibration(manifest, calibration_path)
+        self.model = LearnedPolicy(model_path,self.spec).model
+        self.model_hash = self.spec.sha256
         self.lock = threading.Lock()
         self.stop = threading.Event()
         self.chunks = queue.Queue(maxsize=512)
         self.sequence = 0
         self.latest = None
         self.jpg = None
-        self.state = dict(mode='Connecting to camera', decoded=0, dropped=0)
+        self.state = dict(mode='Connecting to camera', decoded=0, dropped=0, model=self.spec.name,
+                          camera_calibration=self.calibration_status)
         self.threads = []
         self.server = None
 
@@ -107,9 +134,10 @@ class Preview:
         self.folder = Path(folder)
         self.status({'mode':'Recording camera; motors off'})
         (self.folder/'preview_metadata.json').write_text(json.dumps(dict(
-            model_sha256=self.model_hash, policy_inputs=POLICY_INPUT_DIM,
+            model_sha256=self.model_hash, model=self.spec.name, policy_inputs=self.spec.inputs,
+            observation_lags=list(self.spec.lags),
             issued_actions='zero; no movement commands sent', target_rate_hz=10,
-            camera_intrinsics='Team defaults unless calib.npz provided',
+            camera_calibration=self.calibration_status,
             frame_timing='Host receipt age, not measured exposure age',
             hand_carried=True),indent=2))
         for fn in (self.decode, self.analyse):
@@ -149,11 +177,12 @@ class Preview:
                     self.state['decode_errors'] = self.state.get('decode_errors',0)+1
 
     def analyse(self):
-        detector = HoopDetector(confirm=CONFIRM_FRAMES)
-        history = CameraHistory()
+        history = CameraHistory(self.spec.lags)
         last_id, last_tick = -1, None
         with (self.folder/'policy_preview.jsonl').open('w') as log:
             try:
+                detector = HoopDetector(*self.calibration.size, confirm=CONFIRM_FRAMES,
+                                        calibration=self.calibration)
                 while not self.stop.is_set():
                     tick = time.monotonic()
                     with self.lock:
@@ -164,7 +193,9 @@ class Preview:
                     gap = None if last_tick is None else tick-last_tick
                     reset = gap is not None and gap > .25
                     if reset:
-                        history = CameraHistory();detector = HoopDetector(confirm=CONFIRM_FRAMES)
+                        history = CameraHistory(self.spec.lags)
+                        detector = HoopDetector(*self.calibration.size, confirm=CONFIRM_FRAMES,
+                                                calibration=self.calibration)
                     detection = detector(frame)
                     # No inferred motion from hand carrying and no unsent action history.
                     obs = history.update(detection.obs,np.zeros(4,np.float32))
@@ -185,7 +216,8 @@ class Preview:
                     last_id,last_tick = frame_id,tick
                     self.stop.wait(max(0,.1-(time.monotonic()-tick)))
             except Exception as exc:
-                self.status({'error':'Preview analysis failed: '+str(exc)})
+                self.status({'error':'Preview analysis failed: '+str(exc),
+                             'suggestion':[], 'suggestion_received':0})
 
     def close(self):
         self.stop.set()
@@ -200,10 +232,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--seconds',type=int,default=120)
     parser.add_argument('--video',type=Path,help='Replay a saved video without contacting the drone')
+    parser.add_argument('--calibration',type=Path,
+                        help='Measured camera calibration; overrides the package selection')
     args = parser.parse_args()
     if not 1 <= args.seconds <= 300:
         parser.error('Use 1 to 300 seconds')
-    preview = Preview(ROOT/'preview-policy.zip')
+    preview = Preview(ROOT/'preview-policy.zip', args.calibration)
     preview.open_browser()
     try:
         if args.video:

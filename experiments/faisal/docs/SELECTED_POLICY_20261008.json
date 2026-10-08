@@ -1,0 +1,35 @@
+{
+  "branch": "52%-crash-policy",
+  "policy": "trainedModels/seenflag-s1-level1.zip",
+  "sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef",
+  "inputs": 85,
+  "camera_lags": [
+    24,
+    20,
+    16,
+    12,
+    8,
+    4,
+    2,
+    1,
+    0
+  ],
+  "action_history": 3,
+  "action_order": [
+    "right",
+    "forward",
+    "up",
+    "clockwise_yaw"
+  ],
+  "randomized_development": {
+    "episodes": 100,
+    "first_pass": 73,
+    "returned": 70,
+    "clean_repeat": 48,
+    "crashes": 52
+  },
+  "lab_preview_archive": "experiments/faisal/lab-tools/Mac-52-Percent-Policy-Preview-20261008.zip",
+  "lab_preview_sha256": "5be153043df840fde242798b3f9ed4fdf1566dcc57a6a3ffb571e90a2caf039b",
+  "physical_flight_validated": false,
+  "simulation_acceptance_passed": false
+}

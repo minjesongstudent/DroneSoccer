@@ -1,0 +1,76 @@
+{
+  "lags60-scratch/aligned": {
+    "episodes": 100,
+    "clean_first_pass": 23,
+    "crashes": 100,
+    "mean_full_body_passes": 0.23,
+    "returned_episodes": 16,
+    "clean_repeated_episodes": 0,
+    "endings": {
+      "hit": 77,
+      "net": 23
+    }
+  },
+  "lags60-scratch/nominal": {
+    "episodes": 100,
+    "clean_first_pass": 7,
+    "crashes": 100,
+    "mean_full_body_passes": 0.07,
+    "returned_episodes": 3,
+    "clean_repeated_episodes": 0,
+    "endings": {
+      "net": 72,
+      "hit": 28
+    }
+  },
+  "lags60-scratch/randomised": {
+    "episodes": 100,
+    "clean_first_pass": 6,
+    "crashes": 100,
+    "mean_full_body_passes": 0.06,
+    "returned_episodes": 2,
+    "clean_repeated_episodes": 0,
+    "endings": {
+      "net": 69,
+      "hit": 31
+    }
+  },
+  "seenflag-s1-level1/aligned": {
+    "episodes": 100,
+    "clean_first_pass": 84,
+    "crashes": 16,
+    "mean_full_body_passes": 4.2,
+    "returned_episodes": 84,
+    "clean_repeated_episodes": 84,
+    "endings": {
+      "timeout": 84,
+      "hit": 16
+    }
+  },
+  "seenflag-s1-level1/nominal": {
+    "episodes": 100,
+    "clean_first_pass": 80,
+    "crashes": 26,
+    "mean_full_body_passes": 3.67,
+    "returned_episodes": 80,
+    "clean_repeated_episodes": 74,
+    "endings": {
+      "timeout": 74,
+      "hit": 5,
+      "net": 21
+    }
+  },
+  "seenflag-s1-level1/randomised": {
+    "episodes": 100,
+    "clean_first_pass": 73,
+    "crashes": 52,
+    "mean_full_body_passes": 2.76,
+    "returned_episodes": 70,
+    "clean_repeated_episodes": 48,
+    "endings": {
+      "hit": 29,
+      "timeout": 48,
+      "net": 23
+    }
+  }
+}

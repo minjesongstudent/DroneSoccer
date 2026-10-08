@@ -1,0 +1,84 @@
+{
+  "lags60-scratch\\aligned": {
+    "episodes": 100,
+    "crashes": 100,
+    "crash_stages": {
+      "before_first_clearance": 77,
+      "after_first_clearance": 23
+    },
+    "crash_types": {
+      "hit": 77,
+      "net": 23
+    },
+    "started_blind_crashes": 0,
+    "started_blind_episodes": 0
+  },
+  "lags60-scratch\\nominal": {
+    "episodes": 100,
+    "crashes": 100,
+    "crash_stages": {
+      "before_first_clearance": 93,
+      "after_first_clearance": 7
+    },
+    "crash_types": {
+      "net": 72,
+      "hit": 28
+    },
+    "started_blind_crashes": 38,
+    "started_blind_episodes": 38
+  },
+  "lags60-scratch\\randomised": {
+    "episodes": 100,
+    "crashes": 100,
+    "crash_stages": {
+      "before_first_clearance": 94,
+      "after_first_clearance": 6
+    },
+    "crash_types": {
+      "net": 69,
+      "hit": 31
+    },
+    "started_blind_crashes": 37,
+    "started_blind_episodes": 37
+  },
+  "seenflag-s1-level1\\aligned": {
+    "episodes": 100,
+    "crashes": 16,
+    "crash_stages": {
+      "before_first_clearance": 16
+    },
+    "crash_types": {
+      "hit": 16
+    },
+    "started_blind_crashes": 0,
+    "started_blind_episodes": 0
+  },
+  "seenflag-s1-level1\\nominal": {
+    "episodes": 100,
+    "crashes": 26,
+    "crash_stages": {
+      "before_first_clearance": 20,
+      "after_first_clearance": 6
+    },
+    "crash_types": {
+      "hit": 5,
+      "net": 21
+    },
+    "started_blind_crashes": 12,
+    "started_blind_episodes": 38
+  },
+  "seenflag-s1-level1\\randomised": {
+    "episodes": 100,
+    "crashes": 52,
+    "crash_stages": {
+      "after_first_clearance": 25,
+      "before_first_clearance": 27
+    },
+    "crash_types": {
+      "hit": 29,
+      "net": 23
+    },
+    "started_blind_crashes": 19,
+    "started_blind_episodes": 37
+  }
+}

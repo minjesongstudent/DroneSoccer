@@ -1,0 +1,323 @@
+{
+  "status": "complete",
+  "decision_sha256": "5af230968f4d906406156a746eac578dfbbc5befa697ed3bcdd43ba2ad6b10df",
+  "evidence_files": 478,
+  "unique_files_checked": 532,
+  "sources": 43,
+  "fit_episodes": 64,
+  "fit_frames": 16247,
+  "accepted": 16,
+  "rejected": 0,
+  "elapsed_seconds": 63.18799999996554,
+  "weight_changes": {
+    "initial.zip": [],
+    "policy_01.zip": [
+      "actor.mu.weight",
+      "actor.mu.bias"
+    ],
+    "policy_02.zip": [
+      "actor.mu.weight",
+      "actor.mu.bias"
+    ]
+  },
+  "command_error_max": 0.0,
+  "position_error_max": 6.8833827526759706e-15,
+  "heading_error_max": 3.9968028886505635e-15,
+  "paired": {
+    "1": {
+      "aligned": {
+        "reference": {
+          "episodes": 25,
+          "first_pass": 19,
+          "crashes": 6,
+          "returned": 19,
+          "clean_repeat": 19,
+          "full_body_passes": 95
+        },
+        "candidate": {
+          "episodes": 25,
+          "first_pass": 19,
+          "crashes": 6,
+          "returned": 19,
+          "clean_repeat": 19,
+          "full_body_passes": 95
+        },
+        "repeat_rescues": [],
+        "repeat_losses": []
+      },
+      "nominal": {
+        "reference": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 8,
+          "returned": 18,
+          "clean_repeat": 17,
+          "full_body_passes": 83
+        },
+        "candidate": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 9,
+          "returned": 18,
+          "clean_repeat": 16,
+          "full_body_passes": 79
+        },
+        "repeat_rescues": [],
+        "repeat_losses": [
+          {
+            "seed": 9420000,
+            "steps": 127,
+            "outcome": "net",
+            "wall_steps": 1,
+            "centre_passes": 1,
+            "full_body_passes": 1,
+            "full_body_steps": [
+              38
+            ],
+            "returns_to_front": 1,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          }
+        ]
+      },
+      "randomised": {
+        "reference": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 12,
+          "returned": 17,
+          "clean_repeat": 13,
+          "full_body_passes": 68
+        },
+        "candidate": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 14,
+          "returned": 17,
+          "clean_repeat": 11,
+          "full_body_passes": 62
+        },
+        "repeat_rescues": [
+          9430018
+        ],
+        "repeat_losses": [
+          {
+            "seed": 9430010,
+            "steps": 432,
+            "outcome": "net",
+            "wall_steps": 1,
+            "centre_passes": 3,
+            "full_body_passes": 3,
+            "full_body_steps": [
+              85,
+              210,
+              346
+            ],
+            "returns_to_front": 3,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          },
+          {
+            "seed": 9430012,
+            "steps": 68,
+            "outcome": "hit",
+            "wall_steps": 0,
+            "centre_passes": 1,
+            "full_body_passes": 0,
+            "full_body_steps": [],
+            "returns_to_front": 0,
+            "crashed": true,
+            "clean_first_pass": false,
+            "clean_repeated_episode": false
+          },
+          {
+            "seed": 9430024,
+            "steps": 331,
+            "outcome": "hit",
+            "wall_steps": 0,
+            "centre_passes": 2,
+            "full_body_passes": 2,
+            "full_body_steps": [
+              78,
+              200
+            ],
+            "returns_to_front": 2,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          }
+        ]
+      }
+    },
+    "2": {
+      "aligned": {
+        "reference": {
+          "episodes": 25,
+          "first_pass": 19,
+          "crashes": 6,
+          "returned": 19,
+          "clean_repeat": 19,
+          "full_body_passes": 95
+        },
+        "candidate": {
+          "episodes": 25,
+          "first_pass": 20,
+          "crashes": 5,
+          "returned": 20,
+          "clean_repeat": 20,
+          "full_body_passes": 100
+        },
+        "repeat_rescues": [
+          9410008
+        ],
+        "repeat_losses": []
+      },
+      "nominal": {
+        "reference": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 8,
+          "returned": 18,
+          "clean_repeat": 17,
+          "full_body_passes": 83
+        },
+        "candidate": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 9,
+          "returned": 18,
+          "clean_repeat": 16,
+          "full_body_passes": 79
+        },
+        "repeat_rescues": [
+          9420010
+        ],
+        "repeat_losses": [
+          {
+            "seed": 9420007,
+            "steps": 322,
+            "outcome": "hit",
+            "wall_steps": 0,
+            "centre_passes": 2,
+            "full_body_passes": 2,
+            "full_body_steps": [
+              53,
+              183
+            ],
+            "returns_to_front": 2,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          },
+          {
+            "seed": 9420023,
+            "steps": 267,
+            "outcome": "net",
+            "wall_steps": 1,
+            "centre_passes": 2,
+            "full_body_passes": 2,
+            "full_body_steps": [
+              57,
+              178
+            ],
+            "returns_to_front": 2,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          }
+        ]
+      },
+      "randomised": {
+        "reference": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 12,
+          "returned": 17,
+          "clean_repeat": 13,
+          "full_body_passes": 68
+        },
+        "candidate": {
+          "episodes": 25,
+          "first_pass": 19,
+          "crashes": 16,
+          "returned": 18,
+          "clean_repeat": 9,
+          "full_body_passes": 59
+        },
+        "repeat_rescues": [],
+        "repeat_losses": [
+          {
+            "seed": 9430009,
+            "steps": 497,
+            "outcome": "hit",
+            "wall_steps": 0,
+            "centre_passes": 5,
+            "full_body_passes": 4,
+            "full_body_steps": [
+              39,
+              148,
+              270,
+              385
+            ],
+            "returns_to_front": 4,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          },
+          {
+            "seed": 9430010,
+            "steps": 431,
+            "outcome": "net",
+            "wall_steps": 1,
+            "centre_passes": 3,
+            "full_body_passes": 3,
+            "full_body_steps": [
+              85,
+              210,
+              343
+            ],
+            "returns_to_front": 3,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          },
+          {
+            "seed": 9430012,
+            "steps": 68,
+            "outcome": "hit",
+            "wall_steps": 0,
+            "centre_passes": 1,
+            "full_body_passes": 0,
+            "full_body_steps": [],
+            "returns_to_front": 0,
+            "crashed": true,
+            "clean_first_pass": false,
+            "clean_repeated_episode": false
+          },
+          {
+            "seed": 9430024,
+            "steps": 327,
+            "outcome": "hit",
+            "wall_steps": 0,
+            "centre_passes": 2,
+            "full_body_passes": 2,
+            "full_body_steps": [
+              78,
+              200
+            ],
+            "returns_to_front": 2,
+            "crashed": true,
+            "clean_first_pass": true,
+            "clean_repeated_episode": false
+          }
+        ]
+      }
+    }
+  },
+  "conclusion": "Retention stop is correct; close without promotion, extended fitting or intermediate selection",
+  "policy_promoted": false,
+  "acceptance": false,
+  "physical_flight": false
+}

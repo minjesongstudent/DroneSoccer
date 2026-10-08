@@ -1,0 +1,46 @@
+{
+  "analytic-actor-20261008/protocol.json": {
+    "source": "D:\\DroneSoccerData\\runs\\analytic-actor-20261008\\protocol.json",
+    "sha256": "d7312b84bedb8f9cfb9a16977e59773ab9b68ce622321423a1daab26c6db4e05"
+  },
+  "analytic-actor-20261008/result.json": {
+    "source": "D:\\DroneSoccerData\\runs\\analytic-actor-20261008\\result.json",
+    "sha256": "5548523ea7d0f3925bb45a44ffc70bdd42cdee2b003385e7a2467f8b920e1450"
+  },
+  "analytic-actor-20261008/decision.json": {
+    "source": "D:\\DroneSoccerData\\runs\\analytic-actor-20261008\\decision.json",
+    "sha256": "5af230968f4d906406156a746eac578dfbbc5befa697ed3bcdd43ba2ad6b10df"
+  },
+  "analytic-actor-20261008/updates.jsonl": {
+    "source": "D:\\DroneSoccerData\\runs\\analytic-actor-20261008\\updates.jsonl",
+    "sha256": "bf0b5c6d7a5f1ea7ce8f929bb63de186d8c13b36cd88e3f5fff112a91623b80b"
+  },
+  "analytic-actor-20261008/closure_review.json": {
+    "source": "D:\\DroneSoccerData\\runs\\analytic-actor-20261008\\closure_review.json",
+    "sha256": "ec533f01c5ff48da0df0bc492f24323d1bc19086230a1c3b49dbe89e33958609"
+  },
+  "camera-pose-derivative-20261008/protocol.json": {
+    "source": "D:\\DroneSoccerData\\runs\\camera-pose-derivative-20261008\\protocol.json",
+    "sha256": "5119f894162343bc47729003f74ce046d939fe5d240d92937bbdd47029f71fa7"
+  },
+  "camera-pose-derivative-20261008/result.json": {
+    "source": "D:\\DroneSoccerData\\runs\\camera-pose-derivative-20261008\\result.json",
+    "sha256": "7d36c2760962ed50a56c6a466d063ae3dd47bc0576f035f1cd8cd788096e7e8f"
+  },
+  "camera-pose-derivative-20261008/verification.json": {
+    "source": "D:\\DroneSoccerData\\runs\\camera-pose-derivative-20261008\\verification.json",
+    "sha256": "550722d297161e2bb591bb538eec60b75c44e5620a0f397d9af4de4508bfb1c5"
+  },
+  "selected-policy-validation/aligned/episodes.jsonl": {
+    "source": "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\lab-data\\policy-validation-20261006\\seenflag-s1-level1\\aligned\\episodes.jsonl",
+    "sha256": "c34058fa8708064ddb9cdc4927a20dc1f35b7ae3cb4467d7b0e266bdfd25663d"
+  },
+  "selected-policy-validation/nominal/episodes.jsonl": {
+    "source": "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\lab-data\\policy-validation-20261006\\seenflag-s1-level1\\nominal\\episodes.jsonl",
+    "sha256": "2424b265311309d61c4e364220cb108f957e2d443abdce233875a1ca47261cb1"
+  },
+  "selected-policy-validation/randomised/episodes.jsonl": {
+    "source": "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\lab-data\\policy-validation-20261006\\seenflag-s1-level1\\randomised\\episodes.jsonl",
+    "sha256": "a0b2ccd9e0a8250db82da536b5933a91715a937c9bf36f21fab69d0976078e4c"
+  }
+}

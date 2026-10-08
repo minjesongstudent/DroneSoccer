@@ -1,0 +1,42 @@
+{
+  "passed": false,
+  "reasons": [
+    "randomised: crashes increased by more than 3/25",
+    "randomised: clean-repeat count dropped by more than 3/25",
+    "Prescribed training budget did not complete",
+    "No completed final screen"
+  ],
+  "decision": "reject_close_variant",
+  "acceptance": false,
+  "policy_promoted": false,
+  "physical_flight": false,
+  "checkpoint": "D:\\DroneSoccerData\\runs\\analytic-actor-20261008\\policy_02.zip",
+  "checkpoint_sha256": "ed2c98c0614b801b5da40cfc98ff7101de8309e34c67eafc219d541ea3d4e114",
+  "candidate": null,
+  "reference": {
+    "aligned": {
+      "episodes": 100,
+      "first_pass": 84,
+      "clean_repeat": 84,
+      "crashes": 16
+    },
+    "nominal": {
+      "episodes": 100,
+      "first_pass": 80,
+      "clean_repeat": 74,
+      "crashes": 26
+    },
+    "randomised": {
+      "episodes": 100,
+      "first_pass": 73,
+      "clean_repeat": 48,
+      "crashes": 52
+    }
+  },
+  "source_unchanged": true,
+  "backbone_variance_unchanged": true,
+  "prescribed_budget_complete": false,
+  "accepted": 16,
+  "rejected": 0,
+  "actor_changed": true
+}

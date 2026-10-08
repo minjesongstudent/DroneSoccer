@@ -1,0 +1,156 @@
+{
+  "scope": "Saved source development histories; no new flights or optimization; not causal proof",
+  "source_entropy_coefficient": 0.02397354319691658,
+  "candidates": {
+    "clearance\\step_200000\\model.zip": {
+      "sha256": "3cc683ab484f36e60d34cf4dc9e646e9afb958e31875653204563b76db2680cc",
+      "entropy_coefficient": 0.02397354319691658,
+      "suites": {
+        "aligned": {
+          "observations": 11591,
+          "mean_kl": 0.0,
+          "p95_kl": 0.0,
+          "max_kl": 0.0,
+          "mean_absolute_action_change": 0.0,
+          "max_absolute_action_change": 0.0
+        },
+        "nominal": {
+          "observations": 10706,
+          "mean_kl": 0.0,
+          "p95_kl": 0.0,
+          "max_kl": 0.0,
+          "mean_absolute_action_change": 0.0,
+          "max_absolute_action_change": 0.0
+        },
+        "randomised": {
+          "observations": 9337,
+          "mean_kl": 0.0,
+          "p95_kl": 0.0,
+          "max_kl": 0.0,
+          "mean_absolute_action_change": 0.0,
+          "max_absolute_action_change": 0.0
+        }
+      }
+    },
+    "clearance\\step_201000\\model.zip": {
+      "sha256": "dcbeeefb0f4998858fc15c172532f28631cc6d72a767bb692f5f70c73e8a6634",
+      "entropy_coefficient": 0.024001028388738632,
+      "suites": {
+        "aligned": {
+          "observations": 11591,
+          "mean_kl": 13.695883750915527,
+          "p95_kl": 38.25945281982422,
+          "max_kl": 660.739501953125,
+          "mean_absolute_action_change": 0.25704145431518555,
+          "max_absolute_action_change": 1.9238628149032593
+        },
+        "nominal": {
+          "observations": 10706,
+          "mean_kl": 13.546178817749023,
+          "p95_kl": 38.78706741333008,
+          "max_kl": 1023.803955078125,
+          "mean_absolute_action_change": 0.2522203326225281,
+          "max_absolute_action_change": 1.9257172346115112
+        },
+        "randomised": {
+          "observations": 9337,
+          "mean_kl": 13.207399368286133,
+          "p95_kl": 37.08306121826172,
+          "max_kl": 1667.99267578125,
+          "mean_absolute_action_change": 0.24728912115097046,
+          "max_absolute_action_change": 1.9240448474884033
+        }
+      }
+    },
+    "control\\step_200000\\model.zip": {
+      "sha256": "8778a53d68c7a836ae190a3da0c613ee372819c2eef57c06ac87f87f056311a5",
+      "entropy_coefficient": 0.02397354319691658,
+      "suites": {
+        "aligned": {
+          "observations": 11591,
+          "mean_kl": 0.0,
+          "p95_kl": 0.0,
+          "max_kl": 0.0,
+          "mean_absolute_action_change": 0.0,
+          "max_absolute_action_change": 0.0
+        },
+        "nominal": {
+          "observations": 10706,
+          "mean_kl": 0.0,
+          "p95_kl": 0.0,
+          "max_kl": 0.0,
+          "mean_absolute_action_change": 0.0,
+          "max_absolute_action_change": 0.0
+        },
+        "randomised": {
+          "observations": 9337,
+          "mean_kl": 0.0,
+          "p95_kl": 0.0,
+          "max_kl": 0.0,
+          "mean_absolute_action_change": 0.0,
+          "max_absolute_action_change": 0.0
+        }
+      }
+    },
+    "control\\step_201000\\model.zip": {
+      "sha256": "757cb2d504fc8653bd54e43ca84f6a16044dcbdec436dfbf684e9c86d5e0492e",
+      "entropy_coefficient": 0.023761676624417305,
+      "suites": {
+        "aligned": {
+          "observations": 11591,
+          "mean_kl": 0.4901718199253082,
+          "p95_kl": 1.392674207687378,
+          "max_kl": 24.156965255737305,
+          "mean_absolute_action_change": 0.057308562099933624,
+          "max_absolute_action_change": 0.4998149275779724
+        },
+        "nominal": {
+          "observations": 10706,
+          "mean_kl": 0.4890347421169281,
+          "p95_kl": 1.2461163997650146,
+          "max_kl": 42.6713981628418,
+          "mean_absolute_action_change": 0.056911006569862366,
+          "max_absolute_action_change": 0.49930083751678467
+        },
+        "randomised": {
+          "observations": 9337,
+          "mean_kl": 0.4582625925540924,
+          "p95_kl": 1.1518200635910034,
+          "max_kl": 34.633399963378906,
+          "mean_absolute_action_change": 0.05426570028066635,
+          "max_absolute_action_change": 0.6490988731384277
+        }
+      }
+    },
+    "control\\step_210000\\model.zip": {
+      "sha256": "82e20140b9ee73f93d209e6192edd814d8ec44350ad5b32e880e8fd44af618ca",
+      "entropy_coefficient": 0.026370249688625336,
+      "suites": {
+        "aligned": {
+          "observations": 11591,
+          "mean_kl": 1.7259764671325684,
+          "p95_kl": 4.1713762283325195,
+          "max_kl": 74.83625793457031,
+          "mean_absolute_action_change": 0.10270333290100098,
+          "max_absolute_action_change": 0.9584458470344543
+        },
+        "nominal": {
+          "observations": 10706,
+          "mean_kl": 2.1388657093048096,
+          "p95_kl": 4.917998313903809,
+          "max_kl": 254.84844970703125,
+          "mean_absolute_action_change": 0.10679898411035538,
+          "max_absolute_action_change": 1.2483429908752441
+        },
+        "randomised": {
+          "observations": 9337,
+          "mean_kl": 2.0956180095672607,
+          "p95_kl": 6.442266941070557,
+          "max_kl": 219.01040649414062,
+          "mean_absolute_action_change": 0.10570010542869568,
+          "max_absolute_action_change": 1.1246302127838135
+        }
+      }
+    }
+  }
+}

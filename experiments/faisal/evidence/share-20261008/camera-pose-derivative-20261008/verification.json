@@ -1,0 +1,12 @@
+{
+  "status": "complete",
+  "evidence_files": 45,
+  "source_files": 40,
+  "input_files": 131,
+  "result_sha256": "7d36c2760962ed50a56c6a466d063ae3dd47bc0576f035f1cd8cd788096e7e8f",
+  "visible_unstable": 98,
+  "visible_stable": 604,
+  "stable_jacobian_relative_max": 0.010439621750823597,
+  "stable_directional_relative_max": 0.007337861950322961,
+  "whole_camera_gate_passed": false
+}

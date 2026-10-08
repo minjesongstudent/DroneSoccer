@@ -25,6 +25,7 @@ import cv2
 import numpy as np
 
 from src import contract
+from src.camera_calibration import CameraCalibration, resolve_calibration
 from src.params import CALIB_PATH, Camera
 
 WORK_WIDTH = 480          # DESIGN: detect at 480 px wide; the net speckles less
@@ -76,31 +77,27 @@ class Detection:
     rejected: str = ""                 # why a fit was not taken as the hoop, for drawing
 
 
-def load_intrinsics(width: int, height: int) -> tuple[np.ndarray, np.ndarray]:
-    """K and distortion for this frame size: calib.npz if present, else params.Camera."""
-    if CALIB_PATH.exists():
-        data = np.load(CALIB_PATH)
-        K, dist = data["K"].astype(np.float64), data["dist"].astype(np.float64)
-        cw, ch = (int(v) for v in data["size"])
-    else:
-        cam = Camera()
-        K = np.array([[cam.fx, 0, cam.cx], [0, cam.fy, cam.cy], [0, 0, 1]], np.float64)
-        dist, cw, ch = np.zeros(5), cam.width, cam.height
-    K = K.copy()
-    K[0] *= width / cw
-    K[1] *= height / ch
-    return K, dist
+def load_intrinsics(width: int, height: int, calibration_path: str | Path | None = None
+                    ) -> tuple[np.ndarray, np.ndarray]:
+    """Validated calibration for this frame size, or labeled team defaults."""
+    return resolve_calibration(calibration_path).intrinsics(width, height)
 
 
 class HoopDetector:
     """confirm: consecutive frames whose fits must agree before the hoop counts.
     1 for still photos; CONFIRM_FRAMES on live video, where junk flickers."""
 
-    def __init__(self, width: int = Camera.width, height: int = Camera.height, confirm: int = 1):
+    def __init__(self, width: int = Camera.width, height: int = Camera.height, confirm: int = 1,
+                 calibration_path: str | Path | None = None, *,
+                 calibration: CameraCalibration | None = None):
+        if calibration is not None and calibration_path is not None:
+            raise ValueError("Supply calibration or calibration_path, not both")
+        self.calibration = calibration if calibration is not None else resolve_calibration(calibration_path)
+        self.calibration_status = self.calibration.status()
         self.size = (width, height)
         self.confirm = confirm
         self._streak, self._last_fit = 0, None
-        self.K, self.dist = load_intrinsics(width, height)
+        self.K, self.dist = self.calibration.intrinsics(width, height)
         self.scale = WORK_WIDTH / width
         # Normalised half extent of the frame, so u, v are +-1 at its edges (as in sim).
         self.half_extent = (width / (2 * self.K[0, 0]), height / (2 * self.K[1, 1]))
@@ -111,7 +108,7 @@ class HoopDetector:
 
     def __call__(self, frame_bgr: np.ndarray) -> Detection:
         if frame_bgr.shape[1::-1] != self.size:
-            self.__init__(*frame_bgr.shape[1::-1], confirm=self.confirm)
+            self.__init__(*frame_bgr.shape[1::-1], confirm=self.confirm, calibration=self.calibration)
         small = cv2.resize(frame_bgr, None, fx=self.scale, fy=self.scale, interpolation=cv2.INTER_AREA)
         small = cv2.GaussianBlur(small, (5, 5), 0)
 
@@ -319,13 +316,23 @@ def _refine(pts: np.ndarray, ellipse):
 
 
 def _coverage(pts: np.ndarray, ellipse) -> int:
-    """How many of COVER_BINS angular sectors round the ellipse hold an inlier."""
+    """Occupied ellipse-parameter sectors, invariant to fitted axis squashing.
+
+    Image polar angles overcount arcs near the minor-axis tips and undercount
+    those near the major-axis tips. Undo the fitted rotation and semiaxis scale
+    before binning. This is not a perspective-invariant physical-hoop measure.
+    """
     inl = _inliers(pts, ellipse)
     if not inl.any():
         return 0
-    (cx, cy), _, _ = ellipse
-    a = np.arctan2(pts[inl, 1] - cy, pts[inl, 0] - cx)
-    return len(np.unique(((a + np.pi) / (2 * np.pi) * COVER_BINS).astype(int)))
+    (cx, cy), (w, h), angle = ellipse
+    theta = np.deg2rad(angle)
+    dx, dy = pts[inl, 0] - cx, pts[inl, 1] - cy
+    x = (dx * np.cos(theta) + dy * np.sin(theta)) / (w / 2)
+    y = (-dx * np.sin(theta) + dy * np.cos(theta)) / (h / 2)
+    a = np.arctan2(y, x)
+    sectors = np.floor((a + np.pi) / (2 * np.pi) * COVER_BINS).astype(int) % COVER_BINS
+    return len(np.unique(sectors))
 
 
 def _inliers(pts: np.ndarray, ellipse, tol_px: float = None) -> np.ndarray:

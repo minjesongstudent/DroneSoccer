@@ -1,0 +1,19 @@
+# Pre-action ring-position memory comparison
+
+The latest fixed parameter-direction diagnostic is closed. This comparison addresses a different information gap, not another optimization of the failed actor. In the64 natural source flights saved by the authentic checkpoint experiment,36 crashed;27 of those had no current ring feature,6 had no ring feature in any of the nine camera-history slots, and6 of7 crashes after at least two passages had no current ring feature. This descriptive FIT-bank evidence does not prove blindness caused the crashes. It supports checking a persistent geometric estimate before another actor intervention.
+
+The existing GRU estimates the previous body-frame displacement. That three-vector does not itself encode where the ring is now. Test whether recurrent public observation history improves prediction of **current ring-centre displacement in the drone body frame** over a feedforward model with identical current public85 inputs. These are trained estimates, never simulator truth inserted into an actor.
+
+## Fixed offline experiment
+
+Use the same untouched-for-this-target split of the preserved original warmup558 episodes:447FIT/111 previously inspected diagnostic-heldout episodes. The cohorts are not untouched validation in a broader project sense. Keep the separate240 GAE episodes exclusively for the final diagnostic domain check. No new flights, development/acceptance seeds, labels from future actions or changes to any flight policy.
+
+For pre-action row t>=2, compute truth label `hoop_centre - positions[t-1]`, rotated at `headings[t-1]` into forward/right/up, in millimetres. Saved positions and headings are post-action, so using row t would leak the upcoming movement. First two observations initialize recurrence but their labels stay masked, preserving the exact existing whole-episode grouping. The label reads static recorded ring geometry; no geometry, position, heading or current/future action enters model inputs. Public85 history must reproduce exactly from recorded camera features and previously issued commands.
+
+Fit85->128tanh->128tanh->3 and85->GRU64->linear3 with the existing audited full-episode batching, reset, padding/masking and FIT-only normalizers. One initialization/sample seed11597000;3,000 Adam0.0003 updates per model, gradient norm clip10, identical precomputed eight-whole-episode batches. Equal data/update budgets, not equal parameter counts or compute. No sweep, checkpoint selection or loss-based early selection. Only final prescribed models are evaluated, after BOTH models finish fitting.
+
+One exclusive project-lock CUDA worker,0.15 allocation fraction, one CPU thread, strict float32/noTF32/autocast. Bound entire preparation/training/evaluation at1,800seconds, with STOP checks each loading/evaluation episode and update. Preserve incomplete models/RNG/optimizer on failure; incomplete runs cannot pass. No extra trainer/cohort.
+
+Report per-axis RMSE in millimetres for FIT, diagnostic-heldout and separateGAE, overall/current-ring-invisible/visible. To pass the **estimator-only** comparison, GRU must reduce overall and invisible RMSE by>=15% and increase visible RMSE by<=5% on BOTH final diagnostic cohorts. Also report blind-duration bins0,1-8,9-24,25+ frames descriptively; they cannot select checkpoints or change the gate. Passing supports a separate review of estimated-position integration, not automatic actor fitting, flight improvement, acceptance or promotion. Failure closes this target/architecture/budget; no unchanged extension.
+
+Smoke: first10warmup/fourGAE episodes, two updates/model,180seconds; software only. Unit tests check axes, pre-action target indexing, future exclusion, masked start and malformed geometry. Use the existing17 estimator tests for batching, causality, normalization and gates. All source models, existing motion estimator and historical reports remain unchanged.

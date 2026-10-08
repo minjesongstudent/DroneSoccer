@@ -1,0 +1,14 @@
+{
+  "physical_flight_enabled": false,
+  "mission_acceptance": false,
+  "training_started": false,
+  "heartbeat_resumed": false,
+  "reason": "Policy failures: stronger model crashes 16/100 aligned, 26/100 nominal, 52/100 randomized.",
+  "repository_tests": 100,
+  "command_tests_included": 23,
+  "package_tests_per_profile": 9,
+  "reviewed_models": [
+    "lags60-scratch",
+    "seenflag-s1-level1"
+  ]
+}

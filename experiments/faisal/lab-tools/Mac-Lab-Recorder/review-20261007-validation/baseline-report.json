@@ -1,0 +1,399 @@
+{
+  "video_sha256": "648a149c92d7ee3c2bc8959c50f9b5c30c82e7c0f9f09091ff7cd738bf3ce3b6",
+  "labels_sha256": "9e0aba0de5480339637e04dc9a7653d8115c080a3eaa779fc2190615a3f1eac8",
+  "selection_sha256": "bd250e4e67deb16f3cec77fdf4cd76875e94384ccff64a861bc56a6f250f5db7",
+  "detector_sources_sha256": {
+    "src/detect.py": "62d32d5c315d07828eca8238a31dac2d62d8645c7615831f0f5a7359a45ed06a",
+    "src/contract.py": "1b287bbb1261ec844abb5ef1794cf3343ccd7dbcdc64986b9e1270e1c48aca87",
+    "src/params.py": "824c75c6a001e9bbf0872d1531fbff41987519bb0a370ec9ca18530fdf80b6f0",
+    "src/camera_calibration.py": "a0e39951a6e9fb210c5b8ef544cac4c05e7c486091de9ee58437f600f5f814e2",
+    "tools/validate_lab_detector.py": "43db4304039e746090cb1ac79ae4a34a77aefec602d8326f268f636565b691e3"
+  },
+  "calibration_sha256": null,
+  "opencv": "5.0.0",
+  "calibration_status": {
+    "status": "defaults",
+    "label": "Team default intrinsics (uncalibrated)",
+    "source_file": null,
+    "sha256": null,
+    "size": [
+      960,
+      720
+    ],
+    "rms_px": null,
+    "physical_camera_match_verified": false,
+    "validation": null
+  },
+  "confirm": 2,
+  "replayed_frames": 3583,
+  "selected_frames": 48,
+  "independence": "retrospective; source recording previously used for tuning",
+  "metrics": {
+    "ring": {
+      "tp": 7,
+      "fp": 0,
+      "tn": 33,
+      "fn": 7,
+      "labelled": 47,
+      "positives": 14,
+      "negatives": 33,
+      "precision": 1.0,
+      "recall": 0.5,
+      "false_positive_rate": 0.0,
+      "accuracy": 0.851063829787234,
+      "excluded_unreviewed_or_unknown": 1
+    },
+    "marker": {
+      "tp": 4,
+      "fp": 0,
+      "tn": 37,
+      "fn": 5,
+      "labelled": 46,
+      "positives": 9,
+      "negatives": 37,
+      "precision": 1.0,
+      "recall": 0.4444444444444444,
+      "false_positive_rate": 0.0,
+      "accuracy": 0.8913043478260869,
+      "excluded_unreviewed_or_unknown": 2
+    },
+    "ring_by_view": {
+      "full": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "labelled": 0,
+        "positives": 0,
+        "negatives": 0,
+        "precision": null,
+        "recall": null,
+        "false_positive_rate": null,
+        "accuracy": null
+      },
+      "clipped": {
+        "tp": 7,
+        "fp": 0,
+        "tn": 0,
+        "fn": 7,
+        "labelled": 14,
+        "positives": 14,
+        "negatives": 0,
+        "precision": 1.0,
+        "recall": 0.5,
+        "false_positive_rate": null,
+        "accuracy": 0.5
+      },
+      "absent": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 33,
+        "fn": 0,
+        "labelled": 33,
+        "positives": 0,
+        "negatives": 33,
+        "precision": null,
+        "recall": null,
+        "false_positive_rate": 0.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  "caveats": [
+    "Single tuning capture; retrospective sample metrics are not unseen-test estimates.",
+    "Frame samples are correlated; no independent-frame confidence interval claimed.",
+    "Visual presence labels only; no ellipse, pose, flight-clearance or timing accuracy measured.",
+    "Ring-presence recall includes heavily clipped views; it is not fitted-ellipse accuracy.",
+    "Reviewer provenance is retained; AI-reviewed labels need human adjudication before acceptance."
+  ],
+  "predictions": [
+    {
+      "frame": 17,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 92,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 167,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 242,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 317,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 392,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 467,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 542,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 617,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 692,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 767,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 842,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 917,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 992,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 1067,
+      "ring": true,
+      "marker": true,
+      "rejected": ""
+    },
+    {
+      "frame": 1142,
+      "ring": true,
+      "marker": true,
+      "rejected": ""
+    },
+    {
+      "frame": 1217,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 0.90"
+    },
+    {
+      "frame": 1292,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 1367,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 1442,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 1.00"
+    },
+    {
+      "frame": 1517,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 1.00"
+    },
+    {
+      "frame": 1592,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 0.35"
+    },
+    {
+      "frame": 1667,
+      "ring": true,
+      "marker": true,
+      "rejected": ""
+    },
+    {
+      "frame": 1742,
+      "ring": true,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 1817,
+      "ring": false,
+      "marker": false,
+      "rejected": "no ring 0.45"
+    },
+    {
+      "frame": 1892,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 1967,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2042,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 1.00"
+    },
+    {
+      "frame": 2117,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 1.00"
+    },
+    {
+      "frame": 2192,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 1.00"
+    },
+    {
+      "frame": 2267,
+      "ring": true,
+      "marker": true,
+      "rejected": ""
+    },
+    {
+      "frame": 2342,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2417,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2492,
+      "ring": false,
+      "marker": false,
+      "rejected": "no ring 0.22"
+    },
+    {
+      "frame": 2567,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2642,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2717,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2792,
+      "ring": true,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2867,
+      "ring": true,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 2942,
+      "ring": false,
+      "marker": false,
+      "rejected": "no ring 0.42"
+    },
+    {
+      "frame": 3017,
+      "ring": false,
+      "marker": false,
+      "rejected": "backdrop 0.04"
+    },
+    {
+      "frame": 3092,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 3167,
+      "ring": false,
+      "marker": false,
+      "rejected": "solid 0.85"
+    },
+    {
+      "frame": 3242,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 3317,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 3392,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 3467,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    },
+    {
+      "frame": 3542,
+      "ring": false,
+      "marker": false,
+      "rejected": ""
+    }
+  ]
+}

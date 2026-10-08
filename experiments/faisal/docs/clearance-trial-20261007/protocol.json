@@ -1,0 +1,100 @@
+{
+  "kind": "bounded development comparison",
+  "smoke": false,
+  "arms": [
+    "control",
+    "clearance"
+  ],
+  "source": {
+    "name": "seenflag-s1-level1",
+    "sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef",
+    "lags": [
+      24,
+      20,
+      16,
+      12,
+      8,
+      4,
+      2,
+      1,
+      0
+    ]
+  },
+  "source_hashes": {
+    "src\\baseline.py": "571a8ee3c62a076517345dfe916ce6222260b328b3812a47f61dfb95d898117e",
+    "src\\camera_history.py": "b4b806bd93e704596fe3f8c297934fbdf663444c3e5df0b470d35828b1262b43",
+    "src\\clearance_training.py": "91f0fdc5ac033dd1dad0d095dd2bc9aff79f1d331efc017af099b2aab33758a3",
+    "src\\command_rehearsal.py": "64c3e8eb9ac3251d913e883d9d458a3a58aa5fa0701a48f0d5c57ef3bc13389b",
+    "src\\contract.py": "1b287bbb1261ec844abb5ef1794cf3343ccd7dbcdc64986b9e1270e1c48aca87",
+    "src\\detect.py": "21851eca3b3471ffe36c54945359d60f5f346f667ba857e107c22209beaea03a",
+    "src\\evaluate.py": "7c079bb25c13b6d037eff4e58495ec47cf7113d2818925ea106839a5b65b7fa2",
+    "src\\labcheck.py": "ffb3ef187872aa6158124ba2edb4c47ffbfbf9f4aa1a4ee57757c467b77de902",
+    "src\\params.py": "824c75c6a001e9bbf0872d1531fbff41987519bb0a370ec9ca18530fdf80b6f0",
+    "src\\pass_audit.py": "28f57173370f83a39de963b10877c542a52ae4683693f2a6fc14e6fee1706136",
+    "src\\plots.py": "5a1682cef7003496a04e9904beac1ed19be866b70eb368a6a067758973bd29ef",
+    "src\\policy_runtime.py": "486ab537896e1302da50b2736b6423232173ab793579907a98e5ed6445418c34",
+    "src\\replay.py": "3566bdff2f21704f42131d73dba20f186558ca7c03c4f0c3fbbf195e4a4589d6",
+    "src\\report.py": "7bc9f09ea0e82d7968cc2a215804228e72f426f0452d8e5e7a8432cc3e19cd39",
+    "src\\sim.py": "1626d842f1ca03d543f0f677b8f7884299159cde19d3f7df72f3e8e04f34b0a6",
+    "src\\train.py": "42b9eb722816d6ea6c14f23f4346a1bb7673bd266f0d38ad4693cf85365ee723",
+    "src\\viewer.py": "8dcb2a6b31c9e1645df25bd2185097de8069d787d492fbc65b425353eed04414",
+    "src\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tools\\run_clearance_experiment.py": "e4f0f16391a3e071c4ff478bad116c5a961d985c048c6181625824c01e5f1d31",
+    "tools\\validate_flight_policies.py": "1fb6706abcd6d66efff3ba4e0af7fa96d65d1e0a273d940033084f68b6a55635",
+    "tests\\test_clearance_training.py": "9d4f7bcd221ed0e07ce3d5782394c1366515662b8814847b0fed7d5875837925",
+    "trainedModels\\seenflag-s1-level1.zip": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef"
+  },
+  "warmup": 200000,
+  "total_steps": 250000,
+  "check_every": 10000,
+  "learning_rate": 3e-05,
+  "learning_checks": [
+    1000,
+    10000,
+    20000,
+    30000,
+    40000,
+    50000
+  ],
+  "arm_seconds": 7200,
+  "algorithm_seed": 11500000,
+  "training_seed_base": 11000000,
+  "seed_schedule": "base + reset index, shared by both arms",
+  "guard_episodes": 25,
+  "final_episodes": 100,
+  "evaluation_seeds": {
+    "aligned": 9410000,
+    "nominal": 9420000,
+    "randomised": 9430000
+  },
+  "evaluation_max_steps": 600,
+  "retention_stops": {
+    "first_pass_drop_greater_than": 2,
+    "crash_increase_greater_than": 3,
+    "clean_repeat_drop_greater_than": 3,
+    "denominator": 25
+  },
+  "physics": "unchanged group HoopEnv, level1, hanger=True, randomise=True",
+  "actor_input": "85 public camera/action-history inputs only",
+  "reward_control": "unchanged",
+  "reward_clearance": "remove 40 at centre crossing; pay 40 at full clearance",
+  "checkpoint_selection": "retain all; no promotion; last candidate gets full development evaluation",
+  "acceptance": false,
+  "physical_flight": false,
+  "heartbeat_resumed": false,
+  "model_device": "cuda",
+  "evaluation_device": "cpu",
+  "gpu": "NVIDIA GeForce RTX 4070 Ti",
+  "cuda": "12.8",
+  "torch": "2.11.0+cu128",
+  "python": "3.12.13 (main, May  4 2026, 21:19:41) [MSC v.1944 64 bit (AMD64)]",
+  "dependencies": {
+    "stable-baselines3": "2.9.0",
+    "gymnasium": "1.3.0",
+    "numpy": "2.5.3",
+    "opencv-python": "5.0.0.93"
+  },
+  "source_commit": "fb3e3b5163c05a57528835c2269903a813f5aaee",
+  "started_utc": "2026-10-06T16:09:07.101943+00:00",
+  "pid": 46620
+}
