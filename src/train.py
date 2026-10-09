@@ -71,7 +71,7 @@ DEMO_SEED = 2_000_000   # layouts apart from training's and evaluate.EVAL_SEED's
 # 0.6-1.0 m in front of the hoop, whatever the curriculum level, so the blind last
 # half metre of a pass gets practised. teacher2-level1 stopped there on the drone.
 # They do not count towards the curriculum (Progress), and evaluation never has them.
-RUN_IN_SHARE = 0.2
+RUN_IN_SHARE = 0.1
 
 # Picking the model: every checkpoint and the final model fly SELECT_EPISODES episodes
 # from SELECT_SEED, apart from evaluation's, so the reported score is not the one it
