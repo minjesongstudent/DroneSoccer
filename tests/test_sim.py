@@ -53,8 +53,8 @@ def first_event(env, action, max_steps=200):
 
 def newest(policy_input):
     """The latest camera frame in a policy input: what contract.reward was given."""
-    n = contract.OBS_STACK * contract.OBS_DIM
-    return policy_input[n - contract.OBS_DIM:n]
+    frames, _heights, _actions, _unseen = contract.split_input(policy_input)
+    return frames[-1]   # the newest slot is one step
 
 
 # --- observation geometry ---------------------------------------------------
