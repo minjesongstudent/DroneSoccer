@@ -1,0 +1,75 @@
+{
+  "id": "local_credit-round-05",
+  "arm": "local_credit",
+  "round": 5,
+  "path": "policies/checkpoints/local_credit/policy_05.npz",
+  "sha256": "2223a2cc117565f9f33dd3a3009cc818ac5ae826dc7b14f03266c3921beebb8e",
+  "architecture": "estimated-motion-residual-v1",
+  "inputs": 89,
+  "status": "completed-final-not-qualified",
+  "qualified": false,
+  "physical_flight_validated": false,
+  "guard_metrics": {
+    "aligned": {
+      "episodes": 25,
+      "first_pass": 19,
+      "crashes": 6,
+      "returned": 19,
+      "clean_repeat": 19,
+      "full_body_passes": 95
+    },
+    "nominal": {
+      "episodes": 25,
+      "first_pass": 18,
+      "crashes": 9,
+      "returned": 18,
+      "clean_repeat": 16,
+      "full_body_passes": 80
+    },
+    "randomised": {
+      "episodes": 25,
+      "first_pass": 19,
+      "crashes": 13,
+      "returned": 18,
+      "clean_repeat": 12,
+      "full_body_passes": 68
+    }
+  },
+  "final_metrics": {
+    "aligned": {
+      "episodes": 100,
+      "first_pass": 84,
+      "crashes": 16,
+      "returned": 84,
+      "clean_repeat": 84,
+      "full_body_passes": 420
+    },
+    "nominal": {
+      "episodes": 100,
+      "first_pass": 79,
+      "crashes": 26,
+      "returned": 79,
+      "clean_repeat": 74,
+      "full_body_passes": 364
+    },
+    "randomised": {
+      "episodes": 100,
+      "first_pass": 74,
+      "crashes": 54,
+      "returned": 71,
+      "clean_repeat": 46,
+      "full_body_passes": 273
+    }
+  },
+  "source_run": "parallel-credit-20261008",
+  "shared_models": {
+    "baseline": {
+      "path": "models/team-baseline/seenflag-s1-level1.zip",
+      "sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef"
+    },
+    "estimator": {
+      "path": "models/motion-estimator/gru64.pt",
+      "sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554"
+    }
+  }
+}

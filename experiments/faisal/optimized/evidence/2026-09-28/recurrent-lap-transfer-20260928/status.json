@@ -1,7 +1,0 @@
-{
-  "mode": "stopped",
-  "supervised_updates": 500,
-  "reason": "bounded_transfer_complete",
-  "mission_accepted": false,
-  "physical_flight_validated": false
-}

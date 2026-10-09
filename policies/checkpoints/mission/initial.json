@@ -1,0 +1,25 @@
+{
+  "id": "mission-round-00",
+  "arm": "mission",
+  "round": 0,
+  "path": "policies/checkpoints/mission/initial.npz",
+  "sha256": "c50f0fb99fcb42a82566193cdca7c063b1c4f51919a9f1488098dee9ab418fcc",
+  "architecture": "estimated-motion-residual-v1",
+  "inputs": 89,
+  "status": "initial-reference",
+  "qualified": false,
+  "physical_flight_validated": false,
+  "guard_metrics": null,
+  "final_metrics": null,
+  "source_run": "parallel-credit-20261008",
+  "shared_models": {
+    "baseline": {
+      "path": "models/team-baseline/seenflag-s1-level1.zip",
+      "sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef"
+    },
+    "estimator": {
+      "path": "models/motion-estimator/gru64.pt",
+      "sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554"
+    }
+  }
+}

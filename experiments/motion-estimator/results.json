@@ -1,0 +1,114 @@
+{
+  "feedforward": {
+    "fit": {
+      "all": {
+        "samples": 162290,
+        "rmse_mm_per_axis": 6.056893348693848,
+        "mean_vector_error_mm": 8.829727172851562
+      },
+      "visible": {
+        "samples": 97405,
+        "rmse_mm_per_axis": 5.593389511108398,
+        "mean_vector_error_mm": 8.202632904052734
+      },
+      "blind": {
+        "samples": 64885,
+        "rmse_mm_per_axis": 6.692707538604736,
+        "mean_vector_error_mm": 9.771119117736816
+      },
+      "episodes": 447
+    },
+    "heldout": {
+      "all": {
+        "samples": 36523,
+        "rmse_mm_per_axis": 5.693447113037109,
+        "mean_vector_error_mm": 8.31394100189209
+      },
+      "visible": {
+        "samples": 22107,
+        "rmse_mm_per_axis": 5.284217357635498,
+        "mean_vector_error_mm": 7.730111122131348
+      },
+      "blind": {
+        "samples": 14416,
+        "rmse_mm_per_axis": 6.269325256347656,
+        "mean_vector_error_mm": 9.209246635437012
+      },
+      "episodes": 111
+    },
+    "gae_separate": {
+      "all": {
+        "samples": 66731,
+        "rmse_mm_per_axis": 6.172779083251953,
+        "mean_vector_error_mm": 8.968490600585938
+      },
+      "visible": {
+        "samples": 40186,
+        "rmse_mm_per_axis": 5.767960071563721,
+        "mean_vector_error_mm": 8.370162963867188
+      },
+      "blind": {
+        "samples": 26545,
+        "rmse_mm_per_axis": 6.739515781402588,
+        "mean_vector_error_mm": 9.874288558959961
+      },
+      "episodes": 240
+    }
+  },
+  "gru64": {
+    "fit": {
+      "all": {
+        "samples": 162290,
+        "rmse_mm_per_axis": 4.116796016693115,
+        "mean_vector_error_mm": 6.098989009857178
+      },
+      "visible": {
+        "samples": 97405,
+        "rmse_mm_per_axis": 4.203518867492676,
+        "mean_vector_error_mm": 6.285010814666748
+      },
+      "blind": {
+        "samples": 64885,
+        "rmse_mm_per_axis": 3.9830636978149414,
+        "mean_vector_error_mm": 5.8197340965271
+      },
+      "episodes": 447
+    },
+    "heldout": {
+      "all": {
+        "samples": 36523,
+        "rmse_mm_per_axis": 3.9459829330444336,
+        "mean_vector_error_mm": 5.847896099090576
+      },
+      "visible": {
+        "samples": 22107,
+        "rmse_mm_per_axis": 4.0483574867248535,
+        "mean_vector_error_mm": 6.0300469398498535
+      },
+      "blind": {
+        "samples": 14416,
+        "rmse_mm_per_axis": 3.783614158630371,
+        "mean_vector_error_mm": 5.56856632232666
+      },
+      "episodes": 111
+    },
+    "gae_separate": {
+      "all": {
+        "samples": 66731,
+        "rmse_mm_per_axis": 4.243218421936035,
+        "mean_vector_error_mm": 6.256217002868652
+      },
+      "visible": {
+        "samples": 40186,
+        "rmse_mm_per_axis": 4.3530731201171875,
+        "mean_vector_error_mm": 6.451834678649902
+      },
+      "blind": {
+        "samples": 26545,
+        "rmse_mm_per_axis": 4.071275234222412,
+        "mean_vector_error_mm": 5.960075855255127
+      },
+      "episodes": 240
+    }
+  }
+}

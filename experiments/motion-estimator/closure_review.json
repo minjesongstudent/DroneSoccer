@@ -1,0 +1,84 @@
+{
+  "review": "Independent saved-artifact closure verification",
+  "verified": true,
+  "verification_scope": "No training, model inference, simulator or hardware operation",
+  "evidence_hash_counts": {
+    "decision_evidence": 15,
+    "frozen_source": 9,
+    "input_files": 805,
+    "protocol_artifacts": 4
+  },
+  "metrics_exact": true,
+  "source_targets_exact": true,
+  "normalizers_fit_only_exact": true,
+  "split_exact": true,
+  "shared_schedule_exact": true,
+  "warmup": {
+    "episodes": 558,
+    "fit_episodes": 447,
+    "heldout_episodes": 111,
+    "targets": 198813
+  },
+  "gae": {
+    "episodes": 240,
+    "targets": 66731
+  },
+  "six_gate_checks": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "comparisons": {
+    "heldout": {
+      "all": {
+        "feedforward_rmse": 5.693447113037109,
+        "recurrent_rmse": 3.9459829330444336,
+        "relative_reduction": 0.3069255137175604,
+        "samples": 36523
+      },
+      "blind": {
+        "feedforward_rmse": 6.269325256347656,
+        "recurrent_rmse": 3.783614158630371,
+        "relative_reduction": 0.3964878190361103,
+        "samples": 14416
+      },
+      "visible": {
+        "feedforward_rmse": 5.284217357635498,
+        "recurrent_rmse": 4.0483574867248535,
+        "relative_reduction": 0.2338775616648079,
+        "samples": 22107
+      }
+    },
+    "gae_separate": {
+      "all": {
+        "feedforward_rmse": 6.172779083251953,
+        "recurrent_rmse": 4.243218421936035,
+        "relative_reduction": 0.3125918869429851,
+        "samples": 66731
+      },
+      "blind": {
+        "feedforward_rmse": 6.739515781402588,
+        "recurrent_rmse": 4.071275234222412,
+        "relative_reduction": 0.39590982998260404,
+        "samples": 26545
+      },
+      "visible": {
+        "feedforward_rmse": 5.767960071563721,
+        "recurrent_rmse": 4.3530731201171875,
+        "relative_reduction": 0.2453011001969282,
+        "samples": 40186
+      }
+    }
+  },
+  "gate_reproduced": true,
+  "decision_sha256": "7eb9d6acf0bb4130236a810542e5cf6b617223815989cf678b76f6d22024d60b",
+  "protocol_sha256": "c9857d474d3af76fe54d1b904a2ca6f74be3ec72b5e4ffba7eae6f0e7fee5f86",
+  "review_source_sha256": "55079533d1efe6b454a6e91748b7098f6152b756bfcef076522e07a2e8c06e10",
+  "actor_changed": false,
+  "policy_promoted": false,
+  "simulation_acceptance": false,
+  "physical_flight_validated": false
+}

@@ -1,0 +1,49 @@
+{
+  "precision_contract": "strict_float32",
+  "runtime_guards": [
+    "CPU/CUDA autocast must be disabled",
+    "CUDA cudnn.allow_tf32 must be False",
+    "CUDA cuda.matmul.allow_tf32 must be False"
+  ],
+  "configuration_owner": "Caller configures process once; adapter only checks and never mutates global settings",
+  "state_on_rejection": "unchanged; exception raised before recurrence advances",
+  "old_runtime_snapshot": {
+    "path": "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\integration_source_before_precision\\src\\recurrent_motion.py",
+    "sha256": "f1374209141cee45e0f4e9dcc41d1399dbe33cc84f52d97fc2bac41811272d7e"
+  },
+  "new_runtime": {
+    "path": "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\DroneSoccer-Publish\\src\\recurrent_motion.py",
+    "sha256": "460c5b29753f2a94384ea37536a7a9b7933111373286d05416d8841f37f4f010"
+  },
+  "new_tests": {
+    "path": "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\DroneSoccer-Publish\\tests\\test_recurrent_motion.py",
+    "sha256": "03e7a354e7e0e3e129c50315bb500c380e860512445f94e5cc9e1f6c015bf6a5"
+  },
+  "historical_diagnostic": {
+    "script": "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\backend_precision_diagnostic.py",
+    "script_sha256": "16ba5aa29260e73c8443429a34588799b2a8413b2ab72f19f6231899a10ee5e3",
+    "report": "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\backend_precision_diagnostic.json",
+    "report_sha256": "0bd7612e23926fabfaa1401fb0360ba4bf6b7211974dd5088783a700044dfaf9",
+    "runtime_version": "old f137 snapshot; report source paths describe paths at execution time"
+  },
+  "reproducible_diagnostic": {
+    "script": "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\backend_precision_diagnostic_snapshot.py",
+    "script_sha256": "b3c18f27220f6d4e4786c5eac53585e3cf185c905d36ee67400931482797dcc0",
+    "import_verified_to_snapshot": true,
+    "rerun_outputs": "backend_precision_diagnostic_snapshot.json and backend_precision_predictions_snapshot.npz; no overwrite"
+  },
+  "unchanged_originals": {
+    "gru64.pt": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554",
+    "gru64-heldout-predictions.npz": "8217c0e52bfa630bab7a477f3db20839775b2c1f8987887cbec47a5019871dcc",
+    "streaming_review.py": "dbc3c154084ca2079e5a34442826e7ec01428f104bc0b6b3947f2ba12c19742c"
+  },
+  "checks": {
+    "passed": 46,
+    "real_checkpoint_unit_deselected": 1,
+    "reason": "Previously completed once; root will separately verify new guard on the same saved600-frame episode",
+    "command": "python -m pytest tests/test_recurrent_motion.py tests/test_camera_history.py -q -k 'not real_frozen_checkpoint'"
+  },
+  "original_absolute_tolerance_mm": 0.001,
+  "original_saved_TF32_parity_failure_preserved": true,
+  "strict600_frame_comparisons": "Stored unchanged in backend_precision_diagnostic.json; all strictCPU/CUDAbatch/stream comparisons below0.001mm; originalTF32packed comparisons retain failures"
+}

@@ -1,9 +1,0 @@
-{
-  "samples": 970,
-  "profile": "seenflag-s1-level1",
-  "model_sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef",
-  "inputs": 85,
-  "source_sha256": "162824a02d84388131638e59082b91fa74345eddca8e81ae632fdaa97352c84c",
-  "output_sha256": "f9a64b875e2894bb23fb562e387189ae6383d1529f9b3f7399d74365506bb29a",
-  "interpretation": "Replayed recorded detector features, not images; suggestions only. No flight or detector accuracy validation."
-}

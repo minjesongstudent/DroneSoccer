@@ -1,0 +1,33 @@
+{
+  "model_sha256": "eba7030c293d1b56edf3026aba4b449d426e307ad946bde83a0604a418547006",
+  "model": "full_horizon-round-05",
+  "group_master": "71c577e",
+  "policy_inputs": 89,
+  "flight_control": true,
+  "camera_calibration": {
+    "status": "defaults",
+    "label": "Team default intrinsics (uncalibrated)",
+    "source_file": null,
+    "sha256": null,
+    "size": [
+      960,
+      720
+    ],
+    "rms_px": null,
+    "physical_camera_match_verified": false,
+    "validation": null,
+    "bundled_file": null
+  },
+  "mode": "operator-started experimental physical flight",
+  "validated_for_physical_flight": false,
+  "components": {
+    "baseline": {
+      "path": "models/team-baseline/seenflag-s1-level1.zip",
+      "sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef"
+    },
+    "estimator": {
+      "path": "models/motion-estimator/gru64.pt",
+      "sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554"
+    }
+  }
+}

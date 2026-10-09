@@ -1,8 +1,0 @@
-{
-  "tests_passed": 503,
-  "seconds": 126.65,
-  "warnings": 2,
-  "warnings_description": "existing Gymnasium infinite bounds warnings",
-  "report": "D:/DroneSoccerData/diagnostics/standard-source-tests.xml",
-  "protocol": "STANDARD_SOURCE_TRIAL.md"
-}

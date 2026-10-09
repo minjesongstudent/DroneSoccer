@@ -1,8 +1,0 @@
-{
-  "tests_passed": 498,
-  "seconds": 106.64,
-  "warnings": 2,
-  "warnings_description": "existing Gymnasium infinite observation bounds",
-  "report": "D:/DroneSoccerData/diagnostics/balanced-repair-tests.xml",
-  "protocol": "BALANCED_REPAIR_TRIAL.md"
-}

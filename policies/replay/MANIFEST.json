@@ -1,0 +1,13 @@
+{
+  "exported_at": "2026-10-09T04:20:27.298491+00:00",
+  "source": "D:\\DroneSoccerData\\runs\\parallel-credit-20261008",
+  "episodes": {
+    "full_horizon": 240,
+    "mission": 96,
+    "local_credit": 240
+  },
+  "files": {
+    "Open-DroneSoccer.html": "7c7b56ac7a2eda8e6e501bdb6a86ffa33393cf3298ed84a56b0417e3899c0f82",
+    "START-HERE.txt": "1169d0e6c4199c66ea2e5b8bc1f230cade3674fbc2649e776819ec9acfb24f5a"
+  }
+}

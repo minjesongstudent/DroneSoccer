@@ -1,8 +1,0 @@
-{
-  "decoded": 3582,
-  "prediction_records": 263,
-  "preview_packet_drops": 0,
-  "decode_error_events": 18,
-  "physical_commands_sent": 0,
-  "mode": "accelerated packet replay; not timing validation"
-}

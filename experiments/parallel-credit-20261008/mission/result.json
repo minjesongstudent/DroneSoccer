@@ -1,0 +1,216 @@
+{
+  "status": "stopped",
+  "iterations": [
+    {
+      "iteration": 1,
+      "episodes": 48,
+      "transitions": 16592,
+      "accepted": 65,
+      "rejected": 0,
+      "metrics": {
+        "aligned": {
+          "episodes": 25,
+          "first_pass": 19,
+          "crashes": 6,
+          "returned": 19,
+          "clean_repeat": 19,
+          "full_body_passes": 95
+        },
+        "nominal": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 10,
+          "returned": 18,
+          "clean_repeat": 15,
+          "full_body_passes": 79
+        },
+        "randomised": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 13,
+          "returned": 17,
+          "clean_repeat": 12,
+          "full_body_passes": 65
+        }
+      },
+      "failures": [],
+      "diagnostics": {
+        "mean_kl": 0.00020482912077568471,
+        "max_kl": 0.010888934135437012
+      }
+    },
+    {
+      "iteration": 2,
+      "episodes": 48,
+      "transitions": 15283,
+      "accepted": 125,
+      "rejected": 0,
+      "metrics": {
+        "aligned": {
+          "episodes": 25,
+          "first_pass": 19,
+          "crashes": 6,
+          "returned": 19,
+          "clean_repeat": 19,
+          "full_body_passes": 95
+        },
+        "nominal": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 8,
+          "returned": 18,
+          "clean_repeat": 17,
+          "full_body_passes": 84
+        },
+        "randomised": {
+          "episodes": 25,
+          "first_pass": 18,
+          "crashes": 16,
+          "returned": 17,
+          "clean_repeat": 9,
+          "full_body_passes": 59
+        }
+      },
+      "failures": [
+        "randomised: crashes increased by more than 3/25",
+        "randomised: clean-repeat count dropped by more than 3/25"
+      ],
+      "diagnostics": {
+        "mean_kl": 0.000222181566641666,
+        "max_kl": 0.025820910930633545
+      }
+    }
+  ],
+  "completed_seeds": [
+    11244000,
+    11244001,
+    11244002,
+    11244003,
+    11244004,
+    11244005,
+    11244006,
+    11244007,
+    11244008,
+    11244009,
+    11244010,
+    11244011,
+    11244012,
+    11244013,
+    11244014,
+    11244015,
+    11244016,
+    11244017,
+    11244018,
+    11244019,
+    11244020,
+    11244021,
+    11244022,
+    11244023,
+    11244024,
+    11244025,
+    11244026,
+    11244027,
+    11244028,
+    11244029,
+    11244030,
+    11244031,
+    11244032,
+    11244033,
+    11244034,
+    11244035,
+    11244036,
+    11244037,
+    11244038,
+    11244039,
+    11244040,
+    11244041,
+    11244042,
+    11244043,
+    11244044,
+    11244045,
+    11244046,
+    11244047,
+    11244048,
+    11244049,
+    11244050,
+    11244051,
+    11244052,
+    11244053,
+    11244054,
+    11244055,
+    11244056,
+    11244057,
+    11244058,
+    11244059,
+    11244060,
+    11244061,
+    11244062,
+    11244063,
+    11244064,
+    11244065,
+    11244066,
+    11244067,
+    11244068,
+    11244069,
+    11244070,
+    11244071,
+    11244072,
+    11244073,
+    11244074,
+    11244075,
+    11244076,
+    11244077,
+    11244078,
+    11244079,
+    11244080,
+    11244081,
+    11244082,
+    11244083,
+    11244084,
+    11244085,
+    11244086,
+    11244087,
+    11244088,
+    11244089,
+    11244090,
+    11244091,
+    11244092,
+    11244093,
+    11244094,
+    11244095
+  ],
+  "frozen_unchanged": true,
+  "target_mode": "mission",
+  "cohort_id": "77469d20c63b43f18aa7b846e05647e8",
+  "arm": "mission",
+  "acceptance": false,
+  "physical_flight": false,
+  "first_rollout_parity": {
+    "path": "D:\\DroneSoccerData\\runs\\parallel-credit-20261008\\first_rollout_parity.json",
+    "sha256": "64aec86fdf80588a160fc8956ea19bf9d2d9b40965c8158fefdb80932798b4cf"
+  },
+  "completed_training_rounds": 2,
+  "final_checkpoint": "policy_02.npz",
+  "error": "Retention regression",
+  "frozen_weights_verified": true,
+  "frozen_artifact_checks": {
+    "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\DroneSoccer-Publish\\trainedModels\\seenflag-s1-level1.zip": {
+      "expected_sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef",
+      "actual_sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef",
+      "unchanged": true
+    },
+    "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\gru64.pt": {
+      "expected_sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554",
+      "actual_sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554",
+      "unchanged": true
+    }
+  },
+  "training_budget_complete": false,
+  "final_pipeline_complete": false,
+  "cuda_memory": {
+    "initialized": true,
+    "peak_allocated_bytes": 65727488,
+    "peak_reserved_bytes": 88080384
+  },
+  "elapsed_seconds": 338.8279999999795
+}

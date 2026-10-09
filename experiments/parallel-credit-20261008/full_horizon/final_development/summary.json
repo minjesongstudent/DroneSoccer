@@ -1,0 +1,26 @@
+{
+  "aligned": {
+    "episodes": 100,
+    "first_pass": 84,
+    "crashes": 16,
+    "returned": 84,
+    "clean_repeat": 84,
+    "full_body_passes": 420
+  },
+  "nominal": {
+    "episodes": 100,
+    "first_pass": 80,
+    "crashes": 26,
+    "returned": 80,
+    "clean_repeat": 74,
+    "full_body_passes": 368
+  },
+  "randomised": {
+    "episodes": 100,
+    "first_pass": 73,
+    "crashes": 52,
+    "returned": 71,
+    "clean_repeat": 48,
+    "full_body_passes": 277
+  }
+}

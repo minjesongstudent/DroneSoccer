@@ -1,7 +1,0 @@
-{
-  "mode": "stopped",
-  "steps": 32768,
-  "reason": "no_return_learning_signal",
-  "mission_accepted": false,
-  "physical_flight_validated": false
-}

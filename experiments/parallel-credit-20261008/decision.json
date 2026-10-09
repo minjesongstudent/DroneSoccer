@@ -1,0 +1,103 @@
+{
+  "acceptance": false,
+  "automatic_fresh_evaluation": false,
+  "cohort_manifest_sha256": "4469abe7d7d55289f35a3c4d3fde69dcca113d67ed5df5ae2a7c2354826cef0a",
+  "errors": [],
+  "fairness": {
+    "cohort_manifest_sha256": "4469abe7d7d55289f35a3c4d3fde69dcca113d67ed5df5ae2a7c2354826cef0a",
+    "comparisons": {
+      "full_horizon": {
+        "actions": true,
+        "endpoints": true,
+        "episode_lengths": true,
+        "features89": true,
+        "old_log_prob": true,
+        "rewards": true
+      },
+      "local_credit": {
+        "actions": true,
+        "endpoints": true,
+        "episode_lengths": true,
+        "features89": true,
+        "old_log_prob": true,
+        "rewards": true
+      },
+      "mission": {
+        "actions": true,
+        "endpoints": true,
+        "episode_lengths": true,
+        "features89": true,
+        "old_log_prob": true,
+        "rewards": true
+      }
+    },
+    "deliberate_differences": [
+      "returns",
+      "advantages"
+    ],
+    "endpoint_sha256": {
+      "full_horizon": "a409ad6e37427e80b9d44981e4c7cb3a8940df2e689b51dde44ed9767b54ab6a",
+      "local_credit": "a409ad6e37427e80b9d44981e4c7cb3a8940df2e689b51dde44ed9767b54ab6a",
+      "mission": "a409ad6e37427e80b9d44981e4c7cb3a8940df2e689b51dde44ed9767b54ab6a"
+    },
+    "fields": [
+      "features89",
+      "actions",
+      "episode_lengths",
+      "rewards",
+      "old_log_prob",
+      "endpoints"
+    ],
+    "matched": true,
+    "passed": true,
+    "rollout_sha256": {
+      "full_horizon": "9d1c064281ad2d6b6a83922febb92767348ed5d244e766bc9f1fe07b4e62980d",
+      "local_credit": "c8b0c8f2a70778409e19f5380727b2250bf71f550a51a0bf71191576b056b54e",
+      "mission": "793d05b6816517c5e67872cd96c161241962c4f17662062d74bfd45c50c832f2"
+    },
+    "status": "matched"
+  },
+  "physical_flight": false,
+  "policy_promoted": false,
+  "qualifying_final_candidates": [],
+  "selected": null,
+  "selection": "none",
+  "selection_rule": "randomised repeat descending, crash ascending, first-pass descending, fixed arm order",
+  "smoke": false,
+  "status": "complete",
+  "workers": {
+    "full_horizon": {
+      "decision": "reject_close_variant",
+      "decision_sha256": "3dd510c99c4e0137ecc94cf792c3057ec7f3179c6305b59adc46e6fd9401f578",
+      "exit_code": 0,
+      "passed": false,
+      "reasons": [
+        "randomised: clean-repeat gain is below 5/100",
+        "randomised: crash reduction is below 5/100"
+      ]
+    },
+    "local_credit": {
+      "decision": "reject_close_variant",
+      "decision_sha256": "b1fa736363ce498a92ec482f93693c2987598c7281d19fff8f7f7066d864ffd7",
+      "exit_code": 0,
+      "passed": false,
+      "reasons": [
+        "randomised: clean-repeat gain is below 5/100",
+        "randomised: crash reduction is below 5/100"
+      ]
+    },
+    "mission": {
+      "decision": "reject_close_variant",
+      "decision_sha256": "97d1ad1746d6a28513aadcb2442e92619524559d33f37205e389145d4a84755e",
+      "exit_code": 0,
+      "passed": false,
+      "reasons": [
+        "Final validation pipeline not completed: Retention regression",
+        "Prescribed training budget was not completed",
+        "Requires every prescribed round and complete episode exactly once",
+        "Round 2: randomised: crashes increased by more than 3/25",
+        "Round 2: randomised: clean-repeat count dropped by more than 3/25"
+      ]
+    }
+  }
+}

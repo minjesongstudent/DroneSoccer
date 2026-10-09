@@ -1,0 +1,199 @@
+{
+  "arms": {
+    "full_horizon": {
+      "accepted": 274,
+      "baseline": {
+        "aligned": {
+          "clean_repeat": 84,
+          "crashes": 16,
+          "episodes": 100,
+          "first_pass": 84
+        },
+        "nominal": {
+          "clean_repeat": 74,
+          "crashes": 26,
+          "episodes": 100,
+          "first_pass": 80
+        },
+        "randomised": {
+          "clean_repeat": 48,
+          "crashes": 52,
+          "episodes": 100,
+          "first_pass": 73
+        }
+      },
+      "checkpoint_sha256": "eba7030c293d1b56edf3026aba4b449d426e307ad946bde83a0604a418547006",
+      "decision_sha256": "3dd510c99c4e0137ecc94cf792c3057ec7f3179c6305b59adc46e6fd9401f578",
+      "elapsed_seconds": 849.3129999999655,
+      "episodes": 240,
+      "final_candidate": {
+        "aligned": {
+          "clean_repeat": 84,
+          "crashes": 16,
+          "episodes": 100,
+          "first_pass": 84
+        },
+        "nominal": {
+          "clean_repeat": 74,
+          "crashes": 26,
+          "episodes": 100,
+          "first_pass": 80
+        },
+        "randomised": {
+          "clean_repeat": 48,
+          "crashes": 52,
+          "episodes": 100,
+          "first_pass": 73
+        }
+      },
+      "final_checkpoint": "policy_05.npz",
+      "protocol_sha256": "9b9a01a1f352e685cfa7044a33edcc04c4c60703f481d69c853e01cf169958e2",
+      "reasons": [
+        "randomised: clean-repeat gain is below 5/100",
+        "randomised: crash reduction is below 5/100"
+      ],
+      "rejected": 0,
+      "result_sha256": "fb017605910a8cea1c2556e5afc32802566c295be54efe2f0f6cac8b4b9a5448",
+      "rounds": 5,
+      "seed_first": 11244000,
+      "seed_last": 11244239,
+      "status": "complete",
+      "transitions": 69593
+    },
+    "local_credit": {
+      "accepted": 274,
+      "baseline": {
+        "aligned": {
+          "clean_repeat": 84,
+          "crashes": 16,
+          "episodes": 100,
+          "first_pass": 84
+        },
+        "nominal": {
+          "clean_repeat": 74,
+          "crashes": 26,
+          "episodes": 100,
+          "first_pass": 80
+        },
+        "randomised": {
+          "clean_repeat": 48,
+          "crashes": 52,
+          "episodes": 100,
+          "first_pass": 73
+        }
+      },
+      "checkpoint_sha256": "2223a2cc117565f9f33dd3a3009cc818ac5ae826dc7b14f03266c3921beebb8e",
+      "decision_sha256": "b1fa736363ce498a92ec482f93693c2987598c7281d19fff8f7f7066d864ffd7",
+      "elapsed_seconds": 931.2029999999795,
+      "episodes": 240,
+      "final_candidate": {
+        "aligned": {
+          "clean_repeat": 84,
+          "crashes": 16,
+          "episodes": 100,
+          "first_pass": 84
+        },
+        "nominal": {
+          "clean_repeat": 74,
+          "crashes": 26,
+          "episodes": 100,
+          "first_pass": 79
+        },
+        "randomised": {
+          "clean_repeat": 46,
+          "crashes": 54,
+          "episodes": 100,
+          "first_pass": 74
+        }
+      },
+      "final_checkpoint": "policy_05.npz",
+      "protocol_sha256": "149284ed1d53ee9bfd2d8591e62b6ca91aeb953d6e6e60e77ac01dbbe0b3642e",
+      "reasons": [
+        "randomised: clean-repeat gain is below 5/100",
+        "randomised: crash reduction is below 5/100"
+      ],
+      "rejected": 0,
+      "result_sha256": "489a118add4c28e4126637802490a7cb693e474d72228defc6f30245817ac0df",
+      "rounds": 5,
+      "seed_first": 11244000,
+      "seed_last": 11244239,
+      "status": "complete",
+      "transitions": 69836
+    },
+    "mission": {
+      "accepted": 125,
+      "checkpoint_sha256": "db4f747ac244f6871c6823512b59c46d25369a3e3296c3023bfc9ce3ffee224a",
+      "decision_sha256": "97d1ad1746d6a28513aadcb2442e92619524559d33f37205e389145d4a84755e",
+      "elapsed_seconds": 338.8279999999795,
+      "episodes": 96,
+      "final_checkpoint": "policy_02.npz",
+      "protocol_sha256": "1b0d7f9d203168cb206c61bf18fc45b2aeb9bee7606daf57d9d13547fc758f62",
+      "reasons": [
+        "Final validation pipeline not completed: Retention regression",
+        "Prescribed training budget was not completed",
+        "Requires every prescribed round and complete episode exactly once",
+        "Round 2: randomised: crashes increased by more than 3/25",
+        "Round 2: randomised: clean-repeat count dropped by more than 3/25"
+      ],
+      "rejected": 0,
+      "result_sha256": "81acb7c372d95c37f3d0d28c6a54436a71df5eeafa37fbe218d8ba1080c1cac5",
+      "retention_randomised": {
+        "after": {
+          "clean_repeat": 9,
+          "crashes": 16,
+          "episodes": 25,
+          "first_pass": 18
+        },
+        "before": {
+          "clean_repeat": 13,
+          "crashes": 12,
+          "episodes": 25,
+          "first_pass": 18
+        }
+      },
+      "rounds": 2,
+      "seed_first": 11244000,
+      "seed_last": 11244095,
+      "status": "stopped",
+      "transitions": 31875
+    }
+  },
+  "checks": {
+    "allocation": 1,
+    "bitwise_parity_fields": 15,
+    "final_evidence": 610,
+    "final_model_identity": 2,
+    "frozen_artifacts": 6,
+    "initialization": 3,
+    "manifest": 1,
+    "parent_current_sources": 38,
+    "parent_snapshot_sources": 38,
+    "parity_endpoints": 3,
+    "parity_rollouts": 3,
+    "prepared": 21,
+    "queue_main_binding": 1,
+    "queue_smoke_binding": 1,
+    "reference_evidence": 15,
+    "references": 3,
+    "retention_evidence": 960,
+    "worker_approval": 3,
+    "worker_approval_copy": 3,
+    "worker_current_sources": 114,
+    "worker_decisions": 3,
+    "worker_evidence": 2998,
+    "worker_inputs": 1698,
+    "worker_snapshot_sources": 114
+  },
+  "cohort_decision_sha256": "133f275c4f0fbf99b7e69ea8d4b7fb0f028dc5c6fd73a2f9d11dc57f1b753050",
+  "elapsed_seconds": 2.5160000000614673,
+  "errors": [],
+  "estimator_sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554",
+  "first_rollout_parity_sha256": "64aec86fdf80588a160fc8956ea19bf9d2d9b40965c8158fefdb80932798b4cf",
+  "manifest_sha256": "4469abe7d7d55289f35a3c4d3fde69dcca113d67ed5df5ae2a7c2354826cef0a",
+  "passed": true,
+  "queue_result_sha256": "31cdace0b4b53bc1640c6787b3e6a1aaec47d19b35e655281c5efb136d352377",
+  "scope": "Saved-artifact closure only; no inference, rollouts or model execution",
+  "script_sha256": "98f854013065b58f21f4a61816cfceb7e02554e1bb36f672e3b72ccc81eb4800",
+  "source_sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef",
+  "unique_files_hashed": 3639
+}

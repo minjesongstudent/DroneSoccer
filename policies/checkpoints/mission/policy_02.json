@@ -1,0 +1,50 @@
+{
+  "id": "mission-round-02",
+  "arm": "mission",
+  "round": 2,
+  "path": "policies/checkpoints/mission/policy_02.npz",
+  "sha256": "db4f747ac244f6871c6823512b59c46d25369a3e3296c3023bfc9ce3ffee224a",
+  "architecture": "estimated-motion-residual-v1",
+  "inputs": 89,
+  "status": "intermediate-not-qualified",
+  "qualified": false,
+  "physical_flight_validated": false,
+  "guard_metrics": {
+    "aligned": {
+      "episodes": 25,
+      "first_pass": 19,
+      "crashes": 6,
+      "returned": 19,
+      "clean_repeat": 19,
+      "full_body_passes": 95
+    },
+    "nominal": {
+      "episodes": 25,
+      "first_pass": 18,
+      "crashes": 8,
+      "returned": 18,
+      "clean_repeat": 17,
+      "full_body_passes": 84
+    },
+    "randomised": {
+      "episodes": 25,
+      "first_pass": 18,
+      "crashes": 16,
+      "returned": 17,
+      "clean_repeat": 9,
+      "full_body_passes": 59
+    }
+  },
+  "final_metrics": null,
+  "source_run": "parallel-credit-20261008",
+  "shared_models": {
+    "baseline": {
+      "path": "models/team-baseline/seenflag-s1-level1.zip",
+      "sha256": "8c0711b7d139ca7aa2d4b316fdf4e9143019832f75ecb24f264904a4843f04ef"
+    },
+    "estimator": {
+      "path": "models/motion-estimator/gru64.pt",
+      "sha256": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554"
+    }
+  }
+}

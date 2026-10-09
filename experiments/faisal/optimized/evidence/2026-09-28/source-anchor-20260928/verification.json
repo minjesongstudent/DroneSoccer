@@ -1,8 +1,0 @@
-{
-  "tests_passed": 500,
-  "seconds": 115.05,
-  "warnings": 2,
-  "warnings_description": "existing Gymnasium infinite bounds warnings",
-  "report": "D:/DroneSoccerData/diagnostics/source-anchor-tests.xml",
-  "protocol": "SOURCE_ANCHOR_TRIAL.md"
-}

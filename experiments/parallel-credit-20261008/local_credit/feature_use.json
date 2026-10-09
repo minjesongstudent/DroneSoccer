@@ -1,0 +1,14 @@
+{
+  "fit": {
+    "D_source": 0.0005711200064979494,
+    "D_shuffle": 0.0007276154356077313,
+    "zero_estimate_exact": true,
+    "passed": true
+  },
+  "heldout": {
+    "D_source": 0.0005804875981993973,
+    "D_shuffle": 0.0007446804665960371,
+    "zero_estimate_exact": true,
+    "passed": true
+  }
+}

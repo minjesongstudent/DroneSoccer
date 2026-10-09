@@ -1,8 +1,0 @@
-{
-  "mode": "stopped",
-  "steps": 15000,
-  "reason": "retention_or_crash_gate_failed",
-  "development_progress": false,
-  "mission_accepted": false,
-  "reserved_check_rollouts": 0
-}

@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "decision": "supports_future_estimated_state_integration_review",
+  "reasons": [],
+  "comparisons": {
+    "heldout": {
+      "all": {
+        "feedforward_rmse": 5.693447113037109,
+        "recurrent_rmse": 3.9459829330444336,
+        "relative_reduction": 0.3069255137175604,
+        "samples": 36523
+      },
+      "blind": {
+        "feedforward_rmse": 6.269325256347656,
+        "recurrent_rmse": 3.783614158630371,
+        "relative_reduction": 0.3964878190361103,
+        "samples": 14416
+      },
+      "visible": {
+        "feedforward_rmse": 5.284217357635498,
+        "recurrent_rmse": 4.0483574867248535,
+        "relative_reduction": 0.2338775616648079,
+        "samples": 22107
+      }
+    },
+    "gae_separate": {
+      "all": {
+        "feedforward_rmse": 6.172779083251953,
+        "recurrent_rmse": 4.243218421936035,
+        "relative_reduction": 0.3125918869429851,
+        "samples": 66731
+      },
+      "blind": {
+        "feedforward_rmse": 6.739515781402588,
+        "recurrent_rmse": 4.071275234222412,
+        "relative_reduction": 0.39590982998260404,
+        "samples": 26545
+      },
+      "visible": {
+        "feedforward_rmse": 5.767960071563721,
+        "recurrent_rmse": 4.3530731201171875,
+        "relative_reduction": 0.2453011001969282,
+        "samples": 40186
+      }
+    }
+  },
+  "actor_updated": false,
+  "actor_integration_approved": false,
+  "policy_promoted": false,
+  "acceptance": false,
+  "physical_flight": false,
+  "status": "complete",
+  "updates_completed": {
+    "feedforward": 3000,
+    "gru64": 3000
+  },
+  "elapsed_seconds": 85.15700000000652,
+  "source_policy_unchanged": true,
+  "evidence": {
+    "episode_schedule.npy": "83b2abc899e80dcf5c9e4613628b120bf02935598c868bf0aa8e51dd5459975b",
+    "episodes.json": "8c03eaed0422882dfeac95d9c06efd252b9a6b87323de0cf067e2055a4a64259",
+    "feedforward-fit-predictions.npz": "993f496cc553550655848f64a7978f0fbf5f5df5b15446b17946e583e5a38f21",
+    "feedforward-gae_separate-predictions.npz": "f87c4efde13c7c73b7ebf6431ea7d06001268d57fe350813e49280647fed7e77",
+    "feedforward-heldout-predictions.npz": "174c8b2042ccc1e9aa41c6eaae4cf607c1cd3e78f5c1c9f1d0798a3e0ae94f5a",
+    "feedforward.pt": "536a0bacedb9d4c48b188e49ca1a96f33cb414f64cabb6d2a9556606950a5298",
+    "gru64-fit-predictions.npz": "4537700b710f731f82fd8789f139de8576420f0354558c5ee7c00dd52eaf1a97",
+    "gru64-gae_separate-predictions.npz": "62a13f82aaf2ec37c67f7224f317fad703000c3e89d49e1611ead6f2e0e63548",
+    "gru64-heldout-predictions.npz": "8217c0e52bfa630bab7a477f3db20839775b2c1f8987887cbec47a5019871dcc",
+    "gru64.pt": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554",
+    "normalizers.npz": "3bb05728cf3eab59e34733be32971397bb2df8614134448cc2e8c705ee9386db",
+    "protocol.json": "c9857d474d3af76fe54d1b904a2ca6f74be3ec72b5e4ffba7eae6f0e7fee5f86",
+    "results.json": "12329b6338e1ef4452a6c2a0ebbd747f9662b249953a4c2b559ddf658696339f",
+    "split.npz": "539ce25d7a9d851a4d627d7d84c3c66ead30728a2e0cf3bbdeee9a4e1bf24a3e",
+    "status.json": "c0055480b7a3ba60d5c3bb5f5dfe58b9f7d36c778d26828d86483e2879778705"
+  }
+}

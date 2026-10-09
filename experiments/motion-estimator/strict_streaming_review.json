@@ -1,0 +1,42 @@
+{
+  "verified": true,
+  "kind": "Strictfloat32 saved600-frame streaming/batch/CPU-CUDA parity",
+  "historical_failed_check": "streaming_review_failure.json; no tolerance change or historical prediction replacement",
+  "source_policy_updated": false,
+  "simulator_stepped": false,
+  "acceptance": false,
+  "physical_flight": false,
+  "seed": 11000004,
+  "devices": {
+    "cpu": {
+      "frames": 600,
+      "strict_batch_stream_max_difference_mm": 1.1444091796875e-05,
+      "historical_tf32_difference_mm": 0.008174896240234375,
+      "original85_exact": true,
+      "startup_validity_exact": true,
+      "reset_prefix_exact": true
+    },
+    "cuda:0": {
+      "frames": 600,
+      "strict_batch_stream_max_difference_mm": 0.000110626220703125,
+      "historical_tf32_difference_mm": 0.00818634033203125,
+      "original85_exact": true,
+      "startup_validity_exact": true,
+      "reset_prefix_exact": true
+    }
+  },
+  "absolute_tolerance_mm": 0.001,
+  "cross_device_stream_max_difference_mm": 0.00010776519775390625,
+  "inference_contract": "strict_float32",
+  "cudnn_allow_tf32": false,
+  "matmul_allow_tf32": false,
+  "inputs": {
+    "D:\\DroneSoccerData\\runs\\clearance-reward-20261007\\clearance\\training_trajectories\\000005-11000004-complete.npz": "fe7fae686625edf32500b37740d464ec57c0a53f9e433eb1b6fd637f0470e3fc",
+    "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\gru64.pt": "b48d6b26136a5e2e6cbfcd615a1a819eb801b495fba4cfa38130c0e2da54f554",
+    "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\gru64-heldout-predictions.npz": "8217c0e52bfa630bab7a477f3db20839775b2c1f8987887cbec47a5019871dcc"
+  },
+  "sources": {
+    "C:\\Users\\Faisal\\OneDrive\\Documents\\ChatGPT\\RL 2\\DroneSoccer-Publish\\src\\recurrent_motion.py": "460c5b29753f2a94384ea37536a7a9b7933111373286d05416d8841f37f4f010",
+    "D:\\DroneSoccerData\\runs\\recurrent-estimator-20261008\\strict_streaming_review.py": "2c646e30e1416f3502f0a042a04fdd18e2d863cfa075f0a7c0a734b80e8d9537"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "cohort_manifest_sha256": "4469abe7d7d55289f35a3c4d3fde69dcca113d67ed5df5ae2a7c2354826cef0a",
+  "comparisons": {
+    "full_horizon": {
+      "actions": true,
+      "endpoints": true,
+      "episode_lengths": true,
+      "features89": true,
+      "old_log_prob": true,
+      "rewards": true
+    },
+    "local_credit": {
+      "actions": true,
+      "endpoints": true,
+      "episode_lengths": true,
+      "features89": true,
+      "old_log_prob": true,
+      "rewards": true
+    },
+    "mission": {
+      "actions": true,
+      "endpoints": true,
+      "episode_lengths": true,
+      "features89": true,
+      "old_log_prob": true,
+      "rewards": true
+    }
+  },
+  "deliberate_differences": [
+    "returns",
+    "advantages"
+  ],
+  "endpoint_sha256": {
+    "full_horizon": "a409ad6e37427e80b9d44981e4c7cb3a8940df2e689b51dde44ed9767b54ab6a",
+    "local_credit": "a409ad6e37427e80b9d44981e4c7cb3a8940df2e689b51dde44ed9767b54ab6a",
+    "mission": "a409ad6e37427e80b9d44981e4c7cb3a8940df2e689b51dde44ed9767b54ab6a"
+  },
+  "fields": [
+    "features89",
+    "actions",
+    "episode_lengths",
+    "rewards",
+    "old_log_prob",
+    "endpoints"
+  ],
+  "matched": true,
+  "passed": true,
+  "rollout_sha256": {
+    "full_horizon": "9d1c064281ad2d6b6a83922febb92767348ed5d244e766bc9f1fe07b4e62980d",
+    "local_credit": "c8b0c8f2a70778409e19f5380727b2250bf71f550a51a0bf71191576b056b54e",
+    "mission": "793d05b6816517c5e67872cd96c161241962c4f17662062d74bfd45c50c832f2"
+  },
+  "status": "matched"
+}

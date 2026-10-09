@@ -1,0 +1,10 @@
+test_archive_is_idempotent_and_refuses_overwrite (test_pc_policy.CompositeTests.test_archive_is_idempotent_and_refuses_overwrite) ... ok
+test_blind_takeover_lands_before_any_policy_movement (test_pc_policy.CompositeTests.test_blind_takeover_lands_before_any_policy_movement) ... ok
+test_every_saved_checkpoint_loads_by_exact_identity (test_pc_policy.CompositeTests.test_every_saved_checkpoint_loads_by_exact_identity) ... ok
+test_real_weights_match_direct_composite_and_differ_from_baseline (test_pc_policy.CompositeTests.test_real_weights_match_direct_composite_and_differ_from_baseline) ... ok
+test_takeoff_pc_rc_and_land_with_complete_identity_no_real_socket (test_pc_policy.CompositeTests.test_takeoff_pc_rc_and_land_with_complete_identity_no_real_socket) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.341s
+
+OK

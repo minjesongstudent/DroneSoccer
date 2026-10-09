@@ -1,8 +1,0 @@
-{
-  "tests_passed": 442,
-  "test_seconds": 49.45,
-  "existing_gymnasium_warnings": 2,
-  "fixed_reset_baseline": "local-artifact/reset-lesson-fixed-baseline.json",
-  "independent_acceptance_seeds_used": false,
-  "session_id": 60579
-}

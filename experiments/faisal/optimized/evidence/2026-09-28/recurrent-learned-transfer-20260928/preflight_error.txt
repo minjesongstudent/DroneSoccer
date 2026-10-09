@@ -1,1 +1,0 @@
-First backward failed because sequence prediction verification switched policy to eval mode. No optimizer step completed. Explicit set_training_mode(True) added for every fit update. Collection rerun identically; no failed flight filtering.
