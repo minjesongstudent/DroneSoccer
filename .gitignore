@@ -378,3 +378,6 @@ __pycache__/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Extracted PC-Policy-Lab package (from trainedModels/PC-Policy-Lab.zip) and its venv/flight recordings
+PC-Policy-Lab-run/
