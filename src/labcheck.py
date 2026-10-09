@@ -1762,18 +1762,52 @@ def run_markercheck(args) -> None:
 
 
 # The 84-number policy input before the seen-hoop flag and the 60-lag window
-# (3258eae, 16e09df), so models trained on it still fly.
+# (3258eae, 16e09df), so models trained on it still fly. The old inputs all end
+# with the last OLD_ACTIONS commands, newest last.
 OLD_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
+OLD_ACTIONS = 3
 
 
-def old_policy_input(frames, actions, unseen: bool) -> np.ndarray:
-    return np.concatenate([*(frames[-1 - lag] for lag in OLD_LAGS), *actions]).astype(np.float32)
+def old_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
+    frames, actions = list(frames), list(actions)
+    return np.concatenate([*(frames[-1 - lag] for lag in OLD_LAGS),
+                           *actions[-OLD_ACTIONS:]]).astype(np.float32)
 
 
 # The 85-number input between them: the old window plus the seen-hoop flag
 # (3258eae), as seenflag-s1-level1 was trained on.
-def flag_policy_input(frames, actions, unseen: bool) -> np.ndarray:
-    return np.append(old_policy_input(frames, actions, unseen), 1.0 if unseen else 0.0).astype(np.float32)
+def flag_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
+    return np.append(old_policy_input(frames, heights, actions, unseen), 1.0 if unseen else 0.0).astype(np.float32)
+
+
+# The 109-number input before the slotted history (39a323c): 12 frames back to
+# 6 s, the last 3 commands and the flag, as teacher2-level1 and lags60-scratch
+# were trained on.
+LAGS60 = (60, 50, 40, 32, 24, 16, 12, 8, 4, 2, 1, 0)
+
+
+def lags60_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
+    frames, actions = list(frames), list(actions)
+    return np.concatenate([*(frames[-1 - lag] for lag in LAGS60), *actions[-OLD_ACTIONS:],
+                           [1.0 if unseen else 0.0]]).astype(np.float32)
+
+
+# The height the policy gets, from the Tello's downward tof in cm (contract.py).
+# It reads 6553 with no return and jumps for a single packet now and then (35 cm
+# mid-descent), so a reading outside 10-1000 cm is dropped and one more than
+# TOF_JUMP_CM from the last kept is held back until the next agrees with it.
+# Full up is 0.4 m/s, 4 cm a step, so a real change never jumps that far.
+TOF_JUMP_CM = 15
+
+
+def keep_tof(tof, kept, jumped):
+    """The tof reading to use and the one held back, after a new packet's `tof`.
+    kept is None until the first valid reading."""
+    if not 10 < tof < 1000:
+        return kept, jumped
+    if kept is None or abs(tof - kept) <= TOF_JUMP_CM or (jumped is not None and abs(tof - jumped) <= TOF_JUMP_CM):
+        return tof, None
+    return kept, tof
 
 
 def run_baseline(args) -> None:
@@ -1786,8 +1820,10 @@ def run_policy(args) -> None:
     from stable_baselines3 import SAC
     model = SAC.load(args.model, device="cpu")
     size = model.observation_space.shape[0]
-    old = len(OLD_LAGS) * contract.OBS_DIM + contract.ACTION_HISTORY * contract.ACTION_DIM
-    inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, old: old_policy_input, old + 1: flag_policy_input}
+    old = len(OLD_LAGS) * contract.OBS_DIM + OLD_ACTIONS * contract.ACTION_DIM
+    lags60 = len(LAGS60) * contract.OBS_DIM + OLD_ACTIONS * contract.ACTION_DIM + 1
+    inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, old: old_policy_input, old + 1: flag_policy_input,
+              lags60: lags60_policy_input}
     if size not in inputs:
         sys.exit(f"{args.model} takes {size} inputs; this code builds {' or '.join(map(str, inputs))}")
     # Models on the 85-number input learned the old flag: 0 from the first sighting.
@@ -1818,18 +1854,23 @@ def fly_policy(args, kind: str, policy, policy_input, flag_rule=contract.not_yet
     session = Session(kind, args.host, record=args.record)
     session.event(f"policy: {getattr(args, 'model', None) or kind}")
     watcher = Watcher(session)
-    frames = collections.deque([contract.NOT_VISIBLE.copy()] * contract.FRAME_HISTORY,
-                               maxlen=contract.FRAME_HISTORY)
-    actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
-                                maxlen=contract.ACTION_HISTORY)
-    unseen = [True]   # the policy's flag, latched off by flag_rule
+    # Every step of the window, as sim.HoopEnv keeps them: frames[i] and heights[i]
+    # came after actions[i]. Before the first valid tof the height is the takeoff one.
+    n = contract.HISTORY_STEPS
+    frames = collections.deque([contract.NOT_VISIBLE.copy()] * n, maxlen=n)
+    heights = collections.deque([Drone().takeoff_height] * n, maxlen=n)
+    actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * n, maxlen=n)
+    unseen = [True]   # the policy's flag, set by flag_rule
+    tof = [None, None]  # the kept reading and the one held back (keep_tof), cm
 
     def tick() -> tuple:
         # One observation per control step, as in the simulator: the newest frame's.
         watcher.update()
         frames.append(watcher.obs.copy())
+        tof[:] = keep_tof(session.state().get("tof", 0), *tof)
+        heights.append(Drone().takeoff_height if tof[0] is None else tof[0] / 100)
         unseen[0] = flag_rule(unseen[0], frames)
-        x = policy_input(frames, actions, unseen[0])
+        x = policy_input(frames, heights, actions, unseen[0])
         action = np.clip(policy(x), -1, 1)
         actions.append(action.astype(np.float32))
         watcher.rc = tuple(int(round(a * full)) for a, full in zip(action, RC_FULL))
