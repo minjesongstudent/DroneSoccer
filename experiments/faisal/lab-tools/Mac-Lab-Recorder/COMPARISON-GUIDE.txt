@@ -1,0 +1,49 @@
+RECORD CAMERA + TELEMETRY + SELECTED POLICY TOGETHER
+
+1. On normal internet, run 1-Setup.command once.
+2. Join the drone Wi-Fi, keep motors off, and close other controllers/recorders.
+3. Run 2-Record.command. A camera window opens, the exact bundled learned policy
+   computes suggestions, and the recorder saves all streams for two minutes.
+4. Ctrl+C stops early and saves. Keep the session folder and exported ZIP.
+
+This package runs policy inference but does NOT send its movement suggestions.
+The SDK commands remain command, streamon, streamoff only. No physical flight
+path was added. Policy action history therefore contains actually issued zeros.
+Hand carrying does not make the suggestions into a closed-loop flight trial.
+
+Files in sessions/<timestamp>/:
+  camera.h264             Original received video bytes.
+  video_packets.jsonl     Packet offsets and host receipt timestamps.
+  telemetry.jsonl         Raw SDK fields, UTC and monotonic receipt timestamps.
+  policy_preview.jsonl    Camera features, full actor observation, raw model
+                         action, fresh suggestion, issued action, inference
+                         start/end times, camera age and history resets.
+  preview_metadata.json   Exact model SHA256, lag layout and calibration source.
+  commands.jsonl          Commands and replies, with monotonic timestamps.
+  comparison.csv         One policy frame per row with PRECEDING telemetry.
+  comparison-summary.json  Coverage, stale frames, resets and source hashes.
+  session.json / SHA256.json  Capture outcome, clock anchor and file hashes.
+
+The comparison joins only telemetry received no later than the frame's host
+receipt and at most 0.25 seconds earlier. Older or missing values stay blank.
+All times are from the same host monotonic clock; these are not camera exposure
+times or a measurement of upstream delay. Decoder output uses the receipt time
+of the chunk that produced it. Raw SDK values are not normalized RC actions.
+No global XYZ path or measured response to UNSENT suggestions is invented.
+
+WHAT WE CAN COMPARE LATER
+  - Ring/marker visibility and camera feature distributions versus simulation.
+  - Suggested action ranges, saturation, history resets and camera gaps.
+  - Telemetry trends beside frame-aligned video and policy suggestions.
+  - Model and calibration provenance across sessions.
+  - Separately recorded simulator outputs, using the same model and observation
+    contract. Align events/features, not unrelated wall-clock timestamps.
+
+These logs alone cannot identify the correct physics parameters, reconstruct
+an accurate global flight path, or establish that an unsent action would work.
+The recorder does not measure an airborne command-response model with motors off.
+Use an actual measured, synchronized reference if comparing true XYZ trajectories.
+
+If a video is large, send comparison.csv, comparison-summary.json, session.json,
+preview_metadata.json, policy_preview.jsonl and telemetry.jsonl first. Keep the
+original video and full export locally for frame review. Do not delete evidence.

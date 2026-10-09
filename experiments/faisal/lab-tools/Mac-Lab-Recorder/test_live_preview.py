@@ -24,11 +24,12 @@ class PreviewTests(unittest.TestCase):
                 base = f'http://127.0.0.1:{preview.server.server_port}'
                 img = np.full((720,960,3),(40,200,220),np.uint8)
                 cv2.circle(img,(480,330),170,(200,120,30),45)
-                deadline = time.monotonic()+5
+                deadline = time.monotonic()+15
                 while time.monotonic()<deadline:
                     preview.decoded(img,time.monotonic())
                     time.sleep(.12)
-                    if len((Path(td)/'policy_preview.jsonl').read_text().splitlines())>=3:
+                    captured = [json.loads(line) for line in (Path(td)/'policy_preview.jsonl').read_text().splitlines()]
+                    if len(captured)>=3 and any(r['observation'][preview.spec.inputs-15] for r in captured):
                         break
                 state = json.loads(urlopen(base+'/state',timeout=3).read())
                 self.assertTrue(state['decoded'])
@@ -37,12 +38,20 @@ class PreviewTests(unittest.TestCase):
                 self.assertEqual(len(urlopen(base+'/frame.jpg',timeout=3).read())>1000,True)
                 self.assertIn(b'No movement commands',urlopen(base,timeout=3).read())
                 preview.close()
+                outcome_path=Path(td)/'preview_outcome.json'
+                first_outcome=outcome_path.read_bytes()
+                preview.close()
+                self.assertEqual(outcome_path.read_bytes(),first_outcome)
                 records = [json.loads(s) for s in (Path(td)/'policy_preview.jsonl').read_text().splitlines()]
                 metadata = json.loads((Path(td)/'preview_metadata.json').read_text())
                 self.assertEqual(metadata['camera_calibration'], preview.calibration_status)
                 self.assertGreaterEqual(len(records),3)
                 self.assertTrue(any(r['observation'][preview.spec.inputs-15] for r in records))
                 for r in records:
+                    self.assertEqual(len(r['camera_features']),8)
+                    self.assertLessEqual(r['receipt_monotonic'],r['analysis_started_monotonic'])
+                    self.assertLessEqual(r['analysis_started_monotonic'],r['analysis_completed_monotonic'])
+                    self.assertEqual(len(r['raw_policy_action']),4)
                     self.assertEqual(len(r['observation']),preview.spec.inputs)
                     self.assertEqual(r['issued_action'],[0,0,0,0])
                     self.assertEqual(r['observation'][-13:-1],[0]*12)

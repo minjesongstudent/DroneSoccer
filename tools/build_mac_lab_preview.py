@@ -39,10 +39,12 @@ def build_package(profile: str, out: Path, calibration_path: Path | None = None)
                  'mac-common.sh', 'MEASUREMENTS.md', '3-Export-Latest.command',
                  'preview-requirements.txt']:
         files[name] = (SOURCE / name).read_bytes()
+    for name in ('compare_session.py', 'test_compare_session.py', 'COMPARISON-GUIDE.txt'):
+        files[name] = (SOURCE / name).read_bytes()
     files['1-Setup.command'] = (SOURCE / '4-Setup-Camera-Window.command').read_text().replace(
         '5-Record-With-Camera.command', '2-Record.command').replace(
         'test_recorder.py test_live_preview.py',
-        'test_recorder.py test_live_preview.py test_calibration.py').encode()
+        'test_recorder.py test_live_preview.py test_calibration.py test_compare_session.py').encode()
     files['2-Record.command'] = (SOURCE / '5-Record-With-Camera.command').read_text().replace(
         '4-Setup-Camera-Window.command', '1-Setup.command').encode()
     files['4-Replay-Latest.command'] = (SOURCE / '6-Replay-Latest-Camera.command').read_text().replace(

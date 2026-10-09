@@ -28,7 +28,8 @@ def control_reply(data, address):
 
 def request_sdk(control, command, pump, commands, clock=time.monotonic, timeout=8):
     send(control, command)
-    commands.write(json.dumps({'utc': utc(), 'command': command}) + '\n')
+    commands.write(json.dumps({'utc': utc(), 'command': command,
+                               'sent_monotonic': time.monotonic()}) + '\n')
     commands.flush()
     deadline = clock() + timeout
     while clock() < deadline:
@@ -90,9 +91,11 @@ def record(seconds, observer=None):
             'python': platform.python_version(), 'mode': 'motors-off hand-carried capture',
             'timing': 'Host receipt timestamps; not exposure time or measured network latency',
             'requested_seconds': seconds, 'state_packets': 0, 'video_packets': 0,
-            'video_bytes': 0, 'ignored_control_packets': 0, 'recorder_version': 2, 'error': None}
+            'video_bytes': 0, 'ignored_control_packets': 0, 'recorder_version': 3, 'error': None}
     sockets = []
     start = time.monotonic()
+    info['start_monotonic'] = start
+    info['clock_domain'] = 'Python time.monotonic on this recording host'
     try:
         if observer is not None:
             observer.start(folder)
@@ -112,7 +115,9 @@ def record(seconds, observer=None):
                     data, address = s.recvfrom(65535)
                     if address[0] != '192.168.10.1':
                         continue
-                    stamp = {'utc': utc(), 'elapsed_s': time.monotonic() - start}
+                    received = time.monotonic()
+                    stamp = {'utc': utc(), 'elapsed_s': received - start,
+                             'receipt_monotonic': received}
                     if s is state:
                         raw = data.decode('utf-8', errors='replace')
                         states.write(json.dumps(dict(stamp, raw=raw, fields=parse_state(raw))) + '\n')
@@ -124,7 +129,7 @@ def record(seconds, observer=None):
                         info['video_packets'] += 1
                         info['video_bytes'] += len(data)
                         if observer is not None:
-                            observer.feed(data, time.monotonic())
+                            observer.feed(data, received)
                     else:
                         reply = control_reply(data, address)
                         commands.write(json.dumps(dict(stamp, response=reply,
@@ -156,7 +161,8 @@ def record(seconds, observer=None):
             finally:
                 # No landing, motor, movement or Wi-Fi configuration commands are sent.
                 send(control, 'streamoff')
-                commands.write(json.dumps({'utc': utc(), 'command': 'streamoff', 'reply_waited': False}) + '\n')
+                commands.write(json.dumps({'utc': utc(), 'command': 'streamoff',
+                    'sent_monotonic': time.monotonic(), 'reply_waited': False}) + '\n')
     except KeyboardInterrupt:
         info['stopped_by_user'] = True
     except Exception as exc:
@@ -174,6 +180,14 @@ def record(seconds, observer=None):
         info['elapsed_s'] = time.monotonic() - start
         info['capture_present'] = bool(info['state_packets'] and info['video_bytes'])
         (folder / 'session.json').write_text(json.dumps(info, indent=2))
+        if (folder / 'policy_preview.jsonl').exists():
+            try:
+                from compare_session import analyse_session
+                analyse_session(folder)
+            except Exception as exc:
+                info['comparison_error'] = str(exc)
+                (folder / 'session.json').write_text(json.dumps(info, indent=2))
+                print('Comparison issue (raw logs preserved):', exc)
         print('Saved:', folder)
         if not info['capture_present']:
             print('INCOMPLETE: video or telemetry missing. Keep this folder for troubleshooting.')

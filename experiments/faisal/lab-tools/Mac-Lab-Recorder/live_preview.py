@@ -69,7 +69,8 @@ class Preview:
         if manifest['model_sha256'] != self.spec.sha256 or manifest['policy_inputs'] != self.spec.inputs:
             raise ValueError('Manifest does not match the named policy profile')
         self.calibration, self.calibration_status = select_calibration(manifest, calibration_path)
-        self.model = LearnedPolicy(model_path,self.spec).model
+        self.runtime = LearnedPolicy(model_path,self.spec)
+        self.model = self.runtime.model
         self.model_hash = self.spec.sha256
         self.lock = threading.Lock()
         self.stop = threading.Event()
@@ -139,6 +140,8 @@ class Preview:
             issued_actions='zero; no movement commands sent', target_rate_hz=10,
             camera_calibration=self.calibration_status,
             frame_timing='Host receipt age, not measured exposure age',
+            clock_domain='Python time.monotonic on this recording host',
+            log_schema_version=3,
             hand_carried=True),indent=2))
         for fn in (self.decode, self.analyse):
             t = threading.Thread(target=fn,daemon=True);t.start();self.threads.append(t)
@@ -196,6 +199,7 @@ class Preview:
                         history = CameraHistory(self.spec.lags)
                         detector = HoopDetector(*self.calibration.size, confirm=CONFIRM_FRAMES,
                                                 calibration=self.calibration)
+                    analysis_started = time.monotonic()
                     detection = detector(frame)
                     # No inferred motion from hand carrying and no unsent action history.
                     obs = history.update(detection.obs,np.zeros(4,np.float32))
@@ -210,6 +214,9 @@ class Preview:
                             marker=bool(detection.obs[7]),suggestion=suggestion,
                             suggestion_received=received)
                     log.write(json.dumps(dict(frame_id=frame_id,receipt_monotonic=received,
+                        analysis_started_monotonic=analysis_started, analysis_completed_monotonic=time.monotonic(),
+                        camera_features=detection.obs.tolist(),
+                        raw_policy_action=action.tolist(),
                         frame_age_s=age,tick_gap_s=gap,history_reset=reset,
                         observation=obs.tolist(),suggested_action=suggestion,
                         issued_action=[0,0,0,0]))+'\n');log.flush()
@@ -226,6 +233,10 @@ class Preview:
         if any(t.is_alive() for t in self.threads):
             raise RuntimeError('Preview did not finish before export; check diagnostic log')
         self.status({'mode':'Recording finished; saved in sessions'})
+        if hasattr(self, 'folder') and not getattr(self, '_outcome_saved', False):
+            with (self.folder/'preview_outcome.json').open('x') as outcome:
+                json.dump(self.snapshot(), outcome, indent=2)
+            self._outcome_saved = True
 
 
 def main():
