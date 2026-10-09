@@ -4,11 +4,11 @@ from stable_baselines3 import SAC
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from src import train
+from src import contract, train
 from src.contract import LAPS_MAX_STEPS
 from src.demo_buffer import DemoReplayBuffer
 from src.sim import HoopEnv
-from src.teacher import run
+from src.teacher import Teacher, run
 
 
 def test_teacher_flies_the_mission_from_the_real_start():
@@ -21,10 +21,25 @@ def test_teacher_flies_the_mission_from_the_real_start():
 
 def test_teacher_starts_every_run_in_with_the_hoop_in_view():
     """The policy can only copy a run in whose start it saw. The first teacher's
-    began blind 78% of the time, and its students flew into the rim."""
-    out = run(10, level=1.0, seed=0)
-    assert out["run_ins"] > 0
-    assert out["run_ins_seen"] == out["run_ins"]
+    began blind 78% of the time, and its students flew into the rim. teacher3 only
+    starts one on a frame that reports the hoop, so run() no longer counts it; this
+    checks the frame the teacher acted on whenever its run_ins went up."""
+    env, teacher = HoopEnv(level=1.0, randomise=True), Teacher()
+    run_ins = seen = 0
+    for i in range(10):
+        obs, _ = env.reset(seed=i)
+        teacher.reset(env)
+        done = False
+        while not done:
+            before = teacher.run_ins
+            action = teacher.act(env, obs)
+            if teacher.run_ins > before:
+                run_ins += 1
+                seen += bool(contract.split_input(obs)[0][-1][contract.VISIBLE])
+            obs, _, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+    assert run_ins > 0
+    assert seen == run_ins
 
 
 def demo_model(envs: int, demos: int, share: float = 0.25) -> SAC:
