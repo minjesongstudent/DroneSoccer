@@ -1791,13 +1791,25 @@ def run_policy(args) -> None:
     if size not in inputs:
         sys.exit(f"{args.model} takes {size} inputs; this code builds {' or '.join(map(str, inputs))}")
     # Models on the 85-number input learned the old flag: 0 from the first sighting.
-    rule = seen_once if size == old + 1 else contract.not_yet_through
+    # 109-input models trained before 2026-10-09 learned it latched: --flag latched.
+    rule = (seen_once if size == old + 1
+            else latched_not_yet_through if args.flag == "latched" else contract.not_yet_through)
     fly_policy(args, "policy", lambda x: model.predict(x, deterministic=True)[0], inputs[size], rule)
 
 
 def seen_once(unseen: bool, frames) -> bool:
     """The flag seenflag-s1-level1 was trained on: 0 from the first sighting."""
     return bool(unseen) and not frames[-1][contract.VISIBLE]
+
+
+def latched_not_yet_through(unseen: bool, frames) -> bool:
+    """The flag before 2026-10-09 (teacher2-*, firstpass-curriculum, lags60-scratch):
+    contract.not_yet_through without the re-arm, so 0 for good once dropped."""
+    before, now = frames[-2], frames[-1]
+    major, u = contract.FIELDS.index("major"), contract.FIELDS.index("u")
+    flew_at_it = (before[contract.VISIBLE] and not now[contract.VISIBLE]
+                  and before[major] >= contract.PASS_MAJOR and abs(before[u]) < contract.PASS_U)
+    return bool(unseen) and not flew_at_it
 
 
 def fly_policy(args, kind: str, policy, policy_input, flag_rule=contract.not_yet_through) -> None:
@@ -2137,6 +2149,9 @@ def main(argv=None) -> None:
     # The hoop's centre hangs up to 1.73 m (sim.HOOP_HEIGHT), so 170 would land it on the way through.
     drone_args(p, flies=True, fence_cm=200, max_height_cm=190)
     p.add_argument("--model", required=True, help="a model.zip, e.g. trainedModels/nogamma-progress.zip")
+    p.add_argument("--flag", choices=("rearm", "latched"), default="rearm",
+                   help="not-yet-through rule the model was trained on: latched for 109-input models "
+                        "from before 2026-10-09, e.g. teacher2-level1 (default rearm)")
     p.add_argument("--seconds", type=float, default=60, help="flight time before landing (default 60)")
     p.set_defaults(fn=run_policy)
 
