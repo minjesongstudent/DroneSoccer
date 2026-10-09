@@ -1,6 +1,6 @@
-ACTUAL PC POLICY — VERTICAL SEARCH V2 + REAL FLIGHT RECORDING
+ACTUAL PC POLICY — PROGRESS-AWARE SEARCH V3 + REAL FLIGHT RECORDING
 
-Keep the entire downloaded PC-Policy-Lab-Vertical-Search folder together. This runner needs
+Keep the entire downloaded PC-Policy-Lab-Progress-Search-v3 folder together. This runner needs
 ../../models, ../checkpoints and ../registry.json. Do not copy only this folder.
 
 Selected: full_horizon-round-05 (PC CUDA training, 2026-10-08).
@@ -18,7 +18,7 @@ It is supplied for the team's explicitly requested supervised experiment.
 4. Run 2-Supervised-Flight.command and type FLIGHT. This opens the local UI.
    It does NOT take off until you check the supervision box and click once.
 5. Verify the UI says full_horizon-round-05 and the correction hash starts
-   eba7030c and Vertical search v2. Click Take off + find ring + run policy once.
+   eba7030c and Progress-aware search v3. Click Take off + find ring + run policy once.
    This sends REAL takeoff, scripted acquisition RC, then learned policy RC.
    Keep the UI focused. LAND NOW or Escape requests landing. There is no fixed
    ten-second policy limit. Loss of fresh camera/telemetry/UI/inference, height,
@@ -26,9 +26,10 @@ It is supplied for the team's explicitly requested supervised experiment.
 
 After takeoff, the drone settles, then can rise slowly toward measured 120 cm
 and turn in place clockwise/counterclockwise to find the ring. No forward or
-sideways search. The 150 cm ceiling remains. Ascent is limited to five seconds;
+sideways search. The 150 cm ceiling remains. Ascent is limited to 16 seconds, with landing requested if measured height
+fails to gain 10 cm within four seconds of upward commands;
 each turn leg to three seconds. If still unseen, lower toward 80 cm for up to
-five seconds while looking. The complete search is capped at 20 seconds.
+five seconds while looking. The complete search is capped at 30 seconds.
 Forward/backward and sideways RC remain ZERO throughout search. This is not
 guaranteed physical XY position hold: drift can still occur.
 The ring must remain detected for at least three fresh frames across 0.4 seconds

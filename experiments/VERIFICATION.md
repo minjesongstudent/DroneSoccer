@@ -1,6 +1,6 @@
 # Current release
 
-The current download is PC-Policy-Lab-Vertical-Search.zip. See [vertical search v2](vertical-search-v2/README.md) and its 62-test result. The verification below describes the preceding package before acquisition was added.
+The current download is PC-Policy-Lab-Progress-Search-v3.zip. See [progress-aware search v3](progress-search-v3/README.md) and its 66-test result. The verification below describes the preceding package before acquisition was added.
 
 # Publication verification — 2026-10-09
 

@@ -4,8 +4,8 @@ Every saved checkpoint from the current PC comparison is retained, including sma
 
 - [Checkpoint index](CHECKPOINTS.md): all 15 artifacts and their guard results.
 - [Machine-readable registry](registry.json): hashes, architecture, inputs, shared models, per-checkpoint results and status.
-- [PC-Policy-Lab-Vertical-Search.zip](PC-Policy-Lab-Vertical-Search.zip): self-contained experimental physical flight and recording package with bounded startup search.
-- [Startup search details and tests](../experiments/vertical-search-v2/README.md): separate scripted acquisition before learned control.
+- [PC-Policy-Lab-Progress-Search-v3.zip](PC-Policy-Lab-Progress-Search-v3.zip): self-contained experimental physical flight and recording package with bounded startup search.
+- [Startup search details and tests](../experiments/progress-search-v3/README.md): separate scripted acquisition before learned control.
 - [Lab runner source](lab-runner/START-HERE.txt): exact package source and instructions.
 - [Offline simulator UI](replay/Open-DroneSoccer.html): download and open locally. The same 576 recorded training flights shown on the PC UI.
 

@@ -1,0 +1,62 @@
+[
+  {
+    "session": "flight-20261009-190325-609790",
+    "hashes_verified": true,
+    "first_stop_reason": "startup search ascent timeout",
+    "takeoff": true,
+    "policy_rows": 0,
+    "search_frames": 53,
+    "visible_frames": 0,
+    "height_start": 70,
+    "height_end": 100,
+    "up_commands": 48
+  },
+  {
+    "session": "flight-20261009-190419-647557",
+    "hashes_verified": true,
+    "first_stop_reason": "startup search ascent timeout",
+    "takeoff": true,
+    "policy_rows": 0,
+    "search_frames": 53,
+    "visible_frames": 0,
+    "height_start": 40,
+    "height_end": 70,
+    "up_commands": 48
+  },
+  {
+    "session": "flight-20261009-190520-351219",
+    "hashes_verified": true,
+    "first_stop_reason": "startup search ascent timeout",
+    "takeoff": true,
+    "policy_rows": 0,
+    "search_frames": 53,
+    "visible_frames": 2,
+    "height_start": 50,
+    "height_end": 80,
+    "up_commands": 46
+  },
+  {
+    "session": "flight-20261009-190609-345639",
+    "hashes_verified": true,
+    "first_stop_reason": "startup search ascent timeout",
+    "takeoff": true,
+    "policy_rows": 0,
+    "search_frames": 53,
+    "visible_frames": 0,
+    "height_start": 40,
+    "height_end": 70,
+    "up_commands": 48
+  },
+  {
+    "session": "flight-20261009-190704-497123",
+    "hashes_verified": true,
+    "first_stop_reason": "operator EMERGENCY motor cut",
+    "takeoff": false,
+    "policy_rows": 0,
+    "search_frames": 0,
+    "visible_frames": 0,
+    "height_start": null,
+    "height_end": null,
+    "up_commands": 0
+  }
+]

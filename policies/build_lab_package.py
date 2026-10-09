@@ -19,7 +19,7 @@ def build(output):
         for p in sorted(set(paths)):
             rel=p.relative_to(ROOT).as_posix();payload=p.read_bytes()
             if p.suffix in ('.py','.command','.sh'):payload=payload.replace(b'\r\n',b'\n')
-            info=zipfile.ZipInfo('PC-Policy-Lab-Vertical-Search/'+rel);info.create_system=3
+            info=zipfile.ZipInfo('PC-Policy-Lab-Progress-Search-v3/'+rel);info.create_system=3
             info.external_attr=(0o100755 if p.suffix in ('.command','.sh') else 0o100644)<<16
             z.writestr(info,payload,compress_type=zipfile.ZIP_DEFLATED)
     with zipfile.ZipFile(output) as z:

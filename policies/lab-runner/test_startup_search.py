@@ -1,5 +1,7 @@
 """Bounded startup flight tests with fake time/transport only."""
 import unittest
+import json
+from pathlib import Path
 import threading
 import numpy as np
 from flight_control import FlightControl
@@ -80,7 +82,52 @@ class SearchTests(unittest.TestCase):
         for _ in range(60):
             if self.c.state!='acquiring':break
             self.step()
-        self.assertIn('ascent timeout',self.c.reason);self.assertEqual(self.commands[-1],'land')
+        self.assertIn('climb stalled',self.c.reason);self.assertEqual(self.commands[-1],'land')
+
+    def test_recorded_slow_climb_rate_reaches_scan_without_old_timeout(self):
+        # Synthetic continuation at the observed ~6 cm/s, not a physical result.
+        # Telemetry h in these exports is quantized in 10 cm increments.
+        for i in range(155):
+            h=min(120,40+10*int(max(0,i*.1-.5)*.6))
+            self.step(h=h)
+            if self.c.search.scan_at is not None:break
+        self.assertEqual(self.c.state,'acquiring')
+        self.assertIsNotNone(self.c.search.scan_at)
+        self.assertGreater(self.now-self.c.search.started,5.5)
+        self.assertEqual(self.commands[-1],'rc 0 0 0 15')
+        self.assertEqual(self.policy.predictions,0)
+
+    def test_progress_does_not_remove_absolute_ascent_deadline(self):
+        for i in range(175):
+            if self.c.state!='acquiring':break
+            self.step(h=30+10*int(i*.1/3))
+        self.assertEqual(self.c.state,'landing')
+        self.assertIn('ascent timeout',self.c.reason)
+
+    def test_target_visibility_stops_long_climb_before_handoff(self):
+        for i in range(90):self.step(h=40+10*int(i*.1*.6))
+        self.assertEqual(self.c.state,'acquiring')
+        self.step(visible=True,h=100)
+        self.assertEqual(self.commands[-1],'rc 0 0 0 0')
+        for _ in range(6):
+            if self.c.state=='active':break
+            self.step(visible=True,h=100)
+        self.assertEqual(self.c.state,'active')
+        self.assertEqual(self.policy.predictions,0)
+
+    def test_uploaded_climb_traces_do_not_abort_at_old_five_second_limit(self):
+        traces=json.loads((Path(__file__).parent/'testdata/recorded-climb-traces.json').read_text())
+        self.assertEqual(len(traces),4)
+        for trace in traces:
+            with self.subTest(session=trace['session']):
+                frames=trace['frames'];search=StartupSearch(0,frames[0]['yaw'])
+                for frame in frames:
+                    rc,ready=search.step(frame['t'],frame['h'],frame['yaw'],frame['visible'])
+                    self.assertFalse(ready)
+                    self.assertEqual(rc[:2],(0,0))
+                # The next unseen frame used to request landing at 5.5 seconds.
+                rc,ready=search.step(5.6,frames[-1]['h'],frames[-1]['yaw'],False)
+                self.assertEqual(rc,(0,0,15,0));self.assertFalse(ready)
 
     def test_existing_watchdogs_apply_during_search(self):
         for field in ('frame_at','telemetry_at','operator_at','search_updated'):

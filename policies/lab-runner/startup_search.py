@@ -6,8 +6,8 @@ not measured ring height or a physical-flight qualification.
 """
 import math
 
-LIMITS = dict(target_height_cm=120,lower_height_cm=80,up_rc=15,down_rc=15,yaw_rc=15,timeout_s=20,
-              ascent_timeout_s=5,descent_timeout_s=5,sweep_leg_s=3,settle_s=.5,
+LIMITS = dict(target_height_cm=120,lower_height_cm=80,up_rc=15,down_rc=15,yaw_rc=15,timeout_s=30,
+              ascent_timeout_s=16,ascent_progress_s=4,ascent_progress_cm=10,descent_timeout_s=5,sweep_leg_s=3,settle_s=.5,
               confirm_s=.4,confirm_frames=3,max_yaw_excursion_deg=60)
 
 class StartupSearch:
@@ -17,7 +17,7 @@ class StartupSearch:
         self.started=now;self.initial_yaw=yaw;self.last_yaw=yaw;self.yaw_excursion=0.
         self.last_time=now;self.scan_at=None;self.visible_at=None;self.visible_count=0
         self.phase='settling after takeoff';self.last_frame_at=now
-        self.descent_at=None
+        self.descent_at=None;self.progress_at=None;self.progress_height=None
 
     def step(self,now,height,yaw,visible):
         if now<self.last_time:raise ValueError('search clock moved backwards')
@@ -34,6 +34,7 @@ class StartupSearch:
         if now-self.last_frame_at>.25:self.visible_at=None;self.visible_count=0
         self.last_frame_at=now
         if visible:
+            self.progress_at=None;self.progress_height=None
             if self.visible_at is None:self.visible_at=now;self.visible_count=0
             self.visible_count+=1;self.phase='holding still to confirm ring'
             ready=(now-self.started>=LIMITS['settle_s'] and
@@ -47,6 +48,13 @@ class StartupSearch:
         if self.scan_at is None and height<LIMITS['target_height_cm']:
             if elapsed>=LIMITS['settle_s']+LIMITS['ascent_timeout_s']:
                 raise ValueError('startup search ascent timeout')
+            # Recorded RC=15 flights gained only 30 cm in five seconds.
+            # Allow slow progress, but never keep climbing against a stuck sensor
+            # or obstruction. A ten-cm increment respects recorded h quantization.
+            if self.progress_at is None or height>=self.progress_height+LIMITS['ascent_progress_cm']:
+                self.progress_at=now;self.progress_height=height
+            elif now-self.progress_at>=LIMITS['ascent_progress_s']:
+                raise ValueError('startup climb stalled: no 10 cm height gain in 4 s')
             self.phase='rising slowly to at most 120 cm';return (0,0,LIMITS['up_rc'],0),False
         if self.scan_at is None:self.scan_at=now
         scan=now-self.scan_at
