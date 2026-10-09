@@ -1,4 +1,8 @@
-# Synchronized policy and lab recording
+# Synchronized policy and lab recording (historical)
+
+The suggestions-only ZIP was removed from the current branch at the user's
+request. For the current lab download, use ../lab-tools/RECORD-POLICY-COMPARE.md.
+The original artifact remains recoverable through Git history.
 
 The user requested recording drone movement signals while running the selected
 policy, for later simulation comparison. This historical deliverable preceded the user's explicit physical-flight
