@@ -28,12 +28,12 @@ DEFAULT_EPISODES = 200
 Policy = Callable[[np.ndarray], np.ndarray]
 
 
-def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None) -> list[dict]:
+def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None, seed: int = EVAL_SEED) -> list[dict]:
     """One dict per episode: how it ended, passes, steps, and the step of the first pass."""
     env = env or HoopEnv()
     results = []
     for i in range(episodes):
-        obs, _ = env.reset(seed=EVAL_SEED + i)
+        obs, _ = env.reset(seed=seed + i)
         if hasattr(policy, "reset"):
             policy.reset()
         first_pass, done = None, False

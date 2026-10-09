@@ -28,6 +28,7 @@ import numpy as np
 
 # Reward per step = R_PROGRESS * (to_go_before - to_go_after)
 #                 + R_PASS on a pass, - R_CRASH on a crash,
+#                 + R_FOUND once per episode, the first time the front is reported,
 #                 - R_TIME always, - R_WALL each step on the floor.
 #
 # Shaping: R_PROGRESS per metre flown along the route round the lap to the next
@@ -58,6 +59,12 @@ R_PROGRESS = 4.0    # per metre flown along the route
 R_TIME = 0.1        # R_TIME / (1 - GAMMA) must stay below R_CRASH
 R_WALL = 1.0        # each step held at min_altitude, which is no crash; the net is one.
                     # 5 cost an eighth of a pass a step, and low hoops are 10 cm above it
+# R_FOUND: in the 2026-10-09 flights a policy climbed blind, turning ~6 deg/s, to the
+# height limit without ever seeing the hoop. Paid once per episode (sim.HoopEnv tracks
+# it), on the first detector report with the front marker, so it cannot be farmed by
+# losing and refinding the hoop. Small next to R_PASS, so it guides the search and
+# nothing else: finding then crashing still nets R_FOUND - R_CRASH, worse than hovering.
+R_FOUND = 5.0
 
 GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing
 
@@ -66,8 +73,9 @@ def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
            obs: np.ndarray, action: np.ndarray) -> float:
     """The reward for one step. sim.HoopEnv.step calls this and nothing else scores.
 
-    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way",
-        "roof", "side").
+    outcome: "passed", "running", "found" (a running step on which the front is
+        reported for the first time this episode), or a crash in CRASHES ("hit",
+        "wrong_way", "roof", "side").
     to_go_before, to_go_after: metres left round the lap to the next pass, before
         and after the step (sim.HoopEnv._to_go).
     on_wall: the drone touched the min_altitude floor or the net this step.
@@ -76,6 +84,7 @@ def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
     """
     return (R_PROGRESS * (to_go_before - to_go_after)
             + R_PASS * (outcome == "passed")
+            + R_FOUND * (outcome == "found")
             - R_CRASH * (outcome in CRASHES)
             - R_TIME
             - R_WALL * on_wall)
@@ -122,7 +131,12 @@ N_SLOTS = len(SLOT_STEPS)
 SLOT_DIM = OBS_DIM + 1 + ACTION_DIM   # camera, height, command
 #
 # Last comes the not-yet-through flag: 1 until the hoop has left the frame
-# while big and centred, which is what flying at it looks like, then 0 for good. It separates takeoff
+# while big and centred, which is what flying at it looks like, then 0 until the
+# front (the marker) is reported again, then 1. It used to stay 0 for good, but
+# then circling at 0.6-0.8 m dropped it with no pass, and the 2026-10-09 flights
+# (teacher2-level1) flew the after-pass turn-back from in front of the hoop and
+# into the net. Re-armed by the front only, so the back seen just after a pass
+# keeps it 0. It separates takeoff
 # (net 0.3 m behind) from mid-lap (hoop behind, just passed): without it the
 # lap's turn-back reversed into the net at takeoff. It used to drop at the first
 # sighting (seenflag-s1-level1), but then the first sighting after a blind climb
@@ -149,9 +163,12 @@ VISIBLE = FIELDS.index("visible")
 
 
 def not_yet_through(unseen: bool, frames) -> bool:
-    """The flag after the newest frame: 0 for good once the hoop leaves the frame
-    having last been seen at least PASS_MAJOR across within PASS_U of the centre."""
+    """The flag after the newest frame: 0 once the hoop leaves the frame having last
+    been seen at least PASS_MAJOR across within PASS_U of the centre, and 1 again
+    once the hoop is reported with its front marker."""
     before, now = frames[-2], frames[-1]
+    if now[VISIBLE] and now[FIELDS.index("marker")]:
+        return True
     flew_at_it = (before[VISIBLE] and not now[VISIBLE]
                   and before[FIELDS.index("major")] >= PASS_MAJOR and abs(before[FIELDS.index("u")]) < PASS_U)
     return bool(unseen) and not flew_at_it
@@ -163,7 +180,8 @@ def policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
     frames, heights, actions: the last HISTORY_STEPS steps, newest last. Step i is
         the camera frame and height reading after it, and the command that led to
         them: actions[-1] is the command just sent, frames[-1] what came after.
-    unseen: the hoop has not yet been flown at until it left the frame (not_yet_through).
+    unseen: the hoop has not been flown at until it left the frame since its front
+        was last seen (not_yet_through).
     """
     frames = np.asarray(frames, np.float32)[-HISTORY_STEPS:]
     heights = np.asarray(heights, np.float32)[-HISTORY_STEPS:]

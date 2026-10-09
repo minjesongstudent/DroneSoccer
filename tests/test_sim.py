@@ -43,10 +43,10 @@ def fly(env, action, max_steps=200):
 
 
 def first_event(env, action, max_steps=200):
-    """The first outcome that is not "running": a pass, or how the episode ended."""
+    """The first outcome that is not "running" (or "found"): a pass, or how the episode ended."""
     for _ in range(max_steps):
         info = env.step(action)[4]
-        if info["outcome"] != "running":
+        if info["outcome"] not in ("running", "found"):
             return info["outcome"]
     return "running"
 
@@ -295,6 +295,7 @@ def test_holding_still_never_pays():
     cage = env.cage
     for seed in range(100):
         env.reset(seed=seed)
+        env._found = True   # R_FOUND is paid once, not per step: this is about the per-step cost
         spots = rng.uniform([0.1, 0.1, cage.min_altitude], [cage.length - 0.1, cage.width - 0.1,
                                                             cage.height - 0.1], (300, 3))
         front = [p for p in spots if (p - env.hoop_centre) @ env.hoop_normal < 0.0]
@@ -522,6 +523,84 @@ def test_flag_drops_once_the_drone_flies_through():
             break
     assert info["passes"] == 1
     assert flags[0] == 1.0 and flags[-1] == 0.0   # dropped as the hoop left the frame, by the pass
-    for _ in range(30):
+    for _ in range(30):   # hover behind it
+        x = env.step([0.0, 0.0, 0.0, 0.0])[0]
+        assert x[-1] == 0.0                        # until the front is seen again
+    for _ in range(80):   # turn round behind it: the back comes into view, which must not re-arm it
+        x = env.step([0.0, 0.0, 0.0, 1.0])[0]
+        assert x[-1] == 0.0
+
+
+def _frame(major=0.0, u=0.0, marker=False):
+    f = contract.NOT_VISIBLE.copy()
+    if major:
+        f[[U, MAJOR, VISIBLE, MARKER]] = u, major, 1.0, float(marker)
+    return f
+
+
+@pytest.mark.parametrize("before, now, unseen, expected", [
+    (_frame(0.8, 0.1, True), _frame(), True, False),         # left the frame big and centred: flew at it
+    (_frame(0.8, 0.7, True), _frame(), True, True),          # off the side: not at it
+    (_frame(0.4, 0.0, True), _frame(), True, True),          # still far: not at it
+    (_frame(), _frame(0.5, 0.0, marker=True), False, True),  # the front again: re-armed
+    (_frame(), _frame(0.5, 0.0), False, False),              # the back (no marker): stays 0
+    (_frame(), _frame(), False, False),                      # blind: stays 0
+])
+def test_flag_rule(before, now, unseen, expected):
+    assert contract.not_yet_through(unseen, [before, now]) is expected
+
+
+def test_flag_rearms_when_the_front_is_back_in_view():
+    """Circling close in drops the flag with no pass (2026-10-09 flights); seeing
+    the front again must bring it back, or the policy flies the turn-back from in front."""
+    env = make_env()
+    x = env.place([4.8, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for _ in range(60):   # fly at it until the flag drops, before reaching the plane
+        x, _, _, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+        if x[-1] == 0.0:
+            break
+    assert x[-1] == 0.0 and info["passes"] == 0
+    for _ in range(40):   # back off until the front is reported again
         x = env.step([0.0, -1.0, 0.0, 0.0])[0]
-        assert x[-1] == 0.0                        # for good
+        if newest(x)[MARKER]:
+            break
+    assert newest(x)[MARKER] and x[-1] == 1.0
+
+
+def test_finding_the_front_pays_once():
+    env = make_env()
+    env.place([4.8, 5.0, 1.5], 0.0, HOOP_AT, BACK)        # in front, facing it
+    outcomes = [env.step([0.0, 0.0, 0.0, 0.0])[4]["outcome"] for _ in range(10)]
+    for _ in range(200):                                    # spin: lose it and find it again
+        outcomes.append(env.step([0.0, 0.0, 0.0, 1.0])[4]["outcome"])
+    assert outcomes.count("found") == 1 and outcomes[:10].count("found") == 1
+
+
+def test_the_back_is_not_found():
+    env = make_env()
+    env.place([7.2, 5.0, 1.5], np.pi, HOOP_AT, BACK)      # behind, facing it
+    infos = [env.step([0.0, 0.0, 0.0, 0.0])[4] for _ in range(20)]
+    assert all(i["outcome"] != "found" for i in infos)
+
+
+def test_run_in_starts_are_lined_up_and_found_already():
+    env = HoopEnv(randomise=True, run_in_share=1.0)
+    for seed in range(50):
+        env.reset(seed=seed)
+        rel = env.pos - env.hoop_centre
+        assert env.run_in and env._in_fence(env.pos[:2])
+        assert -1.0 - 1e-9 <= rel @ env.hoop_normal <= -0.4 and abs(rel @ env._axis_h) <= 0.05 + 1e-9
+        infos, frames = [], []
+        for _ in range(3):
+            x, _, _, _, info = env.step([0.0, 0.0, 0.0, 0.0])
+            infos.append(info)
+            frames.append(newest(x))
+        assert abs(frames[-1][U]) < 0.3                               # centred when in view
+        assert all(i["outcome"] != "found" for i in infos) and all(i["run_in"] for i in infos)
+
+
+def test_run_in_share_0_leaves_the_layouts_alone():
+    a, b = HoopEnv(randomise=True), HoopEnv(randomise=True, run_in_share=0.0)
+    for seed in range(20):
+        a.reset(seed=seed), b.reset(seed=seed)
+        assert np.array_equal(a.pos, b.pos) and not b.run_in
