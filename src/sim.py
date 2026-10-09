@@ -29,7 +29,7 @@ import gymnasium as gym
 import numpy as np
 
 from src import contract
-from src.params import Cage, Camera, Detector, Drone, Hoop, Pad, Randomise
+from src.params import Altimeter, Cage, Camera, Detector, Drone, Hoop, Pad, Randomise
 
 # Collision checks use this many points along the noodle's centreline. At ~5 mm
 # spacing, a contact can be missed by at most ~0.1 mm.
@@ -46,20 +46,21 @@ class HoopEnv(gym.Env):
                  cage: Cage | None = None, hoop: Hoop | None = None,
                  camera: Camera | None = None, drone: Drone | None = None,
                  pad: Pad | None = None, ranges: Randomise | None = None,
-                 detector: Detector | None = None):
+                 detector: Detector | None = None, altimeter: Altimeter | None = None):
         self.cage = cage or Cage()
         self.hoop = hoop or Hoop()
         self.camera = camera or Camera()
         self.drone = drone or Drone()
         self.pad = pad or Pad()
         self.detector = detector or Detector()
+        self.altimeter = altimeter or Altimeter()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
         self.hanger = hanger   # off replays models trained before it existed
         # The measured setup. With randomise, each episode works on a copy with
         # ranges.error applied; without, on these.
         self._measured = {"cage": self.cage, "hoop": self.hoop, "camera": self.camera, "drone": self.drone,
-                          "detector": self.detector}
+                          "detector": self.detector, "altimeter": self.altimeter}
         self.set_level(level)
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, (contract.ACTION_DIM,), np.float32)
@@ -213,12 +214,14 @@ class HoopEnv(gym.Env):
     def _start_episode(self):
         # Randomised dynamics are drawn once per episode into a copy of the drone.
         self.dyn = self.drone
+        self.height_step = self.altimeter.resolution
         if self.randomise:
             r, rng = self.ranges, self.np_random
             self.dyn = dataclasses.replace(
                 self.drone,
                 delay_steps=int(rng.integers(r.delay_steps[0], r.delay_steps[1] + 1)),
                 tau=float(rng.uniform(*r.tau)))
+            self.height_step = float(rng.uniform(*r.altimeter_resolution))
         self.vel = np.zeros(3)
         self.yaw_rate = 0.0
         self.steps = 0
@@ -226,15 +229,16 @@ class HoopEnv(gym.Env):
         self.wall_steps = 0
         self.route = None   # which way the drone last went round, for replay.py
         self._pending = deque([np.zeros(contract.ACTION_DIM, np.float32)] * self.dyn.delay_steps)
-        # As labcheck.fly_policy starts: no frames yet, so every lag is blind, and the
-        # detector has to confirm the hoop before it counts. A hoop in view at the
+        # As labcheck.fly_policy starts: no frames yet, so every step of the history
+        # is blind with no command, and the height has held at the first reading. The
+        # detector has to confirm the hoop before it counts, so a hoop in view at the
         # start is reported from the second step.
-        self._frames = deque([contract.NOT_VISIBLE.copy()] * contract.FRAME_HISTORY,
-                             maxlen=contract.FRAME_HISTORY)
+        n = contract.HISTORY_STEPS
+        self._frames = deque([contract.NOT_VISIBLE.copy()] * n, maxlen=n)
+        self._heights = deque([self._height_reading()] * n, maxlen=n)
         self._streak = 0
         self._unseen = True
-        self._actions = deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
-                              maxlen=contract.ACTION_HISTORY)
+        self._actions = deque([np.zeros(contract.ACTION_DIM, np.float32)] * n, maxlen=n)
         return self._policy_input()
 
     # --- stepping --------------------------------------------------------
@@ -274,6 +278,7 @@ class HoopEnv(gym.Env):
             self.passes += 1
         obs = self._as_detected(self.observe())
         self._frames.append(obs)
+        self._heights.append(self._height_reading())
         self._unseen = contract.not_yet_through(self._unseen, self._frames)
         self._actions.append(action)
 
@@ -473,10 +478,16 @@ class HoopEnv(gym.Env):
                          [0.0, -cp, -sp]])
         return pos, axes
 
+    def _height_reading(self) -> float:
+        """The height the policy gets: the drone's, off by the episode's offset, with
+        noise, in steps of the episode's resolution."""
+        a = self.altimeter
+        raw = self.pos[2] + a.offset + self.np_random.normal(0.0, max(a.noise, 0.0))
+        return float(np.round(raw / self.height_step) * self.height_step)
+
     def _policy_input(self):
-        # _frames holds every step. OBS_LAGS picks the strided subset, oldest
-        # first, so the newest frame lands last.
-        return contract.policy_input(self._frames, self._actions, self._unseen)
+        # The deques hold every step; contract.policy_input groups them into slots.
+        return contract.policy_input(self._frames, self._heights, self._actions, self._unseen)
 
     def _info(self, outcome):
         return {"outcome": outcome, "passes": self.passes, "steps": self.steps,
