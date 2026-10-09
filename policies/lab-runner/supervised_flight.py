@@ -23,17 +23,21 @@ from live_preview import Preview, ROOT
 from recorder import parse_state, control_reply, utc, export
 from src.detect import HoopDetector, draw, CONFIRM_FRAMES
 from flight_control import FlightControl
+from startup_search import LIMITS
 from compare_session import analyse_session
 
 PAGE = '''<!doctype html><meta charset="utf-8"><title>Supervised policy flight</title>
 <style>body{background:#101827;color:white;font:18px system-ui;margin:24px}button{font:inherit;padding:20px;margin:8px;touch-action:none}#start{background:#93e0c0}#land{background:#ffb458}#cut{background:#ec6666}img{max-height:50vh;max-width:100%}pre{white-space:pre-wrap}</style>
-<h1>PC-trained policy flight + recording</h1><p id="identity">Verifying policy identity...</p>
+<h1>PC-trained policy flight + recording</h1><p>Startup search v1</p><p id="identity">Verifying policy identity...</p><p id="phase"></p>
 <p>This launcher sends REAL takeoff and flight commands. Experimental policy, not flight-qualified.
 Keep the cage clear and have an operator ready. Team RC mapping: 50 / 50 / 100 / 70.
-Click once to take off and run the policy. It keeps running until you stop it or a safety check requests landing.
+Click once to take off, find the ring, then run the policy. Startup search can rise slowly
+to a measured 120 cm and turn in place for two bounded sweeps. It never searches forward
+or sideways. The 150 cm ceiling remains. Startup search ends within 14 seconds or requests landing.
+After stable ring detection, learned control keeps running until you stop it or a safety check requests landing.
 Use LAND NOW or Escape to stop early. Keep this page open and focused. No automatic restart.</p>
 <p><label><input type="checkbox" id="ready"> Cage clear, guards fitted; I am supervising this physical test.</label></p>
-<button id="start" disabled>Take off + run policy</button>
+<button id="start" disabled>Take off + find ring + run policy</button>
 <button id="land">LAND NOW / Escape</button>
 <details><summary>Emergency motor cut - drone will drop</summary><button id="cut">CUT MOTORS NOW</button></details>
 <p id="connection">Connecting to local recorder</p><p id="countdown"></p>
@@ -93,6 +97,7 @@ async function poll(){
     el('countdown').textContent=s.preflight_remaining_s==null?'Recording continues throughout policy flight and landing.':'Start within '+Math.ceil(s.preflight_remaining_s)+' seconds (preflight window).';
     el('status').textContent=JSON.stringify(s.control,null,2);
     el('identity').textContent='PC checkpoint: '+s.control.policy_identity.id+' | '+s.control.policy_identity.sha256+' | NOT flight-qualified';
+    el('phase').textContent=s.control.state==='acquiring'?'STARTUP SEARCH (scripted): '+s.control.startup_search_phase:s.control.state==='active'?'LEARNED POLICY CONTROL':s.control.state.toUpperCase()+(s.control.reason?' — '+s.control.reason:'');
     if(['landing','stopped'].includes(s.control.state)){running=false;closedForFlight=true;endHeartbeat();}
     el('start').disabled=running||startPending||closedForFlight||s.control.state!=='ground'||!!s.control.readiness;
     if(s.decoded)el('camera').src='/frame.jpg?v='+s.frame_id;
@@ -112,7 +117,7 @@ class CaptureLink:
     def __init__(self, folder):
         self.folder=folder;self.stop=threading.Event();self.lock=threading.RLock()
         self.files={name:(folder/name).open('w') for name in
-                    ('telemetry.jsonl','video_packets.jsonl','commands.jsonl','policy_events.jsonl','policy_preview.jsonl')}
+                    ('telemetry.jsonl','video_packets.jsonl','commands.jsonl','policy_events.jsonl','policy_preview.jsonl','startup_search.jsonl')}
         self.movie=(folder/'camera.h264').open('wb')
         self.sockets=[];self.replies=queue.Queue();self.thread=None
         self.preview=None;self.error=None;self.start=time.monotonic()
@@ -131,6 +136,7 @@ class CaptureLink:
     def policy_log(self, row):
         self.write('policy_events.jsonl',row)
         if row['event']=='send_result':self.write('policy_preview.jsonl',row)
+        if row['event'].startswith('startup_'):self.write('startup_search.jsonl',row)
 
     def send(self, command):
         if command not in ('command','streamon','streamoff','takeoff','land','emergency'):
@@ -201,6 +207,7 @@ class FlightPreview(Preview):
         super().start(folder)
         p=self.folder/'preview_metadata.json';meta=json.loads(p.read_text())
         meta.update(hand_carried=False,flight_control=True,
+            release='startup-search-v1',startup_search=dict(LIMITS,controller='scripted_startup_search',count_as_learned_policy=False),
             issued_actions='Quantized policy commands handed to UDP transport; delivery unconfirmed',
             ui_start='single click',stop_on_focus_loss=True,
             mode='physical supervised policy test',rc_full=[50,50,100,70],policy_limit_s=None,policy_stop='operator or safety check',

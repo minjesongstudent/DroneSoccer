@@ -19,11 +19,14 @@ class WiringTests(unittest.TestCase):
         now=[100.];commands=[];rows=[]
         runtime=PCRuntime()
         c=FlightControl(runtime,commands.append,rows.append,clock=lambda:now[0])
-        c.capture_ready=True;c.receive_camera(100.);c.receive_telemetry(dict(bat=80,h=0,temph=30),100.)
+        c.capture_ready=True;c.receive_camera(100.);c.receive_telemetry(dict(bat=80,h=0,temph=30,yaw=0),100.)
         c.heartbeat();c.start();now[0]=100.1
-        c.receive_camera(now[0]);c.receive_telemetry(dict(bat=80,h=80,temph=30),now[0]);c.heartbeat()
+        c.receive_camera(now[0]);c.receive_telemetry(dict(bat=80,h=80,temph=30,yaw=0),now[0]);c.heartbeat()
         c.acknowledge('ok',now[0]);c.watch()
-        row=c.step(1,now[0],np.array([0,0,0,0,0,0,1,0],np.float32))
+        for seq in range(10):
+            now[0]+=.1;c.receive_camera(now[0]);c.receive_telemetry(dict(bat=80,h=80,temph=30,yaw=0),now[0]);c.heartbeat()
+            row=c.step(seq,now[0],np.array([0,0,0,0,0,0,1,0],np.float32))
+            if row and row['event']=='send_result':break
         self.assertEqual(len(row['observation']),89);self.assertTrue(row['sent'])
         self.assertTrue(commands[-1].startswith('rc '))
         self.assertEqual(rows[-1]['issued_action'],row['issued_action'])
@@ -46,13 +49,13 @@ class WiringTests(unittest.TestCase):
         try:
             with patch('supervised_flight.webbrowser.open'):preview.open_browser()
             base='http://127.0.0.1:'+str(preview.server.server_port)
-            self.assertIn(b'Take off + run policy',urlopen(base).read())
+            self.assertIn(b'Take off + find ring + run policy',urlopen(base).read())
             link.send.assert_not_called()
             with self.assertRaises(HTTPError) as e:
                 urlopen(Request(base+'/control',data=b'{"action":"start"}',method='POST'))
             self.assertEqual(e.exception.code,403);link.send.assert_not_called()
             c=preview.control;c.capture_ready=True
-            stamp=time.monotonic();c.receive_camera(stamp);c.receive_telemetry(dict(bat=80,h=0,temph=30),stamp)
+            stamp=time.monotonic();c.receive_camera(stamp);c.receive_telemetry(dict(bat=80,h=0,temph=30,yaw=0),stamp)
             def post(action):
                 return urlopen(Request(base+'/control',data=json.dumps(dict(action=action)).encode(),
                     headers={'X-Flight-Token':preview.token,'Content-Type':'application/json'},method='POST')).read()
@@ -92,6 +95,21 @@ class WiringTests(unittest.TestCase):
             result=analyse_session(folder)
             self.assertEqual(result['mode'],'physical supervised policy test')
             self.assertFalse(any('were not sent' in s for s in result['limitations']))
+
+    def test_startup_records_are_separate_from_learned_policy_rows(self):
+        with tempfile.TemporaryDirectory() as d:
+            with patch('supervised_flight.socket.socket',side_effect=lambda *a:Mock()):
+                link=CaptureLink(Path(d))
+                try:
+                    link.policy_log(dict(event='startup_send_result',sent=True,controller='scripted_startup_search'))
+                    self.assertEqual((Path(d)/'policy_preview.jsonl').read_text(),'')
+                    self.assertIn('scripted_startup_search',(Path(d)/'startup_search.jsonl').read_text())
+                    from compare_session import analyse_session
+                    result=analyse_session(Path(d))
+                    self.assertEqual(result['frames'],0)
+                    self.assertEqual(result['startup_search_sends'],1)
+                    self.assertFalse(result['startup_search_counted_as_learned_policy'])
+                finally:link.close()
 
 
 if __name__=='__main__':unittest.main()

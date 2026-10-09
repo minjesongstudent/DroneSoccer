@@ -10,13 +10,13 @@ This research branch contains Faisal's PC-trained policy checkpoints, their shar
 
 ## Important correction
 
-The previous lab ZIP contained Tom Storey's unchanged `seenflag-s1-level1` baseline. It did **not** include the PC-trained correction or motion estimator. The earlier claim that the lab package was the PC-trained policy was incorrect. [Evidence and exact hashes](experiments/provenance/IDENTITY.md).
+The older `Mac-Single-Click-Policy-Flight` ZIP contained Tom Storey's unchanged `seenflag-s1-level1` baseline. It did **not** include the PC-trained correction or motion estimator. The earlier claim that the lab package was the PC-trained policy was incorrect. [Evidence and exact hashes](experiments/provenance/IDENTITY.md).
 
 The actual PC policy is a composite: **team baseline + learned motion estimator + PC-trained correction checkpoint**, with 89 actor inputs. A residual `.npz` by itself is not an SB3 model and cannot replace a `.zip` in `SAC.load`.
 
 ## Group lab package
 
-[Download PC-Policy-Lab.zip](policies/PC-Policy-Lab.zip). Extract the whole folder. Inside `policies/lab-runner`, run **1-Setup.command** on normal internet, then read **START-HERE.txt**. `2-Supervised-Flight.command` opens the real flight controls; it sends takeoff, actual policy navigation commands, and landing requests after the local operator starts it. It records video, telemetry, 89-input observations, raw policy outputs, issued commands, timestamps, and all three model identities.
+[Download PC-Policy-Lab-Search.zip](policies/PC-Policy-Lab-Search.zip). Extract the whole folder. Inside `policies/lab-runner`, run **1-Setup.command** on normal internet, then read **START-HERE.txt**. `2-Supervised-Flight.command` opens the real flight controls; it sends takeoff, a separately recorded bounded upward/turning search, then actual policy navigation commands and landing requests after the local operator starts it. It records video, telemetry, 89-input observations, raw policy outputs, issued commands, timestamps, and all three model identities.
 
 The supplied selection is **full_horizon-round-05** for the explicitly requested experimental lab test. This is **not a promoted winner**: its saved randomized simulation screen has **48/100 clean repeats and 52/100 crashes**. Physical success is unvalidated. The prior baseline flights failed; replacing their model identity does not establish that this composite will fly well.
 

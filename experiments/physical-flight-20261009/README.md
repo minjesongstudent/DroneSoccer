@@ -6,4 +6,6 @@ All six policy sessions began with no detected ring. Only 48 of 410 recorded pol
 
 The preserved [historical report](REPORT-historical.md) and [model replay](model-replay.json) predate the provenance correction. Any statement that this was "not the wrong model" means the logs matched the bundled baseline; it does not mean the requested PC-trained policy was delivered. [Corrected identity](../provenance/IDENTITY.md).
 
-The replacement runner stops if the ring is undetected at the first policy step and retains the first stop reason after an emergency action. It does not change the camera detector, RC gains, or learned weights to claim a flight improvement. Team-default camera calibration, actuator response and reliable recovery remain unvalidated. Raw lab videos and images are not published here.
+The first replacement runner stopped if the ring was undetected at the first policy step and retains the first stop reason after an emergency action. It does not change the camera detector, RC gains, or learned weights to claim a flight improvement. Team-default camera calibration, actuator response and reliable recovery remain unvalidated. Raw lab videos and images are not published here.
+
+The current [startup-search release](../startup-search-v1/README.md) adds explicitly requested bounded upward/turning acquisition before policy takeover. This is scripted startup, not a new trained checkpoint.

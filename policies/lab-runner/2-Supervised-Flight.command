@@ -2,7 +2,8 @@
 source "$(dirname "$0")/mac-common.sh"
 echo 'REAL FLIGHT TEST: sends takeoff, policy RC, and landing commands.'
 echo 'Use the enclosed lab cage, guards fitted, and a supervising operator.'
-echo 'Click Take off + run policy once. LAND NOW or Escape requests landing.'
+echo 'Click Take off + find ring + run policy once. LAND NOW or Escape requests landing.'
+echo 'Search: slow rise to 120 cm, bounded turns, then learned policy after ring confirmation.'
 echo 'Do not launch another drone controller/recorder at the same time.'
 if [ ! -x .preview-venv/bin/python ]; then
   echo 'Run 1-Setup.command on normal internet first.'

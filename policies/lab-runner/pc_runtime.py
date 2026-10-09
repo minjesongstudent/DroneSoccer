@@ -14,6 +14,7 @@ ROOT=Path(__file__).resolve().parents[2]
 class PCRuntime:
     inputs=89
     require_visible_start=True
+    startup_search=True
 
     def __init__(self, root=ROOT, checkpoint_id=None):
         root=Path(root).resolve()
@@ -45,9 +46,12 @@ class PCRuntime:
         self.history=CameraHistory(SPECS['seenflag-s1-level1'].lags)
         self.policy.reset()
 
-    def predict(self,detection,previous_issued_action):
+    def observe(self,detection,previous_issued_action):
         public85=self.history.update(detection,previous_issued_action)
-        features=self.policy.observe(public85)
+        return self.policy.observe(public85)
+
+    def predict(self,detection,previous_issued_action):
+        features=self.observe(detection,previous_issued_action)
         action,_=self.policy.predict(features,deterministic=True)
         if action.shape!=(4,) or not np.isfinite(action).all() or np.any(abs(action)>1):
             raise ValueError('Invalid PC policy output')

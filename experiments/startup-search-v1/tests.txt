@@ -1,0 +1,8 @@
+Open camera window on this Mac: http://127.0.0.1:53763/
+Transfer this file: C:\Users\Faisal\AppData\Local\Temp\tmpkc4klk2u\session-export-1791531894468055900.zip
+Local flight controls are opening. Do not share the control URL.
+...........................................................
+----------------------------------------------------------------------
+Ran 59 tests in 3.061s
+
+OK

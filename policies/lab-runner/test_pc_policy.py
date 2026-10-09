@@ -37,10 +37,15 @@ class CompositeTests(unittest.TestCase):
         r=self.runtime;r.reset();now=[100.];commands=[];logs=[]
         c=FlightControl(r,commands.append,logs.append,lambda:now[0])
         def fresh(h):
-            c.capture_ready=True;c.receive_camera(now[0]);c.receive_telemetry(dict(bat=80,h=h,temph=30),now[0]);c.heartbeat()
+            c.capture_ready=True;c.receive_camera(now[0]);c.receive_telemetry(dict(bat=80,h=h,temph=30,yaw=0),now[0]);c.heartbeat()
         with patch('socket.socket',side_effect=AssertionError('No hardware/network in this test')):
             fresh(0);c.start();now[0]+=.1;fresh(80);c.acknowledge('ok',now[0]);c.watch()
-            for seq in range(4):
+            for seq in range(8):
+                now[0]+=.1;fresh(80)
+                c.step(seq,now[0],np.array([0,0,.2,.2,0,0,1,0],np.float32))
+                if c.state=='active':break
+            self.assertEqual(c.state,'active')
+            for seq in range(20,24):
                 now[0]+=.1;fresh(80)
                 row=c.step(seq,now[0],np.array([0,0,.2,.2,0,0,1,0],np.float32))
                 self.assertEqual(len(row['observation']),89)
@@ -49,15 +54,6 @@ class CompositeTests(unittest.TestCase):
             c.stop('operator land')
         self.assertEqual(commands[0],'takeoff');self.assertEqual(commands[-1],'land')
         self.assertEqual(len([x for x in logs if x['event']=='send_result']),4)
-
-    def test_blind_takeover_lands_before_any_policy_movement(self):
-        r=self.runtime;now=[100.];commands=[]
-        c=FlightControl(r,commands.append,lambda _:None,lambda:now[0])
-        c.capture_ready=True;c.receive_camera(100);c.receive_telemetry(dict(bat=80,h=0,temph=30),100);c.heartbeat();c.start()
-        now[0]+=.1;c.receive_camera(now[0]);c.receive_telemetry(dict(bat=80,h=80,temph=30),now[0]);c.heartbeat();c.acknowledge('ok',now[0]);c.watch()
-        self.assertIsNone(c.step(1,now[0],np.zeros(8,np.float32)))
-        self.assertEqual(commands,['takeoff','rc 0 0 0 0','land'])
-        c.emergency();self.assertEqual(c.snapshot()['first_stop_reason'],'ring not acquired at policy takeover')
 
     def test_every_saved_checkpoint_loads_by_exact_identity(self):
         entries=json.loads((ROOT/'policies/registry.json').read_text())['checkpoints']

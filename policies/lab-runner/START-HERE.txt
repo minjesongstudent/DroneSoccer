@@ -1,11 +1,11 @@
-ACTUAL PC POLICY — EXPERIMENTAL REAL FLIGHT + RECORDING
+ACTUAL PC POLICY — STARTUP SEARCH V1 + REAL FLIGHT RECORDING
 
-Keep the entire downloaded PC-Policy-Lab folder together. This runner needs
+Keep the entire downloaded PC-Policy-Lab-Search folder together. This runner needs
 ../../models, ../checkpoints and ../registry.json. Do not copy only this folder.
 
 Selected: full_horizon-round-05 (PC CUDA training, 2026-10-08).
 This is the team SAC baseline + frozen learned GRU + PC-trained correction.
-It has 89 actor inputs. The previous lab ZIP contained the baseline alone.
+It has 89 actor inputs. The old Mac-Single-Click-Policy-Flight package used the baseline alone.
 This candidate failed qualification: 52/100 crashes on its randomized screen.
 It is supplied for the team's explicitly requested supervised experiment.
 
@@ -18,19 +18,27 @@ It is supplied for the team's explicitly requested supervised experiment.
 4. Run 2-Supervised-Flight.command and type FLIGHT. This opens the local UI.
    It does NOT take off until you check the supervision box and click once.
 5. Verify the UI says full_horizon-round-05 and the correction hash starts
-   eba7030c. Click Take off + run policy once. This sends REAL takeoff and RC.
+   eba7030c and Startup search v1. Click Take off + find ring + run policy once.
+   This sends REAL takeoff, scripted acquisition RC, then learned policy RC.
    Keep the UI focused. LAND NOW or Escape requests landing. There is no fixed
    ten-second policy limit. Loss of fresh camera/telemetry/UI/inference, height,
    battery and temperature checks request landing. No automatic restart.
 
-At policy takeover after ascent, the detector must see the ring or the runner
-requests landing before any learned navigation command. Do not defeat this
-check. Detection is not a guarantee of correct target identification.
-The learned loop can legitimately lose the ring from view later; the startup
-check is not a substitute for a qualified recovery policy.
+After takeoff, the drone settles, then can rise slowly toward measured 120 cm
+and turn in place clockwise/counterclockwise to find the ring. No forward or
+sideways search. The 150 cm ceiling remains. Ascent is limited to five seconds;
+each turn leg to three seconds; the complete search to at most 14 seconds.
+The ring must remain detected for at least three fresh frames across 0.4 seconds
+while neutral RC is requested, then the learned policy takes over. No ring,
+bad/stale inputs or a stop condition requests landing. No automatic retry.
+These are bounds, not a guarantee of actual physical altitude/turn response.
+Detection is not a guarantee of correct target identification. The learned loop
+can legitimately lose the ring later; this startup routine is not learned recovery.
 
-All navigation RC is the learned model's output with the existing team scaling
-50/50/100/70 and integer quantization. Takeoff/landing are SDK actions. Telemetry
+Startup search RC is SCRIPTED and logged separately in startup_search.jsonl.
+After handoff, navigation RC is the learned model's output with team scaling
+50/50/100/70 and integer quantization. Camera and actual issued action history
+remain continuous across the handoff. Takeoff/landing are SDK actions. Telemetry
 is used for recording and stop checks, not invented actor observations.
 An emergency motor cut is separate and drops the drone. UDP sends/landing
 requests do not confirm delivery or motor state; observe the physical outcome.
@@ -38,6 +46,7 @@ requests do not confirm delivery or motor state; observe the physical outcome.
 Each session saves camera.h264, telemetry.jsonl, commands.jsonl, policy events,
 89-input observations, raw outputs, actually issued quantized actions and
 timestamps. Every policy row/metadata includes all model component identities.
+The UI clearly distinguishes STARTUP SEARCH from LEARNED POLICY CONTROL.
 comparison.csv joins commands to preceding telemetry; it is not a measured
 global 3D trajectory or automatic proof of a ring passage. Export is automatic;
 3-Export-Latest.command can export the latest folder again without deleting it.

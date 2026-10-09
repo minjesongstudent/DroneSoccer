@@ -27,6 +27,7 @@ def analyse_session(folder, max_age=.25):
         raise ValueError('max_age must be positive and finite')
     preview = rows(folder/'policy_preview.jsonl')
     telemetry = rows(folder/'telemetry.jsonl')
+    startup = rows(folder/'startup_search.jsonl')
     metadata_path = folder/'preview_metadata.json'
     metadata = json.loads(metadata_path.read_text()) if metadata_path.exists() else {}
     physical = metadata.get('flight_control') is True
@@ -73,11 +74,13 @@ def analyse_session(folder, max_age=.25):
             writer = csv.DictWriter(f, fieldnames=list(output[0]))
             writer.writeheader(); writer.writerows(output)
     source_hashes = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                     for p in (folder/'policy_preview.jsonl', folder/'telemetry.jsonl', metadata_path, outcome_path)
+                     for p in (folder/'policy_preview.jsonl', folder/'startup_search.jsonl', folder/'telemetry.jsonl', metadata_path, outcome_path)
                      if p.exists()}
     summary = dict(schema_version=1, mode=('physical supervised policy test' if physical else 'recorded shadow-policy comparison'),
         model=metadata.get('model'), model_sha256=metadata.get('model_sha256'),
         policy_identity=metadata.get('policy_identity'),
+        startup_search_sends=sum(r.get('event')=='startup_send_result' and r.get('sent') is True for r in startup),
+        startup_search_counted_as_learned_policy=False,
         camera_calibration=metadata.get('camera_calibration'), frames=len(preview),
         preview_error=outcome.get('error'), decoded_frames=outcome.get('decoded'),
         dropped_preview_packets=outcome.get('dropped'),

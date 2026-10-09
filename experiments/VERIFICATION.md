@@ -1,3 +1,7 @@
+# Current release
+
+The current download is PC-Policy-Lab-Search.zip. See [startup search v1](startup-search-v1/README.md) and its 59-test extracted-package result. The verification below describes the preceding package before acquisition was added.
+
 # Publication verification — 2026-10-09
 
 - 44 recorder, camera, calibration, transport, watchdog and PC-policy tests passed on this Windows PC. The archive regression test was then added; all 5 composite/archive tests passed. See lab-runner-tests.txt and pc-policy-tests.txt.
