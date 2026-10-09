@@ -245,10 +245,10 @@ def grown(init: str, env, seed: int, envs: int, buffer: dict | None = None) -> S
     if added < 0:
         raise ValueError(f"{init} takes {n_old} inputs, more than the {n_old + added} the env gives")
     if added > 1:
-        # Growing only appends inputs at the end (the flag). A different OBS_LAGS
-        # moves every frame, so zero columns at the end would scramble the old weights.
+        # Growing only appends inputs at the end (the flag). A different history
+        # layout moves every input, so zero columns at the end would scramble the old weights.
         raise ValueError(f"{init} takes {n_old} inputs and the env gives {n_old + added}: only the flag can be "
-                         f"added. Set contract.OBS_LAGS to the window the model was trained on")
+                         f"added. Set contract.SLOT_STEPS to the layout the model was trained on")
 
     def widen(old_t, new_t):
         # First layers read [obs, (action)]: insert zero columns where the old obs ended.
@@ -297,7 +297,7 @@ def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
     for _ in range(steps // n):
         before, actions, after, rewards, dones, infos = list(obs), [], [], [], [], []
         for k, (env, teacher) in enumerate(zip(envs, teachers)):
-            action = np.clip(teacher.act(env) + rng.normal(0.0, DEMO_NOISE, contract.ACTION_DIM),
+            action = np.clip(teacher.act(env, obs[k]) + rng.normal(0.0, DEMO_NOISE, contract.ACTION_DIM),
                              -1.0, 1.0).astype(np.float32)
             o, r, terminated, truncated, info = env.step(action)
             actions.append(action)

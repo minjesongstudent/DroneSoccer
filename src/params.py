@@ -118,11 +118,27 @@ class Detector:
 
 
 @dataclass
+class Altimeter:
+    """The height the policy gets: the Tello's downward tof after labcheck.fly_policy has
+    dropped its glitches. The sim's height is the drone's, and tof is what takeoff_height
+    was measured with, so a perfect reading would equal it."""
+    offset: float = 0.0       # UNMEASURED: reading minus true height, m. The pad, the sensor's place on
+                              # the body and tilt shift it; Randomise.error covers +-5 cm. labcheck holds at
+                              # taped heights replace it
+    noise: float = 0.02       # UNMEASURED: std of one reading, m. tof "swings wildly when the drone
+                              # tilts" (labcheck notes). Randomised 0-4 cm; labcheck hover logs replace it
+    resolution: float = 0.10  # UNMEASURED: step between readings, m. The SDK reports whole cm, but the
+                              # docs call the height low resolution; Randomise.altimeter_resolution
+                              # spans 1-10 cm until labcheck state.csv shows the real step
+
+
+@dataclass
 class Randomise:
     """Ranges drawn per episode when HoopEnv(randomise=True). Stage 3 of the laps plan."""
     delay_steps: tuple[int, int] = (1, 4)       # MEASURED 2026-10-01: 2 steps, +-1 plus WiFi spikes
     tau: tuple[float, float] = (0.25, 0.7)      # MEASURED 2026-10-01: 0.25 (ud) to 0.66 (fb)
     rate_hz: tuple[float, float] = (8.0, 12.0)  # MEASURED 2026-10-01: 10.0 Hz mean, worst tick 126 ms; drawn every step
+    altimeter_resolution: tuple[float, float] = (0.01, 0.10)  # DESIGN: per episode, see Altimeter.resolution
     # Measurement error: each value here moves by up to +- this much per episode,
     # so the policy does not lean on any one measurement being exact. DESIGN, sized
     # to how well each was measured (tape about 1 cm, calibration about 3 px).
@@ -138,4 +154,5 @@ class Randomise:
         # Up/down is not linear in rc (MEASURED 2026-10-06), so +-20%; deadband 0.07-0.13.
         "drone.max_up_speed": 0.08, "drone.yaw_deadband": 0.03,
         "detector.min_arc_fraction": 0.15, "detector.marker_miss": 0.1, "detector.marker_miss_near": 0.08,
+        "altimeter.offset": 0.05, "altimeter.noise": 0.02,
     })
