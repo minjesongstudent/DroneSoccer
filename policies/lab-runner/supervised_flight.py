@@ -28,14 +28,16 @@ from compare_session import analyse_session
 
 PAGE = '''<!doctype html><meta charset="utf-8"><title>Supervised policy flight</title>
 <style>body{background:#101827;color:white;font:18px system-ui;margin:24px}button{font:inherit;padding:20px;margin:8px;touch-action:none}#start{background:#93e0c0}#land{background:#ffb458}#cut{background:#ec6666}img{max-height:50vh;max-width:100%}pre{white-space:pre-wrap}</style>
-<h1>PC-trained policy flight + recording</h1><p>Progress-aware search v3</p><p id="identity">Verifying policy identity...</p><p id="phase"></p>
+<h1>PC-trained policy flight + recording</h1><p>Staged search v4</p><p id="identity">Verifying policy identity...</p><p id="phase"></p>
 <p>This launcher sends REAL takeoff and flight commands. Experimental policy, not flight-qualified.
 Keep the cage clear and have an operator ready. Team RC mapping: 50 / 50 / 100 / 70.
-Click once to take off, find the ring, then run the policy. Startup search can rise slowly
-to a measured 120 cm and turn in place for two bounded sweeps. It never searches forward
-or sideways. If still unseen after turning, it lowers slowly toward 80 cm while looking.
-Climb allows up to 16 seconds with a measured-height progress check.
-The 150 cm ceiling remains. Search ends within 30 seconds or requests landing.
+Click once to take off, find the ring, then run the policy. Startup searches at measured
+120, 150 and 180 cm, turning toward both sides at each level. Forward/back and sideways
+search commands remain zero; physical drift is still possible. Upward search stops at
+180 cm, with a hard telemetry ceiling of 190 cm. This is an experimental stopping
+allowance in the 205 cm cage, not verified physical clearance.
+Search has bounded climb, turn and total time limits; stalled movement or other stop
+conditions request landing. The current limits are shown below.
 After stable ring detection, learned control keeps running until you stop it or a safety check requests landing.
 Use LAND NOW or Escape to stop early. Keep this page open and focused. No automatic restart.</p>
 <p><label><input type="checkbox" id="ready"> Cage clear, guards fitted; I am supervising this physical test.</label></p>
@@ -209,12 +211,12 @@ class FlightPreview(Preview):
         super().start(folder)
         p=self.folder/'preview_metadata.json';meta=json.loads(p.read_text())
         meta.update(hand_carried=False,flight_control=True,
-            release='progress-search-v3',startup_search=dict(LIMITS,controller='scripted_startup_search',count_as_learned_policy=False),
+            release='staged-search-v4',startup_search=dict(LIMITS,controller='scripted_startup_search',count_as_learned_policy=False),
             issued_actions='Quantized policy commands handed to UDP transport; delivery unconfirmed',
             ui_start='single click',stop_on_focus_loss=True,
             mode='physical supervised policy test',rc_full=[50,50,100,70],policy_limit_s=None,policy_stop='operator or safety check',
             guards=dict(camera_age_s=.25,telemetry_age_s=.5,operator_age_s=.5,
-                        prediction_age_s=.3,min_battery=30,max_temperature=80,height_cm=[30,150]))
+                        prediction_age_s=.3,min_battery=30,max_temperature=80,height_cm=[30,LIMITS['ceiling_height_cm']]))
         p.write_text(json.dumps(meta,indent=2))
 
     def analyse(self):

@@ -38,20 +38,27 @@ class SearchTests(unittest.TestCase):
         camera=np.zeros(8,np.float32);camera[6]=visible
         return self.c.step(self.seq,self.now,camera)
 
-    def test_slow_rise_then_bounded_turns_no_translation(self):
-        self.assertEqual(self.c.state,'acquiring')
-        self.step(dt=.6);self.assertEqual(self.commands[-1],'rc 0 0 15 0')
-        self.step(h=120);self.assertEqual(self.commands[-1],'rc 0 0 0 15')
-        for _ in range(31):self.step(h=120)
-        self.assertEqual(self.commands[-1],'rc 0 0 0 -15')
-        for _ in range(31):self.step(h=120)
-        self.assertEqual(self.commands[-1],'rc 0 0 -15 0')
-        self.step(h=80)
-        self.assertEqual(self.c.state,'landing');self.assertEqual(self.commands[-1],'land')
+    def test_staged_measured_search_covers_altitudes_and_both_headings(self):
+        # A deliberately quantized fake plant, not a claimed physical result.
+        height=40.;yaw=0.;reached=set();turns=set()
+        for _ in range(1200):
+            if self.c.state!='acquiring':break
+            row=self.step(h=10*int(height/10),yaw=yaw)
+            if row:
+                rc=list(map(int,row['command'].split()[1:]))
+                self.assertEqual(rc[:2],[0,0]);self.assertFalse(rc[2] and rc[3])
+                if row['phase'].startswith('scanning'):
+                    reached.add(self.c.search.stage);turns.add((self.c.search.stage,rc[3]))
+                if rc[2]>0:self.assertLess(row['height_cm'],180)
+                height+=rc[2]/15*.6;yaw+=rc[3]/15*1.2
+        self.assertEqual(reached,{0,1,2})
+        for stage in range(3):
+            self.assertIn((stage,15),turns);self.assertIn((stage,-15),turns)
+        self.assertEqual(self.c.state,'landing')
+        self.assertIn('search complete',self.c.reason)
+        self.assertLessEqual(self.now-self.c.search.started,LIMITS['timeout_s'])
         self.assertEqual(self.policy.predictions,0)
         self.assertTrue(all(row['controller']=='scripted_startup_search' for row in self.rows))
-        self.assertEqual(self.c.snapshot()['policy_steps'],0)
-        self.assertTrue(all(row['command'].split()[1:3]==['0','0'] for row in self.rows))
 
     def test_stable_detection_neutral_before_policy_and_actual_history(self):
         self.step(dt=.6);self.step()
@@ -73,7 +80,7 @@ class SearchTests(unittest.TestCase):
 
     def test_timeout_while_detection_flickers_still_lands(self):
         self.step(h=120,dt=.6)
-        for i in range(150):
+        for i in range(1250):
             if self.c.state!='acquiring':break
             self.step(visible=i%2==0,h=120)
         self.assertEqual(self.c.state,'landing');self.assertEqual(self.policy.predictions,0)
@@ -85,8 +92,6 @@ class SearchTests(unittest.TestCase):
         self.assertIn('climb stalled',self.c.reason);self.assertEqual(self.commands[-1],'land')
 
     def test_recorded_slow_climb_rate_reaches_scan_without_old_timeout(self):
-        # Synthetic continuation at the observed ~6 cm/s, not a physical result.
-        # Telemetry h in these exports is quantized in 10 cm increments.
         for i in range(155):
             h=min(120,40+10*int(max(0,i*.1-.5)*.6))
             self.step(h=h)
@@ -94,13 +99,13 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(self.c.state,'acquiring')
         self.assertIsNotNone(self.c.search.scan_at)
         self.assertGreater(self.now-self.c.search.started,5.5)
-        self.assertEqual(self.commands[-1],'rc 0 0 0 15')
+        self.assertEqual(self.commands[-1],'rc 0 0 0 0')
         self.assertEqual(self.policy.predictions,0)
 
     def test_progress_does_not_remove_absolute_ascent_deadline(self):
-        for i in range(175):
-            if self.c.state!='acquiring':break
-            self.step(h=30+10*int(i*.1/3))
+        # Exhausted climb budget cannot be reset by completing a scan stage.
+        self.c.search.ascent_seconds=LIMITS['ascent_timeout_s']
+        self.step(dt=.6)
         self.assertEqual(self.c.state,'landing')
         self.assertIn('ascent timeout',self.c.reason)
 
@@ -147,23 +152,23 @@ class SearchTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'yaw'):c.start()
         self.assertEqual(self.commands,before)
 
-    def test_downward_detection_stops_and_hands_over(self):
+    def test_detection_while_turning_stops_and_hands_over(self):
         self.step(h=120,dt=.6)
-        for _ in range(62):self.step(h=120)
-        self.assertEqual(self.commands[-1],'rc 0 0 -15 0')
+        for i in range(10):self.step(h=120,yaw=i)
+        self.assertEqual(self.commands[-1],'rc 0 0 0 15')
         for _ in range(7):
-            self.step(visible=True,h=100)
+            self.step(visible=True,h=120,yaw=9)
             if self.c.state=='active':break
         self.assertEqual(self.c.state,'active');self.assertEqual(self.commands[-1],'rc 0 0 0 0')
         self.assertEqual(self.policy.predictions,0)
-        self.step(visible=True,h=100);self.assertEqual(self.policy.predictions,1)
+        self.step(visible=True,h=120,yaw=9);self.assertEqual(self.policy.predictions,1)
 
-    def test_descent_stalls_or_reaches_lower_bound_then_lands(self):
+    def test_yaw_stalls_then_lands(self):
         self.step(h=120,dt=.6)
-        for _ in range(115):
+        for _ in range(55):
             if self.c.state!='acquiring':break
             self.step(h=120)
-        self.assertEqual(self.c.state,'landing');self.assertIn('descent timeout',self.c.reason)
+        self.assertEqual(self.c.state,'landing');self.assertIn('turn stalled',self.c.reason)
 
     def test_horizontal_proposal_rejected_at_command_boundary(self):
         self.c.search.step=lambda *args:((10,0,0,0),False)
@@ -171,19 +176,65 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(self.commands,['takeoff','rc 0 0 0 0','land'])
         self.assertIn('forbidden horizontal',self.c.reason)
 
+    def test_upward_proposal_at_stopping_height_rejected_at_boundary(self):
+        self.c.search.step=lambda *args:((0,0,15,0),False)
+        self.step(dt=.6,h=180)
+        self.assertEqual(self.commands,['takeoff','rc 0 0 0 0','land'])
+        self.assertIn('stopping height',self.c.reason)
+
+    def test_high_initial_altitude_skips_lower_stages_without_rising(self):
+        for i in range(10):self.step(h=180,yaw=i)
+        self.assertEqual(self.c.state,'acquiring');self.assertEqual(self.c.search.stage,2)
+        self.assertTrue(all(row['command'].split()[3]=='0' for row in self.rows))
+
+    def test_high_ring_handoff_and_ceiling_persist_into_policy(self):
+        for _ in range(8):
+            self.step(h=180,visible=True)
+            if self.c.state=='active':break
+        self.assertEqual(self.c.state,'active')
+        self.step(h=180,visible=True);self.assertEqual(self.policy.predictions,1)
+        self.step(h=190,visible=True)
+        self.assertEqual(self.c.state,'landing');self.assertEqual(self.policy.predictions,1)
+        self.assertIn('190',self.c.reason)
+
+    def test_measured_slow_reverse_turn_is_not_cut_at_twelve_seconds(self):
+        s=StartupSearch(0,0);yaw=0.;now=0.;rc=(0,0,0,0);reverse_at=None
+        while now<30:
+            now+=.1;yaw+=rc[3]/15*1.2
+            rc,ready=s.step(now,120,yaw,False)
+            self.assertFalse(ready)
+            if s.leg==1 and reverse_at is None:reverse_at=now
+            if s.leg==2:break
+        self.assertIsNotNone(reverse_at);self.assertEqual(s.leg,2)
+        self.assertGreater(now-reverse_at,11.5)
+        self.assertLess(now-reverse_at,18)
+
+    def test_yaw_progress_does_not_remove_leg_deadline(self):
+        s=StartupSearch(0,0);s.step(.6,120,0,False)
+        # 3deg/s makes >=10degree progress each4s but cannot reach75 in18s.
+        with self.assertRaisesRegex(ValueError,'yaw target timeout'):
+            for i in range(1,205):
+                now=.6+i*.1;s.step(now,120,max(0,now-1.2)*3,False)
+
+    def test_sensor_validation_and_ceiling_precede_visible_handoff(self):
+        for height in (float('nan'),None,True,20,190,200):
+            with self.subTest(height=height):
+                s=StartupSearch(0,0)
+                with self.assertRaises(ValueError):s.step(.6,height,0,True)
+
     def test_yaw_bounds_wrap_and_bad_sensor(self):
         s=StartupSearch(0,179);s.step(.1,120,-179,False)
         self.assertEqual(s.yaw_excursion,2)
         for yaw in (None,float('nan'),181):
             with self.assertRaises(ValueError):StartupSearch(0,yaw)
-        s=StartupSearch(0,0);s.step(.6,120,30,False);s.step(.7,120,60,False)
-        with self.assertRaisesRegex(ValueError,'bound'):s.step(.8,120,61,False)
+        s=StartupSearch(0,0);s.step(.6,120,30,False);s.step(.7,120,60,False);s.step(.8,120,90,False)
+        with self.assertRaisesRegex(ValueError,'bound'):s.step(.9,120,91,False)
 
     def test_search_stop_limits_and_send_log_failures(self):
         for kind in ('ceiling','floor','negative','battery','temperature','log','send'):
             with self.subTest(kind=kind):
                 self.setUp();self.now+=.6;self.fresh(80)
-                if kind=='ceiling':self.c.telemetry['h']=151
+                if kind=='ceiling':self.c.telemetry['h']=190
                 if kind=='floor':self.c.telemetry['h']=20
                 if kind=='negative':self.c.telemetry['h']=-20
                 if kind=='battery':self.c.telemetry['bat']=29

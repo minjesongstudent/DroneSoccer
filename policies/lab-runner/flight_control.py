@@ -47,7 +47,10 @@ class FlightControl:
                 return 'missing or invalid yaw for startup search'
         if self.telemetry['bat'] < 30: return 'battery below 30%'
         if self.telemetry['temph'] >= 80: return 'temperature at or above 80 C'
-        if self.telemetry['h'] > 150: return 'height above test ceiling 150 cm'
+        if getattr(self.policy,'startup_search',False):
+            if self.telemetry['h'] >= LIMITS['ceiling_height_cm']:
+                return f"height at or above test ceiling {LIMITS['ceiling_height_cm']} cm"
+        elif self.telemetry['h'] > 150: return 'height above test ceiling 150 cm'
         if self.state in ('acquiring','active') and self.telemetry['h'] < 30: return 'height below test floor 30 cm'
         return ''
 
@@ -209,6 +212,8 @@ class FlightControl:
             # future search implementation accidentally proposes one.
             if len(rc)!=4 or rc[0]!=0 or rc[1]!=0:
                 self.stop('forbidden horizontal startup movement');return None
+            if rc[2]>0 and self.telemetry['h']>=LIMITS['target_height_cm']:
+                self.stop('forbidden climb above startup stopping height');return None
             command='rc '+' '.join(map(str,rc));issued=np.asarray(rc,np.float64)/[50,50,100,70]
             row=dict(event='startup_proposal',phase=self.search.phase,controller='scripted_startup_search',
                 frame_id=sequence,receipt_monotonic=received,analysis_completed_monotonic=self.clock(),

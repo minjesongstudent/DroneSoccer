@@ -1,6 +1,6 @@
 # Current release
 
-The current download is PC-Policy-Lab-Progress-Search-v3.zip. See [progress-aware search v3](progress-search-v3/README.md) and its 66-test result. The verification below describes the preceding package before acquisition was added.
+The current download is PC-Policy-Lab-Staged-Search-v4.zip. See [staged search v4](staged-search-v4/README.md) and its offline test results. The verification below describes the preceding package before acquisition was added.
 
 # Publication verification — 2026-10-09
 

@@ -1,0 +1,57 @@
+{
+  "training_archive_sha256": "f15462f0a8f89ca2a09aa7937df061dfda1bece3fbe7f913f8731022c0447994",
+  "simulation_file": "arms/full_horizon/source/src/sim.py",
+  "params_file": "arms/full_horizon/source/src/params.py",
+  "hoop_height": [
+    {
+      "line": 16,
+      "text": "HOOP_HEIGHT = (0.6, 1.4)       # hoop centre above the floor"
+    },
+    {
+      "line": 155,
+      "text": "hoop_z = rng.uniform(*HOOP_HEIGHT)"
+    }
+  ],
+  "cage_height": [
+    {
+      "line": 25,
+      "text": "height: float = 2.05       # MEASURED 2026-09-24"
+    }
+  ],
+  "initial_height_clip": [
+    {
+      "line": 157,
+      "text": "cage.min_altitude, cage.height - m)"
+    }
+  ],
+  "physical_collision_ceiling": [
+    {
+      "line": 360,
+      "text": "self.cage.height - up])"
+    }
+  ],
+  "camera_pitch": [
+    {
+      "line": 57,
+      "text": "pitch_deg: float = 12.8  # MEASURED 2026-10-01: labcheck tilt at 0.8 m"
+    }
+  ],
+  "user_report": {
+    "cage_height_cm": 205,
+    "roof_to_hoop_cm": [
+      15,
+      50
+    ],
+    "reference_point": "unconfirmed: top edge or centre"
+  },
+  "conditional_centre_cm_if_top_edge": [
+    132.5,
+    167.5
+  ],
+  "conditional_centre_cm_if_centre": [
+    155,
+    190
+  ],
+  "vertical_half_fov_deg": 21.370622269343183,
+  "upper_view_angle_deg": 8.570622269343183
+}

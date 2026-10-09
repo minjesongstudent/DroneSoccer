@@ -1,6 +1,6 @@
-ACTUAL PC POLICY — PROGRESS-AWARE SEARCH V3 + REAL FLIGHT RECORDING
+ACTUAL PC POLICY — STAGED SEARCH V4 + REAL FLIGHT RECORDING
 
-Keep the entire downloaded PC-Policy-Lab-Progress-Search-v3 folder together. This runner needs
+Keep the entire downloaded PC-Policy-Lab-Staged-Search-v4 folder together. This runner needs
 ../../models, ../checkpoints and ../registry.json. Do not copy only this folder.
 
 Selected: full_horizon-round-05 (PC CUDA training, 2026-10-08).
@@ -18,18 +18,23 @@ It is supplied for the team's explicitly requested supervised experiment.
 4. Run 2-Supervised-Flight.command and type FLIGHT. This opens the local UI.
    It does NOT take off until you check the supervision box and click once.
 5. Verify the UI says full_horizon-round-05 and the correction hash starts
-   eba7030c and Progress-aware search v3. Click Take off + find ring + run policy once.
+   eba7030c and Staged search v4. Click Take off + find ring + run policy once.
    This sends REAL takeoff, scripted acquisition RC, then learned policy RC.
    Keep the UI focused. LAND NOW or Escape requests landing. There is no fixed
    ten-second policy limit. Loss of fresh camera/telemetry/UI/inference, height,
    battery and temperature checks request landing. No automatic restart.
 
-After takeoff, the drone settles, then can rise slowly toward measured 120 cm
-and turn in place clockwise/counterclockwise to find the ring. No forward or
-sideways search. The 150 cm ceiling remains. Ascent is limited to 16 seconds, with landing requested if measured height
-fails to gain 10 cm within four seconds of upward commands;
-each turn leg to three seconds. If still unseen, lower toward 80 cm for up to
-five seconds while looking. The complete search is capped at 30 seconds.
+After takeoff, the drone searches at measured 120, 150 and 180 cm. At each
+level it turns to both sides and returns toward its initial heading before rising.
+Upward commands stop at 180 cm; the hard telemetry ceiling is 190 cm. The 10 cm
+stopping allowance and the 15 cm roof clearance above the telemetry ceiling
+are design limits, not physically validated overshoot or body clearance.
+Climb still uses RC15 and measured-height progress checks. Every turn and the
+whole search have bounded time limits; stalled movement requests landing.
+Total search cap:120 seconds. Each yaw leg:18 seconds. Cumulative upward
+commands:32 seconds. Yaw targets:+75,-75,0 degrees relative to initial heading,
+with90 degrees maximum excursion. These are limits, not promised completion times.
+The UI status/recorded metadata show the exact limits. There is no endless retry.
 Forward/backward and sideways RC remain ZERO throughout search. This is not
 guaranteed physical XY position hold: drift can still occur.
 The ring must remain detected for at least three fresh frames across 0.4 seconds
