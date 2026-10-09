@@ -109,13 +109,33 @@ cmd_screen() {
   cmd_submit 2 800000 "$name" --envs 4 "$@"
 }
 
+# The policy input's length, which sets how fast a seed trains and how much memory
+# its replay buffer takes. 109 if the venv cannot say.
+input_dim() {
+  have_venv && "$PY" -c 'from src import contract; print(contract.POLICY_INPUT_DIM)' 2>/dev/null || echo 109
+}
+
+# Steps a second for one seed on one environment: 86 measured with the 109-input
+# layout, ~60 with the 430-input slotted history (10k steps took 1.4x as long).
+steps_per_s() { [ "$(input_dim)" -gt 200 ] && echo 60 || echo 86; }
+
+# Memory for the job, in GB. Each seed's 1M-step replay buffer holds two float32
+# copies of the input a step (3.4 GB at 430 inputs, 0.9 GB at 109), plus the demo
+# buffer and the process; 16 GB is the floor every job has had.
+mem_for() {
+  local seeds=$1 gb
+  gb=$(( (seeds * ($(input_dim) * 11 + 600) + 999) / 1000 ))
+  [ "$gb" -lt 16 ] && gb=16
+  echo "${gb}GB"
+}
+
 # Wall minutes one seed needs, plus a quarter. Seeds run in parallel on their
-# own cores, so the count does not change the wall time. 86 steps/s is measured
+# own cores, so the count does not change the wall time. steps_per_s is measured
 # on one environment. Parallel environments speed a seed up, and the second
 # argument counts them. Half-linear, because the gradient steps do not shrink.
 walltime_for() {
   local steps=$1 envs=${2:-1} mins
-  mins=$(( steps * 125 / (86 * 60 * 100) ))
+  mins=$(( steps * 125 / ($(steps_per_s) * 60 * 100) ))
   [ "$envs" -gt 1 ] && mins=$(( mins * 2 / envs ))
   [ "$mins" -lt 30 ] && mins=30
   printf '%02d:%02d:00' $(( mins / 60 )) $(( mins % 60 ))
@@ -157,11 +177,11 @@ queue() {
   # -l and -N on the command line beat the #PBS lines in the job file, so the
   # walltime always matches the step count. ncpus must cover every seed's envs.
   qsub -N "hoop-$name" \
-       -l "ncpus=${cpus},mem=16GB,walltime=${wall}" \
+       -l "ncpus=${cpus},mem=$(mem_for "$seeds"),walltime=${wall}" \
        -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
        "$JOB"
-  printf '%s%s seeds, %s steps, %s cores, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
-    "$D" "$seeds" "$steps" "$cpus" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
+  printf '%s%s seeds, %s steps, %s cores, %s, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
+    "$D" "$seeds" "$steps" "$cpus" "$(mem_for "$seeds")" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
 }
 
 # Resubmit a run that was cut off. Each seed carries on from its last snapshot
