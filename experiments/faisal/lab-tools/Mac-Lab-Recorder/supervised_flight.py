@@ -32,23 +32,25 @@ PAGE = '''<!doctype html><meta charset="utf-8"><title>Supervised policy flight</
 Keep the cage clear and have an operator ready. Team RC mapping: 50 / 50 / 100 / 70.
 Release the held control to request landing. No automatic restart.</p>
 <p><label><input type="checkbox" id="ready"> Cage clear, guards fitted; I am supervising this physical test.</label></p>
-<button id="hold">HOLD: take off + run policy (10 seconds)</button>
+<button id="hold" disabled>HOLD: take off + run policy (10 seconds)</button>
 <button id="land">LAND NOW / Escape</button>
 <details><summary>Emergency motor cut — drone will drop</summary><button id="cut">CUT MOTORS NOW</button></details>
-<pre id="status">Connecting</pre><p id="error"></p><img id="camera" alt="Live recorded camera">
+<p id="connection">Connecting to local recorder</p><p id="countdown"></p>
+<pre id="status">Waiting for current state</pre><p id="error"></p><img id="camera" alt="Live recorded camera">
 <script>
 let token=location.hash.slice(1),held=false,timer=null,busy=false;
-async function post(action){let r=await fetch('/control',{method:'POST',headers:{'Content-Type':'application/json','X-Flight-Token':token},body:JSON.stringify({action})});let s=await r.json();if(!r.ok)throw Error(s.error);return s;}
-async function release(){held=false;clearInterval(timer);try{await post('land')}catch(e){document.querySelector('#error').textContent='Landing request failed: '+e.message}}
-document.querySelector('#hold').onpointerdown=async e=>{if(held||!document.querySelector('#ready').checked)return;e.preventDefault();held=true;e.target.setPointerCapture(e.pointerId);try{await post('heartbeat');if(!held)return;await post('start');if(!held){await post('land');return;}timer=setInterval(async()=>{if(!held||busy)return;busy=true;try{await post('heartbeat')}catch(e){release()}finally{busy=false}},100)}catch(e){document.querySelector('#error').textContent=e.message;release()}};
-document.querySelector('#hold').onpointerup=release;
-document.querySelector('#hold').onpointercancel=release;
-document.querySelector('#land').onclick=release;
+async function post(action){let r=await fetch('/control',{method:'POST',headers:{'Content-Type':'application/json','X-Flight-Token':token},body:JSON.stringify({action})});let s=await r.json();if(!r.ok){let e=Error(s.error);e.controlState=s.control_state;throw e;}return s;}
+async function release(force=false){if(!held&&!force)return;held=false;clearInterval(timer);try{await post('land')}catch(e){document.querySelector('#error').textContent='Landing request failed; delivery unconfirmed: '+e.message}}
+document.querySelector('#hold').onpointerdown=async e=>{if(held||e.target.disabled)return;if(!document.querySelector('#ready').checked){document.querySelector('#error').textContent='Check the supervision box, then HOLD the green button.';return;}e.preventDefault();held=true;e.target.setPointerCapture(e.pointerId);document.querySelector('#error').textContent='';try{await post('heartbeat');if(!held)return;await post('start');if(!held){await post('land');return;}timer=setInterval(async()=>{if(!held||busy)return;busy=true;try{await post('heartbeat')}catch(e){release()}finally{busy=false}},100)}catch(e){document.querySelector('#error').textContent=e.message;if(e.controlState==='ground'){held=false;clearInterval(timer);}else{await release();}}};
+document.querySelector('#hold').onpointerup=()=>release();
+document.querySelector('#hold').onpointercancel=()=>release();
+document.querySelector('#ready').onchange=()=>{if(!document.querySelector('#ready').checked)release()};
+document.querySelector('#land').onclick=()=>release(true);
 document.querySelector('#cut').onclick=()=>{held=false;clearInterval(timer);post('emergency').catch(e=>document.querySelector('#error').textContent=e.message)};
 addEventListener('blur',()=>{if(held)release()});addEventListener('pagehide',()=>{held=false;clearInterval(timer)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&held)release()});
-addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();release()}});
-async function poll(){try{const r=await fetch('/state');const s=await r.json();document.querySelector('#status').textContent=JSON.stringify(s.control,null,2);if(s.decoded)document.querySelector('#camera').src='/frame.jpg?v='+s.frame_id;if(s.error)document.querySelector('#error').textContent=s.error}catch(e){document.querySelector('#error').textContent='UI disconnected; watchdog requests landing'}setTimeout(poll,200)}poll();
+addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();release(true)}});
+async function poll(){try{const r=await fetch('/state');if(!r.ok)throw Error('HTTP '+r.status);const s=await r.json();if(!s.control)throw Error('Missing control state');document.querySelector('#connection').textContent='Connected to local recorder';document.querySelector('#countdown').textContent=s.capture_remaining_s==null?'':'Recording closes in '+Math.ceil(s.capture_remaining_s)+' seconds (three-minute limit).';document.querySelector('#status').textContent=JSON.stringify(s.control,null,2);document.querySelector('#hold').disabled=!(s.control.state==='ground'&&!s.control.readiness)&&!held;if(s.decoded)document.querySelector('#camera').src='/frame.jpg?v='+s.frame_id;if(s.error)document.querySelector('#error').textContent=s.error}catch(e){document.querySelector('#connection').textContent='Local recorder unreachable; displayed state and image may be stale. Check Terminal. The three-minute limit may have ended this session. Landing/delivery is not confirmed.';document.querySelector('#hold').disabled=true;document.querySelector('#countdown').textContent='';if(held)await release();}setTimeout(poll,200)}poll();
 </script>'''
 
 
@@ -139,6 +141,7 @@ class FlightPreview(Preview):
         self.link=link
         self.control=FlightControl(self.runtime,link.send,link.policy_log)
         self.token=secrets.token_urlsafe(32)
+        self.capture_deadline=None
 
     def start(self, folder):
         super().start(folder)
@@ -173,6 +176,7 @@ class FlightPreview(Preview):
 
     def snapshot(self):
         result=super().snapshot();result['control']=self.control.snapshot()
+        result['capture_remaining_s']=None if self.capture_deadline is None else max(0,self.capture_deadline-time.monotonic())
         return result
 
     def open_browser(self):
@@ -206,7 +210,8 @@ class FlightPreview(Preview):
                     elif action=='emergency':preview.control.emergency()
                     else:raise ValueError('Unknown control')
                     self.respond(b'{}')
-                except Exception as exc:self.respond(json.dumps(dict(error=str(exc))).encode(),status=400)
+                except Exception as exc:
+                    self.respond(json.dumps(dict(error=str(exc),control_state=preview.control.snapshot()['state'])).encode(),status=400)
         self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
         threading.Thread(target=self.server.serve_forever,daemon=True).start()
         url=f'http://127.0.0.1:{self.server.server_port}/#{self.token}'
@@ -233,8 +238,10 @@ def main():
                 try:preview.control.watch()
                 except Exception as exc:preview.control.stop('watchdog error: '+str(exc))
         watcher=threading.Thread(target=watch,daemon=True);watcher.start()
-        preview.open_browser();print('RECORDING:',folder,flush=True)
         idle_deadline=time.monotonic()+180
+        preview.capture_deadline=idle_deadline
+        preview.open_browser();print('RECORDING:',folder,flush=True)
+        print('Recording/server closes after three minutes; countdown is in the UI.',flush=True)
         while preview.control.state!='stopped':
             if time.monotonic()>=idle_deadline:preview.control.stop('three-minute capture limit')
             time.sleep(.05)
@@ -253,6 +260,7 @@ def main():
             except KeyboardInterrupt:
                 preview.control.stop('second Ctrl+C');preview.control._land()
             info['flight_outcome']=preview.control.snapshot()
+            print('Flight session stopped:',info['flight_outcome']['reason'],flush=True)
             watch_stop.set()
             if watcher:watcher.join(1)
             try:preview.close()

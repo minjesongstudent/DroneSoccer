@@ -56,12 +56,29 @@ class WiringTests(unittest.TestCase):
             def post(action):
                 return urlopen(Request(base+'/control',data=json.dumps(dict(action=action)).encode(),
                     headers={'X-Flight-Token':preview.token,'Content-Type':'application/json'},method='POST')).read()
+            c.frame_at=None
+            with self.assertRaises(HTTPError) as rejected:post('start')
+            failure=json.loads(rejected.exception.read())
+            self.assertEqual(failure['control_state'],'ground')
+            self.assertEqual(failure['error'],'stale camera');link.send.assert_not_called()
+            c.receive_camera(time.monotonic())
             post('heartbeat');post('start');link.send.assert_called_with('takeoff')
             post('land');self.assertEqual(c.state,'landing');link.send.assert_called_with('land')
             with self.assertRaises(HTTPError):post('start')
         finally:
             preview.close()
             if preview.server:preview.server.shutdown();preview.server.server_close()
+
+    def test_capture_countdown_uses_monotonic_deadline(self):
+        preview=FlightPreview(Mock())
+        try:
+            self.assertIsNone(preview.snapshot()['capture_remaining_s'])
+            with patch('supervised_flight.time.monotonic',return_value=100.):
+                preview.capture_deadline=120.
+                self.assertEqual(preview.snapshot()['capture_remaining_s'],20.)
+                preview.capture_deadline=99.
+                self.assertEqual(preview.snapshot()['capture_remaining_s'],0.)
+        finally:preview.close()
 
     def test_csv_labels_physical_records_without_inventing_delivery(self):
         from compare_session import analyse_session
