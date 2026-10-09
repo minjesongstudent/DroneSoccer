@@ -20,6 +20,16 @@ PAD_MIN_DISTANCE = 0.6         # pad to hoop centre
 LAPS_HOOP_ANGLE_DEG = (30.0, 75.0)  # max hoop angle to the pad, level 0 and 1
 CLEARANCE = 0.4                # free space in front of and behind the hoop
 SIDE_GAP = 0.35                # side waypoint's distance beyond the rim
+# Run-in starts (HoopEnv(run_in_share=...), training only): lined up in front of the
+# hoop, at the height that puts it mid-frame, so the last blind half metre of a pass
+# is practised far more often than the whole mission reaches it. In the 2026-10-09
+# flights the policy stopped 0.55-0.6 m out, lined up, and circled instead.
+RUN_IN_DISTANCE = (0.6, 1.0)   # m in front of the hoop centre
+RUN_IN_OFFSET = 0.05           # m, +- off the axis
+RUN_IN_HEADING_DEG = 5.0       # +- off facing the hoop
+RUN_IN_HEIGHT = (-0.3, 0.1)    # m from the height that puts the hoop mid-frame: mostly low,
+                               # as the drone came in on 2026-10-09 (hoop high in frame). From
+                               # 0.3 m low teacher2-level1 passed 42/60 with the flag on, 1/60 off
 # -----------------------------------------------------------------------------
 
 import dataclasses
@@ -46,7 +56,7 @@ class HoopEnv(gym.Env):
                  cage: Cage | None = None, hoop: Hoop | None = None,
                  camera: Camera | None = None, drone: Drone | None = None,
                  pad: Pad | None = None, ranges: Randomise | None = None,
-                 detector: Detector | None = None):
+                 detector: Detector | None = None, run_in_share: float = 0.0):
         self.cage = cage or Cage()
         self.hoop = hoop or Hoop()
         self.camera = camera or Camera()
@@ -55,6 +65,8 @@ class HoopEnv(gym.Env):
         self.detector = detector or Detector()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
+        self.run_in_share = run_in_share   # share of resets that start lined up (RUN_IN_*)
+        self.run_in = False
         self.hanger = hanger   # off replays models trained before it existed
         # The measured setup. With randomise, each episode works on a copy with
         # ranges.error applied; without, on these.
@@ -103,7 +115,32 @@ class HoopEnv(gym.Env):
         if self.randomise:
             self._apply_measurement_error()
         self._sample_layout()
-        return self._start_episode(), self._info("running")
+        # Only draw when asked, so evaluation layouts stay the same.
+        self.run_in = bool(self.run_in_share) and self.np_random.uniform() < self.run_in_share
+        if self.run_in:
+            self._line_up_start()
+        obs = self._start_episode()
+        self._found = self.run_in   # nothing to find: it starts looking at it
+        return obs, self._info("running")
+
+    def _line_up_start(self):
+        """Move the drone onto the hoop's axis RUN_IN_DISTANCE in front, facing it,
+        RUN_IN_HEIGHT from the height that keeps the hoop mid-frame. Nearer if that is
+        past the fence."""
+        rng, n = self.np_random, self.hoop_normal
+        out = rng.uniform(*RUN_IN_DISTANCE)
+        side = rng.uniform(-RUN_IN_OFFSET, RUN_IN_OFFSET)
+        while True:
+            p = self.hoop_centre - out * n + side * self._axis_h
+            if self._in_fence(p[:2]) or out <= CLEARANCE:
+                break
+            out -= 0.05
+        p[2] = np.clip(self.hoop_centre[2] + np.tan(np.deg2rad(self.camera.pitch_deg)) * out
+                       + rng.uniform(*RUN_IN_HEIGHT),
+                       self.cage.min_altitude, self.cage.height - self.cage.margin)
+        self.pos = p
+        self.heading = _wrap(np.arctan2(n[1], n[0])
+                             + np.deg2rad(rng.uniform(-RUN_IN_HEADING_DEG, RUN_IN_HEADING_DEG)))
 
     def place(self, drone_pos, heading, hoop_centre, hoop_normal, hoop_diameter=None,
               hanger_half_width=None):
@@ -120,6 +157,7 @@ class HoopEnv(gym.Env):
                          np.asarray(hoop_centre, float), np.asarray(hoop_normal, float),
                          radius_h, radius_v,
                          self.hoop.hanger_half_width if hanger_half_width is None else hanger_half_width)
+        self.run_in = False
         return self._start_episode()
 
     def _in_fence(self, xy) -> bool:
@@ -233,6 +271,7 @@ class HoopEnv(gym.Env):
                              maxlen=contract.FRAME_HISTORY)
         self._streak = 0
         self._unseen = True
+        self._found = False   # the front reported yet this episode, for R_FOUND
         self._actions = deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
                               maxlen=contract.ACTION_HISTORY)
         return self._policy_input()
@@ -273,6 +312,8 @@ class HoopEnv(gym.Env):
         if outcome == "passed":
             self.passes += 1
         obs = self._as_detected(self.observe())
+        if outcome == "running" and not self._found and obs[contract.VISIBLE] and obs[contract.FIELDS.index("marker")]:
+            outcome, self._found = "found", True
         self._frames.append(obs)
         self._unseen = contract.not_yet_through(self._unseen, self._frames)
         self._actions.append(action)
@@ -481,6 +522,6 @@ class HoopEnv(gym.Env):
     def _info(self, outcome):
         return {"outcome": outcome, "passes": self.passes, "steps": self.steps,
                 "wall_steps": self.wall_steps, "route": self.route,
-                "level": self.level, "drone_pos": self.pos.copy(),
+                "level": self.level, "run_in": self.run_in, "drone_pos": self.pos.copy(),
                 "heading": self.heading, "hoop_centre": self.hoop_centre.copy(),
                 "hoop_normal": self.hoop_normal.copy()}

@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from stable_baselines3 import SAC
 from stable_baselines3.common.monitor import Monitor
@@ -86,3 +88,29 @@ def test_init_grows_an_older_policy_without_changing_what_it_does(tmp_path):
         xn = np.concatenate([x, np.full((50, 1), flag, np.float32)], axis=1)
         assert np.array_equal(new.predict(xn, deterministic=True)[0], old.predict(x, deterministic=True)[0])
     assert new.learning_starts == train.INIT_WARMUP
+
+
+def test_the_best_checkpoint_becomes_the_model(monkeypatch, tmp_path):
+    """Seeds peak and collapse, so model.zip is the best scored of every checkpoint
+    and the final model, not simply the last."""
+    import json
+    monkeypatch.setattr(train, "RUNS", tmp_path)
+    monkeypatch.setattr(train, "CHECKPOINT_EVERY", 200)
+    monkeypatch.setattr(train, "BUFFER_SIZE", 2000)
+    path = train.train(600, "b", seed=0, level=0.5, randomise=False, select_episodes=1)
+    picked = json.loads((tmp_path / "b" / "checkpoints.json").read_text())
+    assert set(picked["scores"]) == {"final.zip", "model_200_steps.zip", "model_400_steps.zip",
+                                     "model_600_steps.zip"}
+    best = picked["best"]
+    source = tmp_path / "b" / (best if best == "final.zip" else f"checkpoints/{best}")
+    assert path.read_bytes() == source.read_bytes()
+
+
+def test_run_in_episodes_do_not_count_towards_the_curriculum():
+    callback = train.Progress(total=1)
+    callback.locals = {"infos": [{"run_in": True, "passes": 1, "outcome": "timeout", "steps": 600}],
+                       "dones": [True]}
+    callback.num_timesteps, callback.printed = 0, 0
+    callback.model = SimpleNamespace(logger=SimpleNamespace(record=lambda *a: None))
+    callback._on_step()
+    assert not callback.recent and list(callback.run_ins) == [True]

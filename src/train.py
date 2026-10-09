@@ -5,8 +5,11 @@ Watch: tensorboard --logdir runs
     rollout/passes_per_ep and curriculum/level are the numbers that matter
 
 Saves a checkpoint to runs/<name>/checkpoints/ every CHECKPOINT_EVERY steps and
-runs/<name>/model.zip at the end, then evaluates it against the baseline on the
-same episodes, then saves the training curves to runs/<name>/plots/. The
+runs/<name>/final.zip at the end. Then it scores every checkpoint and the final
+model on SELECT_EPISODES episodes of their own (checkpoints.json) and copies the
+best to runs/<name>/model.zip: seeds have peaked at 1.3M steps and collapsed by 5M.
+That one is evaluated against the baseline on the held-out episodes, then the
+training curves go to runs/<name>/plots/. The
 policy's scores also go to runs/<name>/eval.json, which run_seeds.sh reads to
 keep only the best seed's models.
 See what a checkpoint does: python -m src.replay --model runs/<name>/checkpoints/<file>.zip
@@ -21,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import time
 from collections import deque
@@ -63,6 +67,18 @@ DEMO_NOISE = 0.1
 DEMO_SHARE = 0.25       # RLPD uses 0.5
 DEMO_SEED = 2_000_000   # layouts apart from training's and evaluate.EVAL_SEED's
 
+# Run-in starts (sim.RUN_IN_*): this share of training episodes starts lined up
+# 0.6-1.0 m in front of the hoop, whatever the curriculum level, so the blind last
+# half metre of a pass gets practised. teacher2-level1 stopped there on the drone.
+# They do not count towards the curriculum (Progress), and evaluation never has them.
+RUN_IN_SHARE = 0.2
+
+# Picking the model: every checkpoint and the final model fly SELECT_EPISODES episodes
+# from SELECT_SEED, apart from evaluation's, so the reported score is not the one it
+# was picked on. Ranked as run_seeds.sh ranks seeds (scores()).
+SELECT_EPISODES = 50
+SELECT_SEED = 3_000_000
+
 # Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the last
 # LEVEL_WINDOW episodes made at least LEVEL_PASSES passes, however they ended.
 # The level only changes the start, so its bar is the first pass. A second pass
@@ -86,6 +102,7 @@ class Progress(BaseCallback):
         super().__init__()
         self.total, self.every = total, every
         self.recent = deque(maxlen=LEVEL_WINDOW)
+        self.run_ins = deque(maxlen=LEVEL_WINDOW)   # run-in starts, kept apart
         self.level = 0.0
 
     def _on_training_start(self) -> None:
@@ -96,7 +113,10 @@ class Progress(BaseCallback):
 
     def _on_step(self) -> bool:
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
-            if done:
+            if done and info.get("run_in"):
+                self.run_ins.append(info["passes"] > 0)
+                self.logger.record("rollout/run_in_passed", float(np.mean(self.run_ins)))
+            elif done:
                 self.recent.append(info)
                 self._record()
         # N parallel envs raise the count by N, so an exact multiple may never
@@ -204,7 +224,7 @@ def settings(**args) -> str:
         f"{k}={','.join(map(str, v)) if isinstance(v, tuple) else v}" for k, v in pairs)
 
 
-def make_env(level: float, randomise: bool, envs: int):
+def make_env(level: float, randomise: bool, envs: int, run_in_share: float = 0.0):
     """One environment, or `envs` of them in their own processes.
 
     Stepping is numpy and the policy runs on CPU, so copies scale nearly
@@ -212,7 +232,7 @@ def make_env(level: float, randomise: bool, envs: int):
     ratio of steps flown to gradients taken the same as with one.
     """
     def one():
-        return Monitor(HoopEnv(level=level, randomise=randomise))
+        return Monitor(HoopEnv(level=level, randomise=randomise, run_in_share=run_in_share))
     return one() if envs == 1 else SubprocVecEnv([one] * envs)
 
 
@@ -319,14 +339,16 @@ def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
 
 def train(steps: int, name: str, seed: int, level: float, randomise: bool,
           resume: bool = False, envs: int = 1, init: str | None = None, demos: int = 0,
-          demo_share: float = DEMO_SHARE) -> Path:
+          demo_share: float = DEMO_SHARE, run_in_share: float = RUN_IN_SHARE,
+          select_episodes: int = SELECT_EPISODES) -> Path:
     print(settings(steps=steps, seed=seed, level=level, randomise=randomise, resume=resume,
-                   envs=envs, init=init or "none", demos=demos, demo_share=demo_share), flush=True)
+                   envs=envs, init=init or "none", demos=demos, demo_share=demo_share,
+                   run_in_share=run_in_share, select_episodes=select_episodes), flush=True)
     out = RUNS / name
     snapshot = out / "resume"
     if resume:
         level = json.loads((snapshot / "state.json").read_text())["level"]
-    env = make_env(level, randomise, envs)
+    env = make_env(level, randomise, envs, run_in_share)
     if resume:
         model = SAC.load(snapshot / "model.zip", env=env, device="cpu")
         model.load_replay_buffer(snapshot / "replay_buffer.pkl")
@@ -353,7 +375,31 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
     model.learn(total_timesteps=steps - model.num_timesteps,
                 callback=[Progress(steps), checkpoints, Snapshot(snapshot, steps)],
                 tb_log_name=name, reset_num_timesteps=not resume)
-    model.save(out / "model")
+    model.save(out / "final")
+    return pick_best(out, randomise, select_episodes)
+
+
+def pick_best(out: Path, randomise: bool, episodes: int) -> Path:
+    """Copy the best of the checkpoints and final.zip to out/model.zip, scored on
+    `episodes` selection episodes, and write every score to checkpoints.json.
+    With episodes 0, final.zip is the model."""
+    candidates = [out / "final.zip"]
+    if episodes:
+        candidates += sorted((out / "checkpoints").glob("model_*_steps.zip"),
+                             key=lambda f: int(f.stem.split("_")[1]))
+    table = {}
+    for path in candidates if len(candidates) > 1 else []:
+        results = run_episodes(load_policy(str(path)), episodes, HoopEnv(randomise=randomise), seed=SELECT_SEED)
+        table[path.name] = scores(results)
+        print(f"select   {path.name:<24} ready {table[path.name]['ready']:.0%}  "
+              f"passes/ep {table[path.name]['passes_per_ep']:.2f}  crashed {table[path.name]['crashed']:.0%}",
+              flush=True)
+    best = (max(table, key=lambda k: (table[k]["ready"], table[k]["passes_per_ep"], -table[k]["crashed"]))
+            if table else "final.zip")
+    (out / "checkpoints.json").write_text(json.dumps({"best": best, "scores": table}, indent=1))
+    source = out / best if best == "final.zip" else out / "checkpoints" / best
+    shutil.copyfile(source, out / "model.zip")
+    print(f"best     {best} -> {out / 'model.zip'}", flush=True)
     return out / "model.zip"
 
 
@@ -376,12 +422,17 @@ if __name__ == "__main__":
                         help="fly src.teacher for this many steps first and keep its flights for the whole run")
     parser.add_argument("--demo-share", type=float, default=DEMO_SHARE,
                         help="share of every batch drawn from the teacher's flights")
+    parser.add_argument("--run-in-share", type=float, default=RUN_IN_SHARE,
+                        help="share of training episodes that start lined up in front of the hoop")
+    parser.add_argument("--select-episodes", type=int, default=SELECT_EPISODES,
+                        help="episodes each checkpoint flies to pick the best; 0 keeps the final model")
     args = parser.parse_args()
     if args.init and args.resume:
         parser.error("--init and --resume do not mix")
 
     path = train(args.steps, args.name, args.seed, args.level, args.randomise,
-                 args.resume, args.envs, args.init, args.demos, args.demo_share)
+                 args.resume, args.envs, args.init, args.demos, args.demo_share,
+                 args.run_in_share, args.select_episodes)
     print(f"saved {path}")
     episodes = args.eval_episodes or DEFAULT_EPISODES
 
