@@ -29,10 +29,15 @@ ROUND = 0.95       # ratio above which the hoop counts as faced: cos 18 degrees
 K_ALIGN = 0.8      # strafe command when far off the axis
 K_YAW = 1.0        # turn command per unit of u while lining up
 # The real ratio jitters by ~0.1 per frame, so compare averages of recent frames
-# (lags in OBS_LAGS) and, after a flip, hold the new way for a while.
+# and, after a flip, hold the new way for a while. Lags 0-3 are single-step slots
+# of the policy input; lags 4 and 8 read the 4-step slots that start there, whose
+# frame is the newest sighting in them, so lag 4 itself whenever it saw the hoop.
 FLATTER = 0.02     # drop in mean ratio, NOW_LAGS against THEN_LAGS, that flips the strafe
 NOW_LAGS = (0, 1, 2)
 THEN_LAGS = (4, 8)
+# Only fly at a hoop whose front marker was seen within MARKER_LAG steps: 6 s,
+# as far back as the old 12-frame history reached.
+MARKER_LAG = 60
 HOLD_STEPS = 10    # steps after a flip before the next may happen
 
 # Lapper. After a pass the drone is only ~0.3 m past the hoop, too close to see
@@ -55,10 +60,9 @@ GO_ROUND = [           # (steps, action): ~0.6 m right, ~0.8 m back, ~0.6 m left
 
 
 def _split(policy_input: np.ndarray):
-    n_obs = contract.OBS_STACK * contract.OBS_DIM
-    frames = policy_input[:n_obs].reshape(contract.OBS_STACK, contract.OBS_DIM)
-    n_act = contract.ACTION_HISTORY * contract.ACTION_DIM   # the seen-hoop flag follows
-    actions = policy_input[n_obs:n_obs + n_act].reshape(contract.ACTION_HISTORY, contract.ACTION_DIM)
+    """Per slot, oldest first, the frames and mean commands. The newest slot is one
+    step, so frames[-1] is the newest frame and actions[-1] the last command."""
+    frames, _heights, actions, _unseen = contract.split_input(policy_input)
     return frames, actions
 
 
@@ -110,9 +114,9 @@ class Lapper:
             return self._search()
         self.searching = 0
         action = self._line_up(frames, actions, act(policy_input))
-        # Only fly at a hoop whose front marker was seen in the last 2.4 s. Blue
-        # junk has no marker, and nor does the hoop's back, which is a wrong way.
-        if not frames[:, 7].any():
+        # Only fly at a hoop whose front marker was seen in the last MARKER_LAG steps.
+        # Blue junk has no marker, and nor does the hoop's back, which is a wrong way.
+        if not frames[contract.slot_of(MARKER_LAG):, 7].any():
             action[1] = 0.0
         return action
 
@@ -124,7 +128,7 @@ class Lapper:
 
     def _line_up(self, frames, actions, action):
         u, ratio = frames[-1][0], frames[-1][3]
-        now, then = ([frames[contract.OBS_LAGS.index(lag)] for lag in lags] for lags in (NOW_LAGS, THEN_LAGS))
+        now, then = ([frames[contract.slot_of(lag)] for lag in lags] for lags in (NOW_LAGS, THEN_LAGS))
         self.since_flip += 1
         if (all(f[6] for f in now + then) and self.since_flip >= HOLD_STEPS
                 and np.mean([f[3] for f in now]) < np.mean([f[3] for f in then]) - FLATTER):
