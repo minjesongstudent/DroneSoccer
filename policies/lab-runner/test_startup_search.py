@@ -43,10 +43,13 @@ class SearchTests(unittest.TestCase):
         for _ in range(31):self.step(h=120)
         self.assertEqual(self.commands[-1],'rc 0 0 0 -15')
         for _ in range(31):self.step(h=120)
+        self.assertEqual(self.commands[-1],'rc 0 0 -15 0')
+        self.step(h=80)
         self.assertEqual(self.c.state,'landing');self.assertEqual(self.commands[-1],'land')
         self.assertEqual(self.policy.predictions,0)
         self.assertTrue(all(row['controller']=='scripted_startup_search' for row in self.rows))
         self.assertEqual(self.c.snapshot()['policy_steps'],0)
+        self.assertTrue(all(row['command'].split()[1:3]==['0','0'] for row in self.rows))
 
     def test_stable_detection_neutral_before_policy_and_actual_history(self):
         self.step(dt=.6);self.step()
@@ -86,7 +89,7 @@ class SearchTests(unittest.TestCase):
                 self.assertEqual(self.c.state,'landing');self.assertEqual(self.commands[-1],'land')
 
     def test_search_hard_timeout_independent_of_frame_loop(self):
-        self.now+=14;self.fresh(100);self.c.search_updated=self.now;self.c.watch()
+        self.now+=LIMITS['timeout_s'];self.fresh(100);self.c.search_updated=self.now;self.c.watch()
         self.assertEqual(self.c.state,'landing');self.assertIn('timeout',self.c.reason)
 
     def test_missing_yaw_prevents_takeoff(self):
@@ -96,6 +99,30 @@ class SearchTests(unittest.TestCase):
         before=list(self.commands)
         with self.assertRaisesRegex(ValueError,'yaw'):c.start()
         self.assertEqual(self.commands,before)
+
+    def test_downward_detection_stops_and_hands_over(self):
+        self.step(h=120,dt=.6)
+        for _ in range(62):self.step(h=120)
+        self.assertEqual(self.commands[-1],'rc 0 0 -15 0')
+        for _ in range(7):
+            self.step(visible=True,h=100)
+            if self.c.state=='active':break
+        self.assertEqual(self.c.state,'active');self.assertEqual(self.commands[-1],'rc 0 0 0 0')
+        self.assertEqual(self.policy.predictions,0)
+        self.step(visible=True,h=100);self.assertEqual(self.policy.predictions,1)
+
+    def test_descent_stalls_or_reaches_lower_bound_then_lands(self):
+        self.step(h=120,dt=.6)
+        for _ in range(115):
+            if self.c.state!='acquiring':break
+            self.step(h=120)
+        self.assertEqual(self.c.state,'landing');self.assertIn('descent timeout',self.c.reason)
+
+    def test_horizontal_proposal_rejected_at_command_boundary(self):
+        self.c.search.step=lambda *args:((10,0,0,0),False)
+        self.step(dt=.6)
+        self.assertEqual(self.commands,['takeoff','rc 0 0 0 0','land'])
+        self.assertIn('forbidden horizontal',self.c.reason)
 
     def test_yaw_bounds_wrap_and_bad_sensor(self):
         s=StartupSearch(0,179);s.step(.1,120,-179,False)

@@ -28,12 +28,13 @@ from compare_session import analyse_session
 
 PAGE = '''<!doctype html><meta charset="utf-8"><title>Supervised policy flight</title>
 <style>body{background:#101827;color:white;font:18px system-ui;margin:24px}button{font:inherit;padding:20px;margin:8px;touch-action:none}#start{background:#93e0c0}#land{background:#ffb458}#cut{background:#ec6666}img{max-height:50vh;max-width:100%}pre{white-space:pre-wrap}</style>
-<h1>PC-trained policy flight + recording</h1><p>Startup search v1</p><p id="identity">Verifying policy identity...</p><p id="phase"></p>
+<h1>PC-trained policy flight + recording</h1><p>Vertical search v2</p><p id="identity">Verifying policy identity...</p><p id="phase"></p>
 <p>This launcher sends REAL takeoff and flight commands. Experimental policy, not flight-qualified.
 Keep the cage clear and have an operator ready. Team RC mapping: 50 / 50 / 100 / 70.
 Click once to take off, find the ring, then run the policy. Startup search can rise slowly
 to a measured 120 cm and turn in place for two bounded sweeps. It never searches forward
-or sideways. The 150 cm ceiling remains. Startup search ends within 14 seconds or requests landing.
+or sideways. If still unseen after turning, it lowers slowly toward 80 cm while looking.
+The 150 cm ceiling remains. Search ends within 20 seconds or requests landing.
 After stable ring detection, learned control keeps running until you stop it or a safety check requests landing.
 Use LAND NOW or Escape to stop early. Keep this page open and focused. No automatic restart.</p>
 <p><label><input type="checkbox" id="ready"> Cage clear, guards fitted; I am supervising this physical test.</label></p>
@@ -207,7 +208,7 @@ class FlightPreview(Preview):
         super().start(folder)
         p=self.folder/'preview_metadata.json';meta=json.loads(p.read_text())
         meta.update(hand_carried=False,flight_control=True,
-            release='startup-search-v1',startup_search=dict(LIMITS,controller='scripted_startup_search',count_as_learned_policy=False),
+            release='vertical-search-v2',startup_search=dict(LIMITS,controller='scripted_startup_search',count_as_learned_policy=False),
             issued_actions='Quantized policy commands handed to UDP transport; delivery unconfirmed',
             ui_start='single click',stop_on_focus_loss=True,
             mode='physical supervised policy test',rc_full=[50,50,100,70],policy_limit_s=None,policy_stop='operator or safety check',

@@ -6,8 +6,8 @@ not measured ring height or a physical-flight qualification.
 """
 import math
 
-LIMITS = dict(target_height_cm=120,up_rc=15,yaw_rc=15,timeout_s=14,
-              ascent_timeout_s=5,sweep_leg_s=3,settle_s=.5,
+LIMITS = dict(target_height_cm=120,lower_height_cm=80,up_rc=15,down_rc=15,yaw_rc=15,timeout_s=20,
+              ascent_timeout_s=5,descent_timeout_s=5,sweep_leg_s=3,settle_s=.5,
               confirm_s=.4,confirm_frames=3,max_yaw_excursion_deg=60)
 
 class StartupSearch:
@@ -17,6 +17,7 @@ class StartupSearch:
         self.started=now;self.initial_yaw=yaw;self.last_yaw=yaw;self.yaw_excursion=0.
         self.last_time=now;self.scan_at=None;self.visible_at=None;self.visible_count=0
         self.phase='settling after takeoff';self.last_frame_at=now
+        self.descent_at=None
 
     def step(self,now,height,yaw,visible):
         if now<self.last_time:raise ValueError('search clock moved backwards')
@@ -50,7 +51,13 @@ class StartupSearch:
         if self.scan_at is None:self.scan_at=now
         scan=now-self.scan_at
         if scan>=2*LIMITS['sweep_leg_s']:
-            raise ValueError('startup search complete: ring not acquired')
+            if self.descent_at is None:self.descent_at=now
+            if height<=LIMITS['lower_height_cm']:
+                raise ValueError('vertical startup search complete: ring not acquired')
+            if now-self.descent_at>=LIMITS['descent_timeout_s']:
+                raise ValueError('startup search descent timeout')
+            self.phase='lowering slowly toward 80 cm to find ring'
+            return (0,0,-LIMITS['down_rc'],0),False
         direction=1 if scan<LIMITS['sweep_leg_s'] else -1
         self.phase='looking clockwise' if direction==1 else 'looking counterclockwise'
         # Neutral at the angular bound; time and opposite sweep still advance.

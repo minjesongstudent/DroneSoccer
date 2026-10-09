@@ -205,6 +205,10 @@ class FlightControl:
                 self.stop('invalid startup history observation');return None
             try:rc,ready=self.search.step(self.clock(),self.telemetry['h'],self.telemetry.get('yaw'),camera[6]==1)
             except ValueError as exc:self.stop(str(exc));return None
+            # Acquisition must never issue horizontal translation, even if a
+            # future search implementation accidentally proposes one.
+            if len(rc)!=4 or rc[0]!=0 or rc[1]!=0:
+                self.stop('forbidden horizontal startup movement');return None
             command='rc '+' '.join(map(str,rc));issued=np.asarray(rc,np.float64)/[50,50,100,70]
             row=dict(event='startup_proposal',phase=self.search.phase,controller='scripted_startup_search',
                 frame_id=sequence,receipt_monotonic=received,analysis_completed_monotonic=self.clock(),
