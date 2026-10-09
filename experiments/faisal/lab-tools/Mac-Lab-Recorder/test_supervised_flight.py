@@ -46,7 +46,7 @@ class WiringTests(unittest.TestCase):
         try:
             with patch('supervised_flight.webbrowser.open'):preview.open_browser()
             base='http://127.0.0.1:'+str(preview.server.server_port)
-            self.assertIn(b'HOLD: take off',urlopen(base).read())
+            self.assertIn(b'Take off + run policy',urlopen(base).read())
             link.send.assert_not_called()
             with self.assertRaises(HTTPError) as e:
                 urlopen(Request(base+'/control',data=b'{"action":"start"}',method='POST'))
@@ -69,15 +69,17 @@ class WiringTests(unittest.TestCase):
             preview.close()
             if preview.server:preview.server.shutdown();preview.server.server_close()
 
-    def test_capture_countdown_uses_monotonic_deadline(self):
+    def test_preflight_countdown_only_applies_on_ground(self):
         preview=FlightPreview(Mock())
         try:
-            self.assertIsNone(preview.snapshot()['capture_remaining_s'])
+            self.assertIsNone(preview.snapshot()['preflight_remaining_s'])
             with patch('supervised_flight.time.monotonic',return_value=100.):
-                preview.capture_deadline=120.
-                self.assertEqual(preview.snapshot()['capture_remaining_s'],20.)
-                preview.capture_deadline=99.
-                self.assertEqual(preview.snapshot()['capture_remaining_s'],0.)
+                preview.preflight_deadline=120.
+                self.assertEqual(preview.snapshot()['preflight_remaining_s'],20.)
+                preview.preflight_deadline=99.
+                self.assertEqual(preview.snapshot()['preflight_remaining_s'],0.)
+                preview.control.state='active'
+                self.assertIsNone(preview.snapshot()['preflight_remaining_s'])
         finally:preview.close()
 
     def test_csv_labels_physical_records_without_inventing_delivery(self):

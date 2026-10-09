@@ -30,7 +30,7 @@ class FlightControl:
         if not self.capture_ready: return 'recording not ready'
         if not self.fresh(self.frame_at, .25): return 'stale camera'
         if not self.fresh(self.telemetry_at, .5): return 'stale telemetry'
-        if require_operator and not self.fresh(self.operator_at, .5): return 'operator control released or lost'
+        if require_operator and not self.fresh(self.operator_at, .5): return 'flight UI contact lost'
         for name in ('bat', 'h', 'temph'):
             v=self.telemetry.get(name)
             if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v):
@@ -45,6 +45,12 @@ class FlightControl:
 
     def heartbeat(self):
         with self.lock: self.operator_at=self.clock()
+
+    def expire_idle(self, deadline):
+        # Serialize with start so an expired preflight window cannot stop a flight.
+        with self.lock:
+            if self.state == 'ground' and self.clock() >= deadline:
+                self.stop('three-minute preflight inactivity limit')
 
     def receive_telemetry(self, fields, received):
         with self.lock:
@@ -106,7 +112,6 @@ class FlightControl:
                     if now-self.takeoff_at >= 12: self.stop('takeoff acknowledgement/height timeout')
                     elif self.takeoff_ack and self.telemetry_at > self.takeoff_at and self.telemetry['h'] >= 30:
                         self.state='active'; self.active_at=now; self.last_prediction=now
-                elif now-self.active_at >= 10: self.stop('10-second policy test complete')
                 elif not self.fresh(self.last_prediction,.3): self.stop('policy inference stalled')
             elif self.state == 'landing':
                 # Keep requesting landing even if takeoff was cancelled mid-ascent.
@@ -135,8 +140,6 @@ class FlightControl:
             problem=self.problem()
             if problem or not self.fresh(received,.25):
                 self.stop(problem or 'frame expired during inference');return None
-            if self.clock()-self.active_at >= 10:
-                self.stop('10-second policy test complete');return None
             record=dict(frame_id=sequence,receipt_monotonic=received,
                 analysis_started_monotonic=started,analysis_completed_monotonic=self.clock(),
                 camera_features=np.asarray(features).tolist(),observation=observation.tolist(),

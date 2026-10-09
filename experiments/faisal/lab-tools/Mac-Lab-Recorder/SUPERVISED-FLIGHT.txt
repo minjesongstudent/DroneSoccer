@@ -11,21 +11,24 @@ This interface has software tests, not a completed physical flight validation.
 3. Join the Tello Wi-Fi; close other drone controllers and recorders.
 4. Run 2-Supervised-Flight.command and type FLIGHT. This connects the camera,
    starts recording and opens LOCAL controls. It does not automatically take off.
-5. Verify live camera and telemetry. Check the supervision box. HOLD the green
-   button continuously to request takeoff and then run the policy for 10 seconds.
-6. Release the button or press Escape / LAND NOW to request landing. Changing
-   focus/tabs also releases control. Keep the page and Terminal open while the
-   landing requests finish. Visually confirm the drone is down and motors stopped.
+5. Verify live camera and telemetry. Check the supervision box. CLICK the green
+   Take off + run policy button ONCE. No long press or holding is needed.
+   It requests takeoff, then keeps running the policy until you stop it or a
+   safety check requests landing. There is no fixed policy duration.
+6. Press Escape / LAND NOW to request landing. Changing focus/tabs also
+   requests landing. Keep the local flight page focused. Keep the page and
+   Terminal open while the landing requests finish. Visually confirm the drone is down and motors stopped.
 
 The separate red CUT MOTORS NOW control is an emergency motor cut: the drone
-will DROP. Ordinary release/stop requests landing, not a motor cut.
+will DROP. LAND NOW / Escape requests landing, not a motor cut.
 Do not control this flight through remote desktop; run it on the Mac next to
 the drone. If Wi-Fi fails, software cannot guarantee a command reaches the drone.
 
 DESIGN LIMITS (not measured safety guarantees)
-  Fresh processed camera within .25 s, telemetry/operator heartbeat within .5 s.
+  Fresh processed camera within .25 s, telemetry/browser heartbeat within .5 s.
   Policy inference watchdog .3 s. Takeoff acknowledgement/height wait 12 s.
-  Policy run 10 s. Capture overall limit 180 s. Landing retries for up to 20 s.
+  Preflight idle window 180 s; it does not limit an already-started flight.
+  Policy/recording continue until operator or safety stop. Landing retries up to 20 s.
   Battery >=30%, temperature <80 C; ground height <=10 cm before start.
   Policy starts only after takeoff OK plus a new height reading >=30 cm.
   During policy control, reported height must stay 30..150 cm.

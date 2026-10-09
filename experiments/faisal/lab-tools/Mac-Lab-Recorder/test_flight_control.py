@@ -74,10 +74,24 @@ class FlightTests(unittest.TestCase):
         self.clock.t+=20;self.c.watch();self.assertEqual(self.c.state,'stopped')
         self.assertFalse(self.c.snapshot()['physical_landing_confirmed'])
 
-    def test_timeout_and_height_limits(self):
-        self.activate();self.clock.t+=10.1;self.fresh(80);self.c.last_prediction=self.clock.t
-        self.c.watch();self.assertIn('10-second',self.c.reason)
-        self.setUp();self.activate();self.clock.t+=.1;self.fresh(160);self.c.watch()
+    def test_policy_continues_past_old_limits_with_fresh_inputs(self):
+        self.activate();started=self.clock.t
+        for seq,elapsed in enumerate((10.1,180.1,360.1),1):
+            self.clock.t=started+elapsed;self.fresh(80)
+            row=self.c.step(seq,self.clock.t,np.zeros(8))
+            self.assertTrue(row['sent']);self.c.watch();self.c.expire_idle(started+180)
+            self.assertEqual(self.c.state,'active')
+        self.assertNotIn('land',self.commands)
+        self.c.stop('operator land');self.assertEqual(self.commands[-1],'land')
+
+    def test_preflight_idle_timeout_does_not_stop_takeoff(self):
+        self.c.expire_idle(99);self.assertEqual(self.c.state,'stopped')
+        self.assertEqual(self.commands,[])
+        self.setUp();self.fresh();self.c.start();self.c.expire_idle(99)
+        self.assertEqual(self.c.state,'taking_off');self.assertEqual(self.commands,['takeoff'])
+
+    def test_height_limit(self):
+        self.activate();self.clock.t+=.1;self.fresh(160);self.c.watch()
         self.assertIn('ceiling',self.c.reason)
 
     def test_invalid_action_and_log_failure_land(self):

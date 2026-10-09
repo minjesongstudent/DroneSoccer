@@ -26,31 +26,84 @@ from flight_control import FlightControl
 from compare_session import analyse_session
 
 PAGE = '''<!doctype html><meta charset="utf-8"><title>Supervised policy flight</title>
-<style>body{background:#101827;color:white;font:18px system-ui;margin:24px}button{font:inherit;padding:20px;margin:8px;touch-action:none}#hold{background:#93e0c0}#land{background:#ffb458}#cut{background:#ec6666}img{max-height:50vh;max-width:100%}pre{white-space:pre-wrap}</style>
+<style>body{background:#101827;color:white;font:18px system-ui;margin:24px}button{font:inherit;padding:20px;margin:8px;touch-action:none}#start{background:#93e0c0}#land{background:#ffb458}#cut{background:#ec6666}img{max-height:50vh;max-width:100%}pre{white-space:pre-wrap}</style>
 <h1>Supervised policy flight + recording</h1>
 <p>This launcher sends REAL takeoff and flight commands. Experimental policy, not flight-qualified.
 Keep the cage clear and have an operator ready. Team RC mapping: 50 / 50 / 100 / 70.
-Release the held control to request landing. No automatic restart.</p>
+Click once to take off and run the policy. It keeps running until you stop it or a safety check requests landing.
+Use LAND NOW or Escape to stop early. Keep this page open and focused. No automatic restart.</p>
 <p><label><input type="checkbox" id="ready"> Cage clear, guards fitted; I am supervising this physical test.</label></p>
-<button id="hold" disabled>HOLD: take off + run policy (10 seconds)</button>
+<button id="start" disabled>Take off + run policy</button>
 <button id="land">LAND NOW / Escape</button>
-<details><summary>Emergency motor cut — drone will drop</summary><button id="cut">CUT MOTORS NOW</button></details>
+<details><summary>Emergency motor cut - drone will drop</summary><button id="cut">CUT MOTORS NOW</button></details>
 <p id="connection">Connecting to local recorder</p><p id="countdown"></p>
 <pre id="status">Waiting for current state</pre><p id="error"></p><img id="camera" alt="Live recorded camera">
 <script>
-let token=location.hash.slice(1),held=false,timer=null,busy=false;
-async function post(action){let r=await fetch('/control',{method:'POST',headers:{'Content-Type':'application/json','X-Flight-Token':token},body:JSON.stringify({action})});let s=await r.json();if(!r.ok){let e=Error(s.error);e.controlState=s.control_state;throw e;}return s;}
-async function release(force=false){if(!held&&!force)return;held=false;clearInterval(timer);try{await post('land')}catch(e){document.querySelector('#error').textContent='Landing request failed; delivery unconfirmed: '+e.message}}
-document.querySelector('#hold').onpointerdown=async e=>{if(held||e.target.disabled)return;if(!document.querySelector('#ready').checked){document.querySelector('#error').textContent='Check the supervision box, then HOLD the green button.';return;}e.preventDefault();held=true;e.target.setPointerCapture(e.pointerId);document.querySelector('#error').textContent='';try{await post('heartbeat');if(!held)return;await post('start');if(!held){await post('land');return;}timer=setInterval(async()=>{if(!held||busy)return;busy=true;try{await post('heartbeat')}catch(e){release()}finally{busy=false}},100)}catch(e){document.querySelector('#error').textContent=e.message;if(e.controlState==='ground'){held=false;clearInterval(timer);}else{await release();}}};
-document.querySelector('#hold').onpointerup=()=>release();
-document.querySelector('#hold').onpointercancel=()=>release();
-document.querySelector('#ready').onchange=()=>{if(!document.querySelector('#ready').checked)release()};
-document.querySelector('#land').onclick=()=>release(true);
-document.querySelector('#cut').onclick=()=>{held=false;clearInterval(timer);post('emergency').catch(e=>document.querySelector('#error').textContent=e.message)};
-addEventListener('blur',()=>{if(held)release()});addEventListener('pagehide',()=>{held=false;clearInterval(timer)});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&held)release()});
-addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();release(true)}});
-async function poll(){try{const r=await fetch('/state');if(!r.ok)throw Error('HTTP '+r.status);const s=await r.json();if(!s.control)throw Error('Missing control state');document.querySelector('#connection').textContent='Connected to local recorder';document.querySelector('#countdown').textContent=s.capture_remaining_s==null?'':'Recording closes in '+Math.ceil(s.capture_remaining_s)+' seconds (three-minute limit).';document.querySelector('#status').textContent=JSON.stringify(s.control,null,2);document.querySelector('#hold').disabled=!(s.control.state==='ground'&&!s.control.readiness)&&!held;if(s.decoded)document.querySelector('#camera').src='/frame.jpg?v='+s.frame_id;if(s.error)document.querySelector('#error').textContent=s.error}catch(e){document.querySelector('#connection').textContent='Local recorder unreachable; displayed state and image may be stale. Check Terminal. The three-minute limit may have ended this session. Landing/delivery is not confirmed.';document.querySelector('#hold').disabled=true;document.querySelector('#countdown').textContent='';if(held)await release();}setTimeout(poll,200)}poll();
+const token=location.hash.slice(1);
+const el=id=>document.querySelector('#'+id);
+let running=false,startPending=false,closedForFlight=false,timer=null,busy=false;
+function endHeartbeat(){clearInterval(timer);timer=null;}
+async function post(action){
+  const r=await fetch('/control',{method:'POST',headers:{'Content-Type':'application/json','X-Flight-Token':token},body:JSON.stringify({action})});
+  const s=await r.json();
+  if(!r.ok){const e=Error(s.error);e.controlState=s.control_state;throw e;}
+  return s;
+}
+async function stopFlight(force=false){
+  if(!running&&!force)return;
+  running=false;closedForFlight=true;endHeartbeat();el('start').disabled=true;
+  try{await post('land')}
+  catch(e){el('error').textContent='Landing request failed; delivery unconfirmed: '+e.message}
+}
+el('start').onclick=async()=>{
+  if(running||startPending||closedForFlight||el('start').disabled)return;
+  if(!el('ready').checked){el('error').textContent='Check the supervision box, then click Take off + run policy.';return;}
+  running=true;startPending=true;el('start').disabled=true;el('error').textContent='';
+  try{
+    await post('heartbeat');if(!running)return;
+    await post('start');
+    // Stop during an in-flight request must still win if the start reply arrives late.
+    if(!running){await post('land');return;}
+    timer=setInterval(async()=>{
+      if(!running||busy)return;
+      busy=true;
+      try{await post('heartbeat')}catch(e){await stopFlight()}finally{busy=false}
+    },100);
+  }catch(e){
+    el('error').textContent=e.message;
+    if(e.controlState==='ground'&&!closedForFlight){running=false;endHeartbeat();}
+    else{await stopFlight();}
+  }finally{startPending=false;}
+};
+el('ready').onchange=()=>{if(!el('ready').checked)stopFlight()};
+el('land').onclick=()=>stopFlight(true);
+el('cut').onclick=()=>{
+  running=false;closedForFlight=true;endHeartbeat();el('start').disabled=true;
+  post('emergency').catch(e=>el('error').textContent=e.message);
+};
+addEventListener('blur',()=>{if(running)stopFlight()});
+addEventListener('pagehide',()=>{running=false;closedForFlight=true;endHeartbeat()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&running)stopFlight()});
+addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();stopFlight(true)}});
+async function poll(){
+  try{
+    const r=await fetch('/state');if(!r.ok)throw Error('HTTP '+r.status);
+    const s=await r.json();if(!s.control)throw Error('Missing control state');
+    el('connection').textContent='Connected to local recorder';
+    el('countdown').textContent=s.preflight_remaining_s==null?'Recording continues throughout policy flight and landing.':'Start within '+Math.ceil(s.preflight_remaining_s)+' seconds (preflight window).';
+    el('status').textContent=JSON.stringify(s.control,null,2);
+    if(['landing','stopped'].includes(s.control.state)){running=false;closedForFlight=true;endHeartbeat();}
+    el('start').disabled=running||startPending||closedForFlight||s.control.state!=='ground'||!!s.control.readiness;
+    if(s.decoded)el('camera').src='/frame.jpg?v='+s.frame_id;
+    if(s.error)el('error').textContent=s.error;
+  }catch(e){
+    el('connection').textContent='Local recorder unreachable; displayed state and image may be stale. Check Terminal. The preflight window may have expired before takeoff. Landing/delivery is not confirmed.';
+    el('start').disabled=true;el('countdown').textContent='';
+    if(running)await stopFlight();
+  }
+  setTimeout(poll,200);
+}
+poll();
 </script>'''
 
 
@@ -141,14 +194,15 @@ class FlightPreview(Preview):
         self.link=link
         self.control=FlightControl(self.runtime,link.send,link.policy_log)
         self.token=secrets.token_urlsafe(32)
-        self.capture_deadline=None
+        self.preflight_deadline=None
 
     def start(self, folder):
         super().start(folder)
         p=self.folder/'preview_metadata.json';meta=json.loads(p.read_text())
         meta.update(hand_carried=False,flight_control=True,
             issued_actions='Quantized policy commands handed to UDP transport; delivery unconfirmed',
-            mode='physical supervised policy test',rc_full=[50,50,100,70],policy_limit_s=10,
+            ui_start='single click',stop_on_focus_loss=True,
+            mode='physical supervised policy test',rc_full=[50,50,100,70],policy_limit_s=None,policy_stop='operator or safety check',
             guards=dict(camera_age_s=.25,telemetry_age_s=.5,operator_age_s=.5,
                         prediction_age_s=.3,min_battery=30,max_temperature=80,height_cm=[30,150]))
         p.write_text(json.dumps(meta,indent=2))
@@ -176,7 +230,7 @@ class FlightPreview(Preview):
 
     def snapshot(self):
         result=super().snapshot();result['control']=self.control.snapshot()
-        result['capture_remaining_s']=None if self.capture_deadline is None else max(0,self.capture_deadline-time.monotonic())
+        result['preflight_remaining_s']=None if self.preflight_deadline is None or result['control']['state']!='ground' else max(0,self.preflight_deadline-time.monotonic())
         return result
 
     def open_browser(self):
@@ -239,11 +293,11 @@ def main():
                 except Exception as exc:preview.control.stop('watchdog error: '+str(exc))
         watcher=threading.Thread(target=watch,daemon=True);watcher.start()
         idle_deadline=time.monotonic()+180
-        preview.capture_deadline=idle_deadline
+        preview.preflight_deadline=idle_deadline
         preview.open_browser();print('RECORDING:',folder,flush=True)
-        print('Recording/server closes after three minutes; countdown is in the UI.',flush=True)
+        print('Preflight window is three minutes. After takeoff, policy and recording run until operator/safety stop.',flush=True)
         while preview.control.state!='stopped':
-            if time.monotonic()>=idle_deadline:preview.control.stop('three-minute capture limit')
+            preview.control.expire_idle(idle_deadline)
             time.sleep(.05)
     except KeyboardInterrupt:
         if preview:preview.control.stop('Ctrl+C')
