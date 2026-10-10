@@ -1816,7 +1816,15 @@ def run_baseline(args) -> None:
 
 
 def run_policy(args) -> None:
-    """A trained SAC model on the real drone, flown exactly like the baseline."""
+    """A trained SAC model or src.ppo actor on the real drone, flown exactly like the baseline."""
+    from src import actor
+    if actor.is_ppo(args.model):
+        # One flight per run, so its memory starts clear as in every training episode.
+        policy = actor.load_policy(args.model)
+        if policy.observation_size != contract.POLICY_INPUT_DIM:
+            sys.exit(f"{args.model} takes {policy.observation_size} inputs; this code builds {contract.POLICY_INPUT_DIM}")
+        fly_policy(args, "policy", policy, contract.policy_input, contract.not_yet_through)
+        return
     from stable_baselines3 import SAC
     model = SAC.load(args.model, device="cpu")
     size = model.observation_space.shape[0]
