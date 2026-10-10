@@ -49,6 +49,10 @@ def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None, seed
 
 
 def load_policy(model_path: str) -> Policy:
+    """A saved SAC model, or a src.ppo actor (which keeps a memory: it has reset())."""
+    from src import actor
+    if actor.is_ppo(model_path):
+        return actor.load_policy(model_path)
     from stable_baselines3 import SAC
     model = SAC.load(model_path, device="cpu")
     return lambda obs: model.predict(obs, deterministic=True)[0]
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--baseline", action="store_true")
-    group.add_argument("--model", help="path to a saved SAC model.zip")
+    group.add_argument("--model", help="path to a saved model.zip, SAC or PPO")
     parser.add_argument("--episodes", type=int)
     parser.add_argument("--level", type=float, default=1.0, help="curriculum level, 0-1")
     parser.add_argument("--randomise", action="store_true", help="draw dynamics per episode")

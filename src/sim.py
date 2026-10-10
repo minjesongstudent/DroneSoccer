@@ -45,6 +45,11 @@ from src.params import Altimeter, Cage, Camera, Detector, Drone, Hoop, Pad, Rand
 # spacing, a contact can be missed by at most ~0.1 mm.
 CENTRELINE_POINTS = 256
 
+# HoopEnv.privileged pads the commands still in flight to this many. Above
+# Randomise.delay_steps' top, so every draw fits.
+PENDING_MAX = 6
+PRIVILEGED_DIM = 3 + 3 + 3 + 3 + 3 + 6 + 9 + PENDING_MAX * contract.ACTION_DIM
+
 def _wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
@@ -530,6 +535,32 @@ class HoopEnv(gym.Env):
     def _policy_input(self):
         # The deques hold every step; contract.policy_input groups them into slots.
         return contract.policy_input(self._frames, self._heights, self._actions, self._unseen)
+
+    def privileged(self) -> np.ndarray:
+        """The true state, for src.ppo's critic in training only: never the policy's
+        input, and nothing on the drone has it. The policy sees blank frames for
+        whole stretches of the lap, and a critic on the same input values every blind
+        state alike. With this it knows where the drone is round the lap, how fast it
+        flies, which commands are still in flight and the episode's draw of the setup.
+        PRIVILEGED_DIM long, the same in every layout."""
+        n = self.hoop_normal
+        to_hoop = np.array([n, self._axis_h, self._axis_v])   # world offsets to the hoop's frame
+        facing = _wrap(self.heading - np.arctan2(n[1], n[0]))
+        cage = np.array([self.cage.length, self.cage.width, self.cage.height])
+        pending = np.zeros((PENDING_MAX, contract.ACTION_DIM))
+        queued = np.array(list(self._pending), float).reshape(-1, contract.ACTION_DIM)[:PENDING_MAX]
+        pending[:len(queued)] = queued   # none queued at delay_steps 0
+        d = self.dyn
+        return np.concatenate([
+            to_hoop @ (self.pos - self.hoop_centre), to_hoop @ self.vel,
+            [np.sin(facing), np.cos(facing), self.yaw_rate],
+            self.pos / cage, cage,
+            [self.hoop_centre[2], self._line_h, self._line_v, self._to_go(self.pos),
+             float(self._unseen), float(self._found)],
+            [d.delay_steps, d.tau, d.max_speed, d.max_up_speed, d.max_yaw_rate_deg, d.yaw_deadband,
+             self.camera.pitch_deg, self.altimeter.offset, self.height_step],
+            pending.ravel(),
+        ]).astype(np.float32)
 
     def _info(self, outcome):
         return {"outcome": outcome, "passes": self.passes, "steps": self.steps,

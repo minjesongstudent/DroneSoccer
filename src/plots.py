@@ -46,12 +46,14 @@ SURFACE = "#fcfcfb"
 SMOOTHING = 0.9       # TensorBoard-style exponential moving average weight
 
 
-def find_log_dir(name: str) -> Path:
-    """The newest TensorBoard directory for a run. SB3 writes runs/<name>_<N>."""
+def find_log_dir(name: str, runs: Path | None = None) -> Path:
+    """The newest TensorBoard directory for a run. SB3 writes runs/<name>_<N>, and src.ppo
+    numbers its own the same way through here, so the two always agree."""
+    runs = runs or RUNS
     pattern = re.compile(rf"^{re.escape(name)}_(\d+)$")
-    found = [(int(m.group(1)), p) for p in RUNS.iterdir() if (m := pattern.match(p.name))]
+    found = [(int(m.group(1)), p) for p in runs.iterdir() if (m := pattern.match(p.name))]
     if not found:
-        raise FileNotFoundError(f"no TensorBoard log for {name} in {RUNS}")
+        raise FileNotFoundError(f"no TensorBoard log for {name} in {runs}")
     return max(found)[1]
 
 
