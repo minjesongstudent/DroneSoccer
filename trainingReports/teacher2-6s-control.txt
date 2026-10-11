@@ -1,0 +1,41 @@
+teacher2-6s-control
+job 119501   git unknown   seeds 6/6   steps 5,000,000
+written 2026-10-10 13:26
+
+SETTINGS
+args      --randomise --demos 200000 --demo-share 0.25 --level 1.0
+run       steps 5000000  level 1.0  randomise True  resume False  envs 1  init none  demos 200000  demo_share 0.25  run_in_share 0.1  select_episodes 50
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          4.0
+          R_TIME              0.1           R_WALL              1.0           R_FOUND             5.0
+          GAMMA               0.995         CRASHES             hit,wrong_way,roof,sideLAPS_MAX_STEPS      600
+          FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,markerOBS_DIM             8             ACTION_FIELDS       right,forward,up,yaw_cw
+          ACTION_DIM          4             OBS_LAGS            60,50,40,32,24,16,12,8,4,2,1,0OBS_STACK           12
+          FRAME_HISTORY       61            ACTION_HISTORY      3             PASS_MAJOR          0.55
+          PASS_U              0.5           POLICY_INPUT_DIM    109           VISIBLE             6
+          MIN_ARC_FRACTION    0.25          MIN_POINTS          5             MIN_RATIO           0.2
+          CLIP                3.0           _FIT_SCALE          1000.0        HOOP_HEIGHT         1.33,1.73
+          HOOP_FROM_CENTRE    0.15          PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0
+          CLEARANCE           0.4           SIDE_GAP            0.35          RUN_IN_DISTANCE     0.6,1.0
+          RUN_IN_OFFSET       0.05          RUN_IN_HEADING_DEG  5.0           RUN_IN_HEIGHT       -0.3,0.1
+          CENTRELINE_POINTS   256           DEFAULT_EPISODES    200           CHECKPOINT_EVERY    250000
+          BUFFER_SIZE         1000000       INIT_WARMUP         200000        DEMO_LEVEL          1.0
+          DEMO_NOISE          0.1           DEMO_SHARE          0.25          DEMO_SEED           2000000
+          RUN_IN_SHARE        0.1           SELECT_EPISODES     50            SELECT_SEED         3000000
+          LEVEL_STEP          0.25          LEVEL_WINDOW        200           LEVEL_UP            0.7
+          LEVEL_PASSES        1             MISSION_PASSES      2
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     pass/ep    never     laps  crashed     wall      hit    wrong     roof     side  timeout  1st pass  level      steps   time
+0     done          0.54    50.0%    15.0%    71.5%     0.0%    29.0%     2.0%    26.0%    16.0%    28.0%     10.7s   1.00      5000k  1067m
+1     done          0.51    54.0%     9.0%    99.0%     0.0%    38.0%     0.0%    46.0%    14.0%     1.0%     10.0s   1.00      5000k  1068m
+2     done          0.59    50.0%    22.0%    80.0%    17.0%    42.0%     0.0%     9.0%    30.0%    20.0%     10.1s   1.00      5000k  1075m
+3     done          0.66    40.0%    10.0%    93.0%     0.0%    61.0%     0.0%     7.0%    25.0%     7.0%     10.1s   1.00      5000k  1080m
+4     done          0.68    40.0%    13.0%    95.5%     0.0%    32.0%     0.0%    14.0%    50.0%     4.0%     10.0s   1.00      5000k  1096m
+5*    done          0.79    44.0%    34.0%    87.0%     0.0%    65.0%     0.0%    10.0%    12.0%    13.0%     10.0s   1.00      5000k  1089m
+base                0.03    98.0%     0.0%    64.0%     0.0%     2.0%     0.0%     2.0%    60.0%    36.0%     38.8s
+best      seed 5 -> trainedModels/teacher2-6s-control.zip
+
+FLAGS
+  !  seed 0,1,2,3,4,5: crash-heavy - 50%+ of episodes crash
+     seed 2,3: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)
