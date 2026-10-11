@@ -111,11 +111,12 @@ class Episodes:
         self.start, self.start_steps = time.time(), steps
         self.printed = steps // self.every
 
-    def add(self, info: dict):
+    def add(self, info: dict, reward: float):
+        """reward: the episode's summed (unscaled) reward."""
         if info.get("run_in"):
             self.run_ins.append(info["passes"] > 0)
         else:
-            self.recent.append(info)
+            self.recent.append({**info, "reward": reward})
 
     def level_up(self) -> bool:
         """Step the level up if the full window met the bar. The caller tells its envs."""
@@ -127,6 +128,9 @@ class Episodes:
 
     def passes_per_ep(self) -> float:
         return float(np.mean([i["passes"] for i in self.recent]))
+
+    def reward_per_ep(self) -> float:
+        return float(np.mean([i["reward"] for i in self.recent]))
 
     def crash_rate(self) -> float:
         return float(np.mean([i["outcome"] in CRASHES for i in self.recent]))
@@ -143,8 +147,8 @@ class Episodes:
         ready = f"ready {self.ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
         # Episodes that end before the minute are crashes.
         seconds = np.mean([i["steps"] for i in self.recent]) * Drone().dt
-        return (f"passes/ep {self.passes_per_ep():.2f}  crashed {self.crash_rate():.0%}  "
-                f"ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
+        return (f"passes/ep {self.passes_per_ep():.2f}  reward/ep {self.reward_per_ep():.2f}  "
+                f"crashed {self.crash_rate():.0%}  ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
 
     def progress_line(self, steps: int) -> str | None:
         """The line to print once every `every` steps, else None. N parallel envs raise
@@ -176,7 +180,7 @@ class Progress(BaseCallback):
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
             if not done:
                 continue
-            episodes.add(info)
+            episodes.add(info, info["episode"]["r"])   # Monitor's episode sum
             if info.get("run_in"):
                 self.logger.record("rollout/run_in_passed", float(np.mean(episodes.run_ins)))
                 continue

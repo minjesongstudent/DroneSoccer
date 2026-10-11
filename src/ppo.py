@@ -322,7 +322,7 @@ class Tracker:
         for info, expert, reward in ended:
             if expert:
                 continue
-            self.episodes.add(info)
+            self.episodes.add(info, reward)
             if info.get("run_in"):
                 continue
             self.rewards.append(reward)
