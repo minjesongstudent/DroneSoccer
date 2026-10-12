@@ -1,0 +1,13 @@
+   0.000  connecting to 192.168.10.1
+   0.105  connected, battery 69%, temperature 67 C
+   0.310  mission pads on, downward
+   3.207  video reader open
+   3.210  policy: trainedModels/teacher3-12s-height.zip
+   3.211  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   3.359  phase: countdown
+   8.232  phase: takeoff
+  12.065  phase: airborne check
+  13.098  phase: settle
+  16.094  phase: policy
+  25.287  ! too high: tof 191 cm, landing
+  25.287  phase: land
