@@ -1,6 +1,0 @@
-   0.000  connecting to 192.168.10.1
-   0.218  connected, battery 27%, temperature 83 C
-   0.431  mission pads on, downward
-   2.799  video reader open
-   2.799  policy: trainedModels/ppo-dagger.zip
-   2.860  ! battery 27% is under 30%. Swap it and run again.

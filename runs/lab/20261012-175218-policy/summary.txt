@@ -1,3 +1,0 @@
-Summary of 20261012-175218-policy
-  telemetry      9.8 Hz (median), worst gap 177 ms
-  video        960x720, 27.5 fps (median), worst gap 150 ms
