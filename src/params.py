@@ -30,11 +30,16 @@ class Cage:
 
 @dataclass
 class Hoop:
-    outer_diameter: float = 0.45      # width. MEASURED 2026-09-24, outside edge to outside edge, direction
-                                      # not noted. Face-on it reads 0.93-0.95 of its height in flight, so
-                                      # ~0.43-0.44 is likely. UNMEASURED as a width: labcheck tape
-    outer_height: float = 0.46        # MEASURED 2026-10-06: tape, top to bottom outside the noodle, as hung
-    diameter_tolerance: float = 0.03  # DESIGN: +- per episode and per axis; the noodle is floppy
+    outer_diameter: float = 0.44      # width. MEASURED 2026-10-12: flight video (labcheck 183046, 183807,
+                                      # 103 frames), the fitted outer edge with the 6.5 cm noodle as the
+                                      # ruler, 0.43-0.46. 0.45 by tape on 2026-09-24, direction not noted
+    outer_height: float = 0.48        # MEASURED 2026-10-12: flight video as outer_diameter, 0.46-0.51. The
+                                      # tape gave 0.46 on 2026-10-06: the noodle hangs from its top and sags
+    diameter_tolerance: float = 0.03  # DESIGN: +- per episode on the width; the noodle is floppy
+    # Per episode the height is the width times outer_height / outer_diameter (1.09), times 1 +- this:
+    # height/width 0.98 (round) to 1.20. MEASURED 2026-10-12 in the videos: 1.06-1.13, median 1.09,
+    # and the top, where the ends are taped to the hanger, is narrower than an ellipse's.
+    stretch_tolerance: float = 0.1    # DESIGN
     thickness: float = 0.065  # MEASURED 2026-10-01: tape, 6.5 cm
     n_points: int = 32                # DESIGN: points projected around the outer edge
     # The front marker: a disc on the noodle's front face at 6 o'clock. The noodle
@@ -76,6 +81,8 @@ class Drone:
     max_up_speed: float = 0.4  # DESIGN: m/s at full up or down; labcheck.RC_FULL ud is set so the drone matches.
                                # MEASURED 2026-10-06 (labcheck survey, 3 s holds): 0.4 m/s at rc 51 up, 47 down,
                                # so RC_FULL ud 50. Not linear: rc 30 gives 0.18 up / 0.13 down (sim 0.24)
+    up_exponent: float = 1.0   # DESIGN: up/down speed = max_up_speed * |command| ** this, 1 linear.
+                               # The real drone is weaker at small commands: Randomise.up_exponent
     max_yaw_rate_deg: float = 55.0  # MEASURED 2026-10-06 (labcheck survey): rc 70 (RC_FULL) turns 52.9-57.6 deg/s
     yaw_deadband: float = 0.10  # MEASURED 2026-10-06 (labcheck survey): rc 5 turns 0-1 deg/s, rc 10 3.4-4.8,
                                 # rc 20 11, rc 40 25; the line through them crosses 0 at rc 7 = 0.10 of rc 70
@@ -133,12 +140,39 @@ class Altimeter:
 
 
 @dataclass
+class Telemetry:
+    """The motion the policy gets (contract.MOTION_FIELDS): the Tello's state packet, read
+    each tick by labcheck.fly_policy. sim.HoopEnv copies its faults."""
+    speed_step: float = 0.1     # MEASURED 2026-10-12: vgx, vgy are whole dm/s; at hover 95% read 0
+    speed_noise: float = 0.06   # MEASURED 2026-10-12: std, m/s, before the step: 5% of hover packets
+                                # (rc < 5) read 0.1, which a 0.06 std below the 0.1 step gives
+    stale: float = 0.02         # MEASURED 2026-10-12: share of ticks with no new packet (gap > 0.15 s)
+    lag_steps: int = 1          # UNMEASURED: steps the packet trails the motion; Randomise.telemetry_lag
+    yaw_step_deg: float = 1.0   # MEASURED 2026-10-12: yaw is whole degrees
+    yaw_drift_deg_per_s: float = 0.0  # UNMEASURED: IMU heading drift; Randomise.yaw_drift spans +-1/min
+
+
+@dataclass
 class Randomise:
     """Ranges drawn per episode when HoopEnv(randomise=True). Stage 3 of the laps plan."""
     delay_steps: tuple[int, int] = (1, 4)       # MEASURED 2026-10-01: 2 steps, +-1 plus WiFi spikes
     tau: tuple[float, float] = (0.25, 0.7)      # MEASURED 2026-10-01: 0.25 (ud) to 0.66 (fb)
     rate_hz: tuple[float, float] = (8.0, 12.0)  # MEASURED 2026-10-01: 10.0 Hz mean, worst tick 126 ms; drawn every step
     altimeter_resolution: tuple[float, float] = (0.01, 0.10)  # DESIGN: per episode, see Altimeter.resolution
+    telemetry_lag: tuple[int, int] = (0, 2)    # DESIGN: per episode, see Telemetry.lag_steps
+    yaw_drift: tuple[float, float] = (-1 / 60, 1 / 60)   # DESIGN: deg/s per episode, see Telemetry
+    # Top speed and the up/down response, per episode, never beyond what the 2026-10-12 policy
+    # flights showed. MEASURED 2026-10-12 (8 flights):
+    #   - run ins reached 0.5-0.8 m/s (telemetry) at rc 37-50, against the sim's 0.4 at full
+    #     command, and after both passes the drone flew 2.1x as far as the sim does on the same
+    #     commands, into the net. 0.55 to 0.8 (the user's choice, 2026-10-12): the run-in speeds
+    #     seen, 0.8 the fastest. Drone.max_speed 0.4 (1 s steps, 2026-10-01) is below it.
+    #   - up/down over 830 steady, level windows: rc 6-30 gave 0.03-0.11 m/s against the
+    #     sim's 0.08-0.18, and rc 2-6 nothing: 0.4 * |command| ** 1.6 fits every bin to ~0.01.
+    #     So 1 (the old linear sim) to 1.6. The 2026-10-06 survey agrees: rc 30 gave 0.13-0.18.
+    # Both from flight logs, not steps: labcheck steps --axis ud/fb --seconds 3 would pin them.
+    max_speed: tuple[float, float] = (0.55, 0.8)
+    up_exponent: tuple[float, float] = (1.0, 1.6)
     # Measurement error: each value here moves by up to +- this much per episode,
     # so the policy does not lean on any one measurement being exact. DESIGN, sized
     # to how well each was measured (tape about 1 cm, calibration about 3 px).
@@ -150,7 +184,7 @@ class Randomise:
         "camera.pitch_deg": 2.0, "camera.offset_forward": 0.01,
         "drone.width": 0.01, "drone.length": 0.01, "drone.height": 0.01,
         "drone.takeoff_height": 0.05,
-        "drone.max_speed": 0.04, "drone.max_yaw_rate_deg": 6.0,
+        "drone.max_yaw_rate_deg": 6.0,   # max_speed: Randomise.max_speed
         # Up/down is not linear in rc (MEASURED 2026-10-06), so +-20%; deadband 0.07-0.13.
         "drone.max_up_speed": 0.08, "drone.yaw_deadband": 0.03,
         "detector.min_arc_fraction": 0.15, "detector.marker_miss": 0.1, "detector.marker_miss_near": 0.08,

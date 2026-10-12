@@ -36,6 +36,8 @@ def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None, seed
         obs, _ = env.reset(seed=seed + i)
         if hasattr(policy, "reset"):
             policy.reset()
+        if hasattr(policy, "bind"):   # a privileged teacher reads the sim's true state
+            policy.bind(env)
         first_pass, done = None, False
         while not done:
             obs, _, terminated, truncated, info = env.step(policy(obs))

@@ -39,7 +39,7 @@ import gymnasium as gym
 import numpy as np
 
 from src import contract
-from src.params import Altimeter, Cage, Camera, Detector, Drone, Hoop, Pad, Randomise
+from src.params import Altimeter, Cage, Camera, Detector, Drone, Hoop, Pad, Randomise, Telemetry
 
 # Collision checks use this many points along the noodle's centreline. At ~5 mm
 # spacing, a contact can be missed by at most ~0.1 mm.
@@ -48,10 +48,29 @@ CENTRELINE_POINTS = 256
 # HoopEnv.privileged pads the commands still in flight to this many. Above
 # Randomise.delay_steps' top, so every draw fits.
 PENDING_MAX = 6
-PRIVILEGED_DIM = 3 + 3 + 3 + 3 + 3 + 6 + 9 + PENDING_MAX * contract.ACTION_DIM
+PRIVILEGED_DIM = 3 + 3 + 3 + 3 + 3 + 6 + 12 + PENDING_MAX * contract.ACTION_DIM
 
 def _wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
+
+
+def velocity_command(d: Drone, right, forward, up, yaw_cw, heading: float):
+    """The velocity (world x, y, z in m/s) and turn rate (rad/s, counter-clockwise) a
+    command asks of drone d facing heading: what HoopEnv.step eases towards with tau.
+    A function of its own so src.sysid fits real logs with the same equations."""
+    c, s = np.cos(heading), np.sin(heading)
+    # No faster than max_speed in any direction: on 2026-10-12 full diagonals (rc lr 50, fb
+    # -45) flew 0.5-0.65 m/s, slower than straight ahead (0.8), not 1.41 times it.
+    across = max(1.0, float(np.hypot(forward, right)))
+    forward, right = forward / across, right / across
+    # Up and down are weak at small commands (params.Randomise.up_exponent).
+    up_speed = d.max_up_speed * np.sign(up) * abs(up) ** d.up_exponent
+    v_cmd = np.array([d.max_speed * (forward * c + right * s), d.max_speed * (forward * s - right * c),
+                      up_speed])
+    # Small yaw commands barely turn the real drone: scale from the deadband up.
+    db = float(np.clip(d.yaw_deadband, 0.0, 0.5))
+    yaw_cw = np.sign(yaw_cw) * max(0.0, abs(yaw_cw) - db) / (1.0 - db)
+    return v_cmd, -yaw_cw * np.deg2rad(d.max_yaw_rate_deg)   # heading is counter-clockwise
 
 
 class HoopEnv(gym.Env):
@@ -62,7 +81,7 @@ class HoopEnv(gym.Env):
                  camera: Camera | None = None, drone: Drone | None = None,
                  pad: Pad | None = None, ranges: Randomise | None = None,
                  detector: Detector | None = None, altimeter: Altimeter | None = None,
-                 run_in_share: float = 0.0):
+                 telemetry: Telemetry | None = None, run_in_share: float = 0.0):
         self.cage = cage or Cage()
         self.hoop = hoop or Hoop()
         self.camera = camera or Camera()
@@ -70,6 +89,7 @@ class HoopEnv(gym.Env):
         self.pad = pad or Pad()
         self.detector = detector or Detector()
         self.altimeter = altimeter or Altimeter()
+        self.telemetry = telemetry or Telemetry()
         self.ranges = ranges or Randomise()
         self.randomise = randomise
         self.run_in_share = run_in_share   # share of resets that start lined up (RUN_IN_*)
@@ -192,8 +212,12 @@ class HoopEnv(gym.Env):
             angle = bearing + np.deg2rad(rng.uniform(-max_angle, max_angle))
             normal = np.array([np.cos(angle), np.sin(angle)])
             side = np.array([-normal[1], normal[0]])
-            radii = (np.array([self.hoop.outer_diameter, self.hoop.outer_height])
-                     + rng.uniform(-1, 1, 2) * self.hoop.diameter_tolerance) / 2
+            # The noodle hangs taller than wide by a varying amount: the width, then the
+            # height from the width (params.Hoop.stretch_tolerance).
+            wide, tall = rng.uniform(-1, 1, 2)
+            width = self.hoop.outer_diameter + wide * self.hoop.diameter_tolerance
+            stretch = self.hoop.outer_height / self.hoop.outer_diameter * (1 + tall * self.hoop.stretch_tolerance)
+            radii = np.array([width, width * stretch]) / 2
             must_fit = [centre + radii[0] * side, centre - radii[0] * side,
                         centre + CLEARANCE * normal, centre - CLEARANCE * normal]
             gates = [centre + (radii[0] + SIDE_GAP) * side, centre - (radii[0] + SIDE_GAP) * side]
@@ -252,6 +276,12 @@ class HoopEnv(gym.Env):
         # The open hole inside the noodle, and the point out front to line up on.
         self._hole_h, self._hole_v = self._line_h - half_t, self._line_v - half_t
         self._approach = hoop_centre - CLEARANCE * n
+        # Lined up: flying straight on along the axis, the box would clear the noodle.
+        # The hole less the box's half-width beside and half-height above and below.
+        self._safe_h = self._hole_h - self._half_box[1]
+        self._safe_v = self._hole_v - self._half_box[2]
+        # The most clearance any pass here can have: centred, facing straight through.
+        self._best_clearance = self._clearance(hoop_centre, np.arctan2(n[1], n[0]))
         # Sideways from the centre, past which the drone clears the rim going round.
         self._beside = radius_h + SIDE_GAP / 2
 
@@ -259,19 +289,25 @@ class HoopEnv(gym.Env):
         # Randomised dynamics are drawn once per episode into a copy of the drone.
         self.dyn = self.drone
         self.height_step = self.altimeter.resolution
+        self.telemetry_lag, self.yaw_drift = self.telemetry.lag_steps, self.telemetry.yaw_drift_deg_per_s
         if self.randomise:
             r, rng = self.ranges, self.np_random
             self.dyn = dataclasses.replace(
                 self.drone,
                 delay_steps=int(rng.integers(r.delay_steps[0], r.delay_steps[1] + 1)),
-                tau=float(rng.uniform(*r.tau)))
+                tau=float(rng.uniform(*r.tau)),
+                max_speed=float(rng.uniform(*r.max_speed)),
+                up_exponent=float(rng.uniform(*r.up_exponent)))
             self.height_step = float(rng.uniform(*r.altimeter_resolution))
+            self.telemetry_lag = int(rng.integers(r.telemetry_lag[0], r.telemetry_lag[1] + 1))
+            self.yaw_drift = float(rng.uniform(*r.yaw_drift))
         self.vel = np.zeros(3)
         self.yaw_rate = 0.0
         self.steps = 0
         self.passes = 0
         self.wall_steps = 0
         self.route = None   # which way the drone last went round, for replay.py
+        self.centred = None   # how centred this step's pass was (_centred), None without one
         self._pending = deque([np.zeros(contract.ACTION_DIM, np.float32)] * self.dyn.delay_steps)
         # As labcheck.fly_policy starts: no frames yet, so every step of the history
         # is blind with no command, and the height has held at the first reading. The
@@ -280,6 +316,11 @@ class HoopEnv(gym.Env):
         n = contract.HISTORY_STEPS
         self._frames = deque([contract.NOT_VISIBLE.copy()] * n, maxlen=n)
         self._heights = deque([self._height_reading()] * n, maxlen=n)
+        # Motion, as labcheck.fly_policy reads it: heading from where the policy started.
+        self._start_heading, self._clock = self.heading, 0.0
+        self._motion_true = deque([(0.0, 0.0)] * (self.telemetry_lag + 1), maxlen=self.telemetry_lag + 1)
+        self._last_motion = contract.NO_MOTION.copy()
+        self._motion = deque([self._motion_reading()] * n, maxlen=n)
         self._streak = 0
         self._unseen = True
         self._found = False   # the front reported yet this episode, for R_FOUND
@@ -298,13 +339,7 @@ class HoopEnv(gym.Env):
         # Commands are body-frame: rotate by heading before integrating.
         d = self.dyn
         dt = 1.0 / self.np_random.uniform(*self.ranges.rate_hz) if self.randomise else d.dt
-        c, s = np.cos(self.heading), np.sin(self.heading)
-        v_cmd = np.array([d.max_speed * (forward * c + right * s), d.max_speed * (forward * s - right * c),
-                          d.max_up_speed * up])
-        # Small yaw commands barely turn the real drone: scale from the deadband up.
-        db = float(np.clip(d.yaw_deadband, 0.0, 0.5))
-        yaw_cw = np.sign(yaw_cw) * max(0.0, abs(yaw_cw) - db) / (1.0 - db)
-        yaw_cmd = -yaw_cw * np.deg2rad(d.max_yaw_rate_deg)  # heading is counter-clockwise
+        v_cmd, yaw_cmd = velocity_command(d, right, forward, up, yaw_cw, self.heading)
         alpha = 1.0 - np.exp(-dt / d.tau)
         self.vel += (v_cmd - self.vel) * alpha
         self.yaw_rate += (yaw_cmd - self.yaw_rate) * alpha
@@ -312,6 +347,7 @@ class HoopEnv(gym.Env):
         prev = self.pos.copy()
         self.pos = self.pos + self.vel * dt
         self.heading = (self.heading + self.yaw_rate * dt + np.pi) % (2 * np.pi) - np.pi
+        self._clock += dt
         self.steps += 1
         on_wall, face = self._touch_walls()
         self.wall_steps += on_wall
@@ -326,12 +362,13 @@ class HoopEnv(gym.Env):
             outcome, self._found = "found", True
         self._frames.append(obs)
         self._heights.append(self._height_reading())
+        self._motion.append(self._motion_reading())
         self._unseen = contract.not_yet_through(self._unseen, self._frames)
         self._actions.append(action)
 
         terminated = outcome in contract.CRASHES
         reward = contract.reward(outcome, self._to_go(prev), self._to_go(self.pos),
-                                 on_wall, obs.copy(), action.copy())
+                                 on_wall, obs.copy(), action.copy(), self.centred or 0.0)
         truncated = not terminated and self.steps >= contract.LAPS_MAX_STEPS
         if truncated:
             outcome = "timeout"
@@ -342,8 +379,11 @@ class HoopEnv(gym.Env):
         off the noodle. A straight line at the hoop centre from the side, or at
         a side gate from just behind the ring, runs into the rim.
 
-        In front, lined up with the hole: straight to the centre.
+        In front, lined up (a straight run along the axis would clear the noodle):
+        straight to the centre.
         In front, not lined up: to the approach point CLEARANCE out front, then in.
+        Inside the hole but too near the rim to clear it counts as not lined up, so
+        cutting in from the side towards the rim earns nothing.
         Behind, still within the rim's width: out to a point CLEARANCE behind a
         side gate, so the drone backs off the rim. Beside the rim: straight to
         the gate, then round to the approach point.
@@ -355,7 +395,7 @@ class HoopEnv(gym.Env):
         h = rel @ self._axis_h
         if along < 0.0:
             v = rel @ self._axis_v
-            if (h / self._hole_h) ** 2 + (v / self._hole_v) ** 2 < 1.0:
+            if (h / self._safe_h) ** 2 + (v / self._safe_v) ** 2 < 1.0:
                 return float(np.linalg.norm(rel))
             return float(np.linalg.norm(pos - self._approach)) + CLEARANCE
         best = np.inf
@@ -444,12 +484,15 @@ class HoopEnv(gym.Env):
         """Front to back through the ring scores; back through the ring is wrong_way.
         Crossing the plane outside the ring is how the drone gets round, so it is neutral.
         The hanger counts as part of the hoop."""
-        self.route = None
+        self.route = self.centred = None
         if self._hit() or self._hits_hanger():
             return "hit"
         crossing = self._crossing(prev)
         if crossing is not None and crossing[1]:
-            return "passed" if crossing[0] == 1 else "wrong_way"
+            if crossing[0] == 1:
+                self.centred = self._centred(crossing[2])
+                return "passed"
+            return "wrong_way"
         if crossing is not None and crossing[0] == -1:
             self.route = self._route(crossing[2])
         return "running"
@@ -462,11 +505,26 @@ class HoopEnv(gym.Env):
             return "over" if v > 0 else "under"
         return "left" if h > 0 else "right"
 
-    def _box_distance(self, pts):
-        """Distance from each world point to the drone's collision box (0 inside it)."""
-        c, s = np.cos(self.heading), np.sin(self.heading)
-        body = (pts - self.pos) @ np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+    def _box_distance(self, pts, pos=None, heading=None):
+        """Distance from each world point to the drone's collision box (0 inside it), the
+        box where the drone is, or at pos turned to heading."""
+        pos = self.pos if pos is None else pos
+        heading = self.heading if heading is None else heading
+        c, s = np.cos(heading), np.sin(heading)
+        body = (pts - pos) @ np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
         return np.linalg.norm(np.maximum(np.abs(body) - self._half_box, 0.0), axis=1)
+
+    def _clearance(self, pos, heading) -> float:
+        """Gap in metres from the drone's box at pos, turned to heading, to the noodle's
+        surface: 0 or less touches it."""
+        return float(self._box_distance(self._centreline, pos, heading).min() - self.hoop.thickness / 2)
+
+    def _centred(self, rel) -> float:
+        """How centred a pass was, 0 to 1: the box's clearance from the noodle where it
+        crossed the plane (rel from the hoop centre), as it was turned, as a share of the
+        most this hoop allows. Off to a side, high or low, or crabbing all cut it."""
+        gap = self._clearance(self.hoop_centre + rel, self.heading)
+        return float(np.clip(gap / self._best_clearance, 0.0, 1.0))
 
     # --- observation -----------------------------------------------------
 
@@ -532,9 +590,24 @@ class HoopEnv(gym.Env):
         raw = self.pos[2] + a.offset + self.np_random.normal(0.0, max(a.noise, 0.0))
         return float(np.round(raw / self.height_step) * self.height_step)
 
+    def _motion_reading(self) -> np.ndarray:
+        """The motion the policy gets (contract.motion_reading), as the Tello's state packet
+        gives it: speed in whole steps with noise, heading in whole degrees with drift,
+        both telemetry_lag steps late, and now and then no new packet at all."""
+        t = self.telemetry
+        turned = _wrap(self.heading - self._start_heading + np.deg2rad(self.yaw_drift * self._clock))
+        self._motion_true.append((float(np.hypot(*self.vel[:2])), turned))
+        if self.np_random.uniform() < t.stale:
+            return self._last_motion.copy()
+        speed, turned = self._motion_true[0]
+        speed = max(0.0, np.floor((speed + self.np_random.normal(0.0, t.speed_noise)) / t.speed_step) * t.speed_step)
+        step = np.deg2rad(t.yaw_step_deg)
+        self._last_motion = contract.motion_reading(speed, np.round(turned / step) * step)
+        return self._last_motion.copy()
+
     def _policy_input(self):
         # The deques hold every step; contract.policy_input groups them into slots.
-        return contract.policy_input(self._frames, self._heights, self._actions, self._unseen)
+        return contract.policy_input(self._frames, self._heights, self._motion, self._actions, self._unseen)
 
     def privileged(self) -> np.ndarray:
         """The true state, for src.ppo's critic in training only: never the policy's
@@ -557,14 +630,15 @@ class HoopEnv(gym.Env):
             self.pos / cage, cage,
             [self.hoop_centre[2], self._line_h, self._line_v, self._to_go(self.pos),
              float(self._unseen), float(self._found)],
-            [d.delay_steps, d.tau, d.max_speed, d.max_up_speed, d.max_yaw_rate_deg, d.yaw_deadband,
+            [d.delay_steps, d.tau, d.max_speed, d.max_up_speed, d.up_exponent, d.max_yaw_rate_deg, d.yaw_deadband,
+             self.telemetry_lag, self.yaw_drift,
              self.camera.pitch_deg, self.altimeter.offset, self.height_step],
             pending.ravel(),
         ]).astype(np.float32)
 
     def _info(self, outcome):
         return {"outcome": outcome, "passes": self.passes, "steps": self.steps,
-                "wall_steps": self.wall_steps, "route": self.route,
+                "wall_steps": self.wall_steps, "route": self.route, "centred": self.centred,
                 "level": self.level, "run_in": self.run_in, "drone_pos": self.pos.copy(),
                 "heading": self.heading, "hoop_centre": self.hoop_centre.copy(),
                 "hoop_normal": self.hoop_normal.copy()}

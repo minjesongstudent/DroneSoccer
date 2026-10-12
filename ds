@@ -206,7 +206,13 @@ queue() {
   mem=$(mem_for "$seeds" "$(algo_for "$name")")
   # -l and -N on the command line beat the #PBS lines in the job file, so the
   # walltime always matches the step count. ncpus must cover every seed's envs.
-  qsub -N "hoop-$name" \
+  # DS_AFTER=<job id> holds this job until that one ends well, e.g. a student run
+  # waiting for the --privileged-actor run whose model it names in --teacher.
+  local after=()
+  # DS_AFTER_ANY=<job id> holds it until that one ends however it ends.
+  [ -n "${DS_AFTER:-}" ] && after=(-W "depend=afterok:${DS_AFTER}")
+  [ -n "${DS_AFTER_ANY:-}" ] && after=(-W "depend=afterany:${DS_AFTER_ANY}")
+  qsub -N "hoop-$name" "${after[@]}" \
        -l "ncpus=${cpus},mem=${mem},walltime=${wall}" \
        -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
        "$JOB"

@@ -70,10 +70,12 @@ class Actor(nn.Module):
         return self.log_std.clamp(min=LOG_STD_MIN).exp()
 
 
-def save_actor(actor: Actor, path: Path):
+def save_actor(actor: Actor, path: Path, privileged: bool = False):
+    """privileged: the actor reads the policy input followed by sim.HoopEnv.privileged(),
+    the true state. Such a one is a teacher for the sim only: it cannot fly the drone."""
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"algo": "ppo", "obs_dim": actor.obs_dim, "hidden": actor.hidden, "memory": actor.memory,
-                "actor": actor.state_dict()}, path)
+                "privileged": privileged, "actor": actor.state_dict()}, path)
 
 
 def _resolve(path) -> Path:
@@ -94,8 +96,17 @@ def is_ppo(path) -> bool:
         return "policy.pth" not in z.namelist()
 
 
+def _saved(path) -> dict:
+    return torch.load(_resolve(path), map_location="cpu", weights_only=True)
+
+
+def is_privileged(path) -> bool:
+    """A teacher that reads the sim's true state (save_actor's privileged)."""
+    return bool(_saved(path).get("privileged", False))
+
+
 def load_actor(path) -> Actor:
-    saved = torch.load(_resolve(path), map_location="cpu", weights_only=True)
+    saved = _saved(path)
     actor = Actor(saved["obs_dim"], hidden=saved["hidden"], memory=saved["memory"])
     actor.load_state_dict(saved["actor"])
     return actor.eval()
@@ -119,5 +130,16 @@ class Policy:
         return mean[0].numpy().clip(-1.0, 1.0)
 
 
+class PrivilegedPolicy(Policy):
+    """A privileged actor flying in the sim: bind(env) after every reset, and each call
+    reads env.privileged() after the policy input, as it was trained."""
+
+    def bind(self, env):
+        self.env = env
+
+    def __call__(self, obs) -> np.ndarray:
+        return super().__call__(np.concatenate([np.asarray(obs, np.float32), self.env.privileged()]))
+
+
 def load_policy(path) -> Policy:
-    return Policy(load_actor(path))
+    return (PrivilegedPolicy if is_privileged(path) else Policy)(load_actor(path))

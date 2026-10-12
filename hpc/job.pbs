@@ -30,4 +30,13 @@ ARGS="runs/${DS_NAME:-sac}.args"
 if [ -f "$ARGS" ]; then
     while IFS= read -r arg; do EXTRA+=("$arg"); done < "$ARGS"
 fi
+# A student taught by an RL teacher (--teacher NAME) first tests that teacher and
+# reports it (hpc/teacher_gate.sh), then trains whatever the result.
+prev=""
+for arg in ${EXTRA[@]+"${EXTRA[@]}"}; do
+    if [ "$prev" = --teacher ] && [ "${arg%.zip}" = "$(basename "${arg%.zip}")" ]; then
+        bash hpc/teacher_gate.sh "$arg" "${DS_SEEDS:-4}" || exit 1
+    fi
+    prev="$arg"
+done
 bash hpc/run_seeds.sh "${DS_NAME:-sac}" "${DS_SEEDS:-4}" "${DS_STEPS:-2000000}" ${EXTRA[@]+"${EXTRA[@]}"}

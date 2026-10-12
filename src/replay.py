@@ -45,6 +45,8 @@ def fly(policy, env: HoopEnv, seed: int) -> dict:
     obs, info = env.reset(seed=seed)
     if hasattr(policy, "reset"):
         policy.reset()
+    if hasattr(policy, "bind"):   # a privileged teacher reads the sim's true state
+        policy.bind(env)
     path, passes, routes, done = [info["drone_pos"]], [], [], False
     while not done:
         obs, _, terminated, truncated, info = env.step(policy(obs))

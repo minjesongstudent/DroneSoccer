@@ -96,7 +96,8 @@ def test_init_grows_an_older_policy_without_changing_what_it_does(tmp_path):
     x = np.random.default_rng(0).normal(size=(50, old_space.shape[0])).astype(np.float32)
     for flag in (0.0, 1.0):
         xn = np.concatenate([x, np.full((50, 1), flag, np.float32)], axis=1)
-        assert np.array_equal(new.predict(xn, deterministic=True)[0], old.predict(x, deterministic=True)[0])
+        # Equal but for float32 summation order, which the input's width changes.
+        assert np.allclose(new.predict(xn, deterministic=True)[0], old.predict(x, deterministic=True)[0], atol=1e-5)
     assert new.learning_starts == train.INIT_WARMUP
 
 

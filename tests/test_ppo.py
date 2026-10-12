@@ -301,3 +301,19 @@ def test_log_dirs_are_numbered_by_the_exact_run_name(monkeypatch, tmp_path):
     (tmp_path / "foo_1").mkdir()
     assert ppo._log_dir("foo", resume=True) == tmp_path / "foo_1"
     assert ppo._log_dir("foo", resume=False) == tmp_path / "foo_2"
+
+
+def test_teacher_then_student_keeps_the_true_state_out_of_the_student(monkeypatch, tmp_path):
+    """A privileged teacher trains, then labels a student's DAgger: the student's saved
+    actor reads the policy input alone and is not flagged privileged."""
+    _tiny(monkeypatch, tmp_path)
+    ppo.train_ppo(512, "t", seed=0, level=1.0, randomise=True, select_episodes=0, rollout_envs=4,
+                  privileged_actor=True)
+    teacher = tmp_path / "t" / "final.zip"
+    assert actor_module.is_privileged(teacher)
+    assert actor_module.load_actor(teacher).obs_dim == contract.POLICY_INPUT_DIM + PRIVILEGED_DIM
+    ppo.train_ppo(512, "s", seed=0, level=1.0, randomise=True, select_episodes=0, rollout_envs=4,
+                  teacher=str(teacher))
+    student = tmp_path / "s" / "final.zip"
+    assert not actor_module.is_privileged(student)
+    assert actor_module.load_actor(student).obs_dim == contract.POLICY_INPUT_DIM

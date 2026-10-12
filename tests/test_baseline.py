@@ -14,7 +14,8 @@ def policy_input(frame, marker_seen=True, forward=0.0):
     heights = np.ones(contract.HISTORY_STEPS, np.float32)
     actions = np.zeros((contract.HISTORY_STEPS, contract.ACTION_DIM), np.float32)
     actions[-1][1] = forward
-    return contract.policy_input(frames, heights, actions, unseen=False)
+    motion = np.tile(contract.NO_MOTION, (contract.HISTORY_STEPS, 1))
+    return contract.policy_input(frames, heights, motion, actions, unseen=False)
 
 
 def hoop_ahead():

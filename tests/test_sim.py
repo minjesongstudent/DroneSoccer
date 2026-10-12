@@ -11,8 +11,8 @@ from src.sim import HOOP_FROM_CENTRE, SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
-EXACT = Hoop(outer_height=0.45, diameter_tolerance=0.0, marker_max_angle_deg=70.0)  # a round hoop: tests pin
-                                                                                   # these, not the measured one
+EXACT = Hoop(outer_diameter=0.45, outer_height=0.45, diameter_tolerance=0.0, stretch_tolerance=0.0,
+             marker_max_angle_deg=70.0)  # a round hoop: tests pin these, not the measured one
 IDEAL = Drone(tau=0.3, delay_steps=0)  # scripted paths assume no lag, not the measured drone
 U, V, MAJOR, RATIO, SIN, COS, VISIBLE, MARKER = range(8)
 
@@ -251,6 +251,37 @@ def test_lap_pass_scores_and_keeps_flying():
     assert not terminated and not truncated and info["passes"] == 1
 
 
+def test_a_centred_pass_pays_more():
+    """Every pass scores, but the further off the centre it crossed, the less it pays:
+    the real drone touched the rim on passes the sim scored in full."""
+    rewards, centred = [], []
+    for lateral in (0.0, 0.035, 0.065):   # contact from 0.075 m sideways
+        env = make_env()
+        env.place([5.0, 5.0 + lateral, 1.5], 0.0, HOOP_AT, BACK)
+        for _ in range(100):
+            _, reward, _, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+            if info["outcome"] == "passed":
+                break
+        assert info["outcome"] == "passed"
+        rewards.append(reward)
+        centred.append(info["centred"])
+    assert centred[0] == pytest.approx(1.0, abs=0.02) and centred[1] == pytest.approx(0.5, abs=0.1)
+    assert centred[2] < 0.2
+    assert rewards[0] > rewards[1] > rewards[2]
+    assert rewards[0] - rewards[2] > 0.75 * contract.R_CENTRE
+
+
+def test_centred_counts_height_and_crabbing_too():
+    """High in the ring, the rim curves in beside the box; turned, the box is wider."""
+    env = make_env(hoop=dataclasses.replace(EXACT, outer_height=0.50))
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    assert env._centred(np.zeros(3)) == pytest.approx(1.0)
+    assert env._centred(np.array([0.0, 0.0, 0.10])) < 0.7
+    env.heading = np.deg2rad(30)
+    assert env._centred(np.zeros(3)) < 0.9
+    assert env.step([0.0, 0.0, 0.0, 0.0])[4]["centred"] is None   # only a pass has one
+
+
 def test_a_crash_costs_less_than_a_pass_pays():
     """Otherwise the safest policy is to hover out of reach and never try."""
     assert R_CRASH < R_PASS
@@ -364,6 +395,20 @@ def test_hanger_blocks_going_over_the_top(y, z, expected):
     assert (info["outcome"] if terminated else info["route"]) == expected
 
 
+def test_lined_up_means_a_straight_run_clears_the_rim():
+    """In front, the route goes straight at the centre only from where flying on along
+    the axis would clear the noodle. Inside the hole but nearer the rim than the
+    drone's half-width, it goes via the approach point, so edging in towards the rim
+    earns nothing."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    centre = np.array(HOOP_AT)
+    for lateral, lined_up in [(0.03, True), (0.06, True), (0.12, False)]:   # hole edge 0.16
+        pos = centre + [-0.3, lateral, 0.0]
+        straight = np.linalg.norm(pos - centre)
+        assert (env._to_go(pos) == pytest.approx(straight)) == lined_up
+
+
 def _downhill(env, pos, e=1e-4):
     return -np.array([env._to_go(pos + e * d) - env._to_go(pos - e * d) for d in np.eye(3)])
 
@@ -445,7 +490,9 @@ def test_level_zero_starts_with_hoop_and_marker_in_view():
         for _ in range(Detector().confirm_frames):
             x = env.step([0.0, 0.0, 0.0, 0.0])[0]
         seen.append(newest(x)[MARKER])
-    assert np.mean(seen) > 0.95
+    # Level with the hoop ~1 m out, the camera's 12.8 deg tilt crops a tall hoop's top:
+    # 97% seen for the old 0.45 x 0.46 hoop, 88% with the measured stretch (params.Hoop).
+    assert np.mean(seen) > 0.85
 
 
 def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
@@ -486,6 +533,27 @@ def test_hanger_bar_is_drawn_per_episode():
         env.reset(seed=seed)
         widths.append(env.hanger_half_width)
     assert low <= min(widths) and max(widths) <= high and len(set(widths)) == 30
+
+
+def test_hoop_is_drawn_taller_than_wide_by_a_varying_amount():
+    """The real noodle sags: 1.06-1.13 times taller than wide in the 2026-10-12 videos.
+    Each episode draws a width and a stretch, from about round to more than seen."""
+    hoop = Hoop()
+    env = HoopEnv(camera=Camera())
+    half_t = hoop.thickness / 2
+    widths, stretch = [], []
+    for seed in range(300):
+        env.reset(seed=seed)
+        w, h = 2 * (env._line_h + half_t), 2 * (env._line_v + half_t)
+        widths.append(w)
+        stretch.append(h / w)
+    nominal = hoop.outer_height / hoop.outer_diameter
+    assert abs(min(widths) - hoop.outer_diameter) <= hoop.diameter_tolerance + 1e-9
+    assert abs(max(widths) - hoop.outer_diameter) <= hoop.diameter_tolerance + 1e-9
+    assert nominal * (1 - hoop.stretch_tolerance) - 1e-9 <= min(stretch) < 1.0
+    assert 1.18 < max(stretch) <= nominal * (1 + hoop.stretch_tolerance) + 1e-9
+    assert np.mean(stretch) == pytest.approx(nominal, abs=0.02)
+
 
 def test_gymnasium_api():
     check_env(HoopEnv(randomise=True, camera=Camera()), skip_render_check=True)

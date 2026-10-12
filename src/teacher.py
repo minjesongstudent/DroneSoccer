@@ -34,16 +34,22 @@ from __future__ import annotations
 
 import argparse
 import collections
+import dataclasses
 
 import numpy as np
 
 from src import contract
-from src.params import Camera, Drone, Hoop
+from src.params import Camera, Drone, Hoop, Randomise
 from src.sim import HoopEnv
 
 U, V, MAJOR = (contract.FIELDS.index(k) for k in ("u", "v", "major"))
 VISIBLE = contract.VISIBLE
 RIGHT, FORWARD, UP, YAW = range(contract.ACTION_DIM)
+
+# teacher3 was built for this drone: top speed 0.36-0.44 m/s and a linear up and down.
+# Under the 2026-10-12 ranges it passes 1.43 a flight, against 3.13 here, so src.ppo runs
+# its DAgger rounds on these, and LearnedTeacher covers the rest.
+DESIGN_RANGES = dataclasses.replace(Randomise(), max_speed=(0.36, 0.44), up_exponent=(1.0, 1.0))
 
 # Blind, the teacher knows only what the policy's designer knows: the measured setup,
 # never the episode's randomised draw of it.
@@ -335,11 +341,35 @@ class Teacher:
                        up=v[2] / d.max_up_speed, yaw=yaw)
 
 
-def run(episodes: int, level: float = 1.0, seed: int = 0, noise: float = 0.0) -> collections.Counter:
-    """How the teacher's flights end, over `episodes` minutes at `level`."""
-    env, out = HoopEnv(level=level, randomise=True), collections.Counter()
+class LearnedTeacher:
+    """A privileged src.ppo actor (train.py --privileged-actor) as a teacher: the same
+    reset/act as Teacher, so src.ppo's DAgger labels with it. It reads the true state
+    (env.privileged()) after the policy input and keeps a memory, so act on every step
+    of an episode, as src.ppo's labels do."""
+
+    def __init__(self, path):
+        from src import actor
+        if not actor.is_privileged(path):
+            raise ValueError(f"{path} is not a privileged actor (train.py --privileged-actor)")
+        self.policy = actor.load_policy(path)
+        self.run_ins = 0   # Teacher counts its run ins; this one has none to count
+
+    def reset(self, env: HoopEnv | None = None):
+        self.policy.reset()
+        self.policy.bind(env)
+
+    def act(self, env: HoopEnv, obs: np.ndarray) -> np.ndarray:
+        self.policy.bind(env)
+        return self.policy(obs).astype(np.float32)
+
+
+def run(episodes: int, level: float = 1.0, seed: int = 0, noise: float = 0.0,
+        ranges: Randomise | None = None, teacher=None) -> collections.Counter:
+    """How the teacher's flights end, over `episodes` minutes at `level`, on ranges
+    (default DESIGN_RANGES, the drone teacher3 was built for)."""
+    env, out = HoopEnv(level=level, randomise=True, ranges=ranges or DESIGN_RANGES), collections.Counter()
     rng = np.random.default_rng(seed)
-    teacher = Teacher(rng)
+    teacher = teacher or Teacher(rng)
     for i in range(episodes):
         obs, _ = env.reset(seed=seed + i)
         teacher.reset(env)

@@ -48,7 +48,7 @@ def test_sum_is_not_on_the_numpy_whitelist():
     edited(SLOTS, "SLOT_STEPS = (4,) * 29 + (1, 1, 1)"),
     edited(SLOTS, "SLOT_STEPS = (1, 1, 1, 1) + (4,) * 29"),
     edited("HISTORY_STEPS = sum(SLOT_STEPS)", "HISTORY_STEPS = 60"),
-    edited("SLOT_DIM = OBS_DIM + 1 + ACTION_DIM", "SLOT_DIM = OBS_DIM + ACTION_DIM"),
+    edited("SLOT_DIM = OBS_DIM + 1 + MOTION_DIM + ACTION_DIM", "SLOT_DIM = OBS_DIM + MOTION_DIM + ACTION_DIM"),
     edited(SLOTS, SLOTS + "\nOBS_LAGS = (8, 4, 2, 1, 0)"),
     edited("    ratio = minor / major", "    ratio = minor / major * 1.1"),
     edited("import cv2", "import cv2\nimport os"),

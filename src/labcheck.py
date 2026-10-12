@@ -964,6 +964,11 @@ def summarise(folder: Path) -> str:
             f" {1 / np.median(gaps):4.1f} fps (median), worst gap {gaps.max() * 1000:.0f} ms")
     if (folder / "detect.csv").exists():
         out += summarise_detect(load(folder / "detect.csv"))
+    try:   # the dynamics this flight shows, against the sim's ranges (src.sysid)
+        from src import sysid
+        out += sysid.summary_lines(folder)
+    except Exception as ex:   # a summary never fails for want of a fit
+        out.append(f"  sysid        not fitted: {ex}")
     if (folder / "survey.csv").exists():
         out += summarise_survey(folder)
     out += summarise_holds(state, cmds)
@@ -1768,7 +1773,7 @@ OLD_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
 OLD_ACTIONS = 3
 
 
-def old_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
+def old_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
     frames, actions = list(frames), list(actions)
     return np.concatenate([*(frames[-1 - lag] for lag in OLD_LAGS),
                            *actions[-OLD_ACTIONS:]]).astype(np.float32)
@@ -1776,8 +1781,9 @@ def old_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
 
 # The 85-number input between them: the old window plus the seen-hoop flag
 # (3258eae), as seenflag-s1-level1 was trained on.
-def flag_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
-    return np.append(old_policy_input(frames, heights, actions, unseen), 1.0 if unseen else 0.0).astype(np.float32)
+def flag_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
+    return np.append(old_policy_input(frames, heights, motion, actions, unseen),
+                     1.0 if unseen else 0.0).astype(np.float32)
 
 
 # The 109-number input before the slotted history (39a323c): 12 frames back to
@@ -1786,10 +1792,31 @@ def flag_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
 LAGS60 = (60, 50, 40, 32, 24, 16, 12, 8, 4, 2, 1, 0)
 
 
-def lags60_policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
+def lags60_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
     frames, actions = list(frames), list(actions)
     return np.concatenate([*(frames[-1 - lag] for lag in LAGS60), *actions[-OLD_ACTIONS:],
                            [1.0 if unseen else 0.0]]).astype(np.float32)
+
+
+# The 430-number slotted input before the motion readings (2026-10-12): each slot
+# without contract.MOTION_FIELDS, as ppo-dagger and teacher3-12s-height were trained on.
+SLOTS_V1_DIM = contract.N_SLOTS * (contract.SLOT_DIM - contract.MOTION_DIM) + 1
+
+
+def slots_v1_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
+    x = contract.policy_input(frames, heights, motion, actions, unseen)
+    slots = x[:-1].reshape(contract.N_SLOTS, contract.SLOT_DIM)
+    keep = np.r_[0:contract.OBS_DIM + 1, contract.OBS_DIM + 1 + contract.MOTION_DIM:contract.SLOT_DIM]
+    return np.append(slots[:, keep].ravel(), x[-1]).astype(np.float32)
+
+
+# The motion the policy gets (contract.MOTION_FIELDS), from the Tello's state packet:
+# horizontal speed from vgx, vgy (whole dm/s; only the size, as their frame flipped
+# between flights) and the heading from yaw (whole degrees) since the policy started.
+# In a crash the packet swings wildly, but then the flight is over.
+def motion_from_state(state: dict, start_yaw: float) -> np.ndarray:
+    speed = float(np.hypot(state.get("vgx", 0), state.get("vgy", 0))) / 10
+    return contract.motion_reading(speed, np.deg2rad(float(state.get("yaw", start_yaw)) - start_yaw))
 
 
 # The height the policy gets, from the Tello's downward tof in cm (contract.py).
@@ -1819,19 +1846,23 @@ def run_policy(args) -> None:
     """A trained SAC model or src.ppo actor on the real drone, flown exactly like the baseline."""
     from src import actor
     if actor.is_ppo(args.model):
+        if actor.is_privileged(args.model):
+            sys.exit(f"{args.model} reads the sim's true state: a teacher for training, it cannot fly the drone")
         # One flight per run, so its memory starts clear as in every training episode.
         policy = actor.load_policy(args.model)
-        if policy.observation_size != contract.POLICY_INPUT_DIM:
-            sys.exit(f"{args.model} takes {policy.observation_size} inputs; this code builds {contract.POLICY_INPUT_DIM}")
-        fly_policy(args, "policy", policy, contract.policy_input, contract.not_yet_through)
+        inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, SLOTS_V1_DIM: slots_v1_policy_input}
+        if policy.observation_size not in inputs:
+            sys.exit(f"{args.model} takes {policy.observation_size} inputs; this code builds "
+                     f"{' or '.join(map(str, inputs))}")
+        fly_policy(args, "policy", policy, inputs[policy.observation_size], contract.not_yet_through)
         return
     from stable_baselines3 import SAC
     model = SAC.load(args.model, device="cpu")
     size = model.observation_space.shape[0]
     old = len(OLD_LAGS) * contract.OBS_DIM + OLD_ACTIONS * contract.ACTION_DIM
     lags60 = len(LAGS60) * contract.OBS_DIM + OLD_ACTIONS * contract.ACTION_DIM + 1
-    inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, old: old_policy_input, old + 1: flag_policy_input,
-              lags60: lags60_policy_input}
+    inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, SLOTS_V1_DIM: slots_v1_policy_input,
+              old: old_policy_input, old + 1: flag_policy_input, lags60: lags60_policy_input}
     if size not in inputs:
         sys.exit(f"{args.model} takes {size} inputs; this code builds {' or '.join(map(str, inputs))}")
     # Models on the 85-number input learned the old flag: 0 from the first sighting.
@@ -1867,6 +1898,8 @@ def fly_policy(args, kind: str, policy, policy_input, flag_rule=contract.not_yet
     n = contract.HISTORY_STEPS
     frames = collections.deque([contract.NOT_VISIBLE.copy()] * n, maxlen=n)
     heights = collections.deque([Drone().takeoff_height] * n, maxlen=n)
+    motion = collections.deque([contract.NO_MOTION.copy()] * n, maxlen=n)
+    start_yaw = []   # yaw at the first policy tick
     actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * n, maxlen=n)
     unseen = [True]   # the policy's flag, set by flag_rule
     tof = [None, None]  # the kept reading and the one held back (keep_tof), cm
@@ -1877,8 +1910,12 @@ def fly_policy(args, kind: str, policy, policy_input, flag_rule=contract.not_yet
         frames.append(watcher.obs.copy())
         tof[:] = keep_tof(session.state().get("tof", 0), *tof)
         heights.append(Drone().takeoff_height if tof[0] is None else tof[0] / 100)
+        state = session.state()
+        if not start_yaw:
+            start_yaw.append(float(state.get("yaw", 0)))
+        motion.append(motion_from_state(state, start_yaw[0]))
         unseen[0] = flag_rule(unseen[0], frames)
-        x = policy_input(frames, heights, actions, unseen[0])
+        x = policy_input(frames, heights, motion, actions, unseen[0])
         action = np.clip(policy(x), -1, 1)
         actions.append(action.astype(np.float32))
         watcher.rc = tuple(int(round(a * full)) for a, full in zip(action, RC_FULL))

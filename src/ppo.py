@@ -44,7 +44,8 @@ from src import contract, plots, train
 # LOG_STD_* and MEMORY are imported so the settings line logs them with the rest.
 from src.actor import HIDDEN, LOG_STD_INIT, LOG_STD_MIN, MEMORY, Actor, normalised, save_actor  # noqa: F401
 from src.sim import PRIVILEGED_DIM, HoopEnv
-from src.teacher import Teacher
+from src.params import Randomise
+from src.teacher import DESIGN_RANGES, LearnedTeacher, Teacher
 
 ROLLOUT_ENVS = 16        # simulators per seed, stepped in turn on one core
 ROLLOUT_STEPS = 128      # steps per simulator per update: 2048 a rollout
@@ -115,12 +116,17 @@ def log_prob(action, mean, std):
 
 class Fleet:
     """ROLLOUT_ENVS simulators on this core, each with a teacher to label its states.
-    A finished episode resets at once, so obs is always the next step's input."""
+    A finished episode resets at once, so obs is always the next step's input.
+
+    teacher: a privileged actor's path (teacher.LearnedTeacher), or None for teacher3.
+    privileged_actor: the actor reads the true state after the policy input (inputs())."""
 
     def __init__(self, n: int, level: float, randomise: bool, run_in_share: float, seed: int,
-                 rng: np.random.Generator):
+                 rng: np.random.Generator, privileged_actor: bool = False, teacher: str | None = None):
         self.envs = [HoopEnv(level=level, randomise=randomise, run_in_share=run_in_share) for _ in range(n)]
-        self.teachers = [Teacher() for _ in range(n)]
+        self.teachers = [LearnedTeacher(teacher) if teacher else Teacher() for _ in range(n)]
+        self.scripted = teacher is None
+        self.privileged_actor = privileged_actor
         self.rng, self.n, self.beta = rng, n, 0.0
         self.expert = np.zeros(n, bool)   # this episode is flown by the teacher
         self.obs = np.zeros((n, contract.POLICY_INPUT_DIM), np.float32)
@@ -149,6 +155,16 @@ class Fleet:
         for env in self.envs:
             env.set_level(level)
 
+    def set_ranges(self, ranges: Randomise):
+        """Randomisation ranges for every episode from the next reset on."""
+        for env in self.envs:
+            env.ranges = ranges
+
+    def inputs(self) -> np.ndarray:
+        """What the actor reads for every simulator: the policy input, then the true
+        state when the actor is privileged. A student's actor reads the policy input only."""
+        return np.concatenate([self.obs, self.priv], 1) if self.privileged_actor else self.obs.copy()
+
     def labels(self) -> np.ndarray:
         """The teacher's command for every simulator's current state. Call it every step
         of an episode or none: the teacher counts steps since it last saw the hoop."""
@@ -167,7 +183,7 @@ class Fleet:
             self.obs[k], self.priv[k] = obs, env.privileged()
             if terminated or truncated:
                 if truncated and not terminated:
-                    rewards[k] += contract.GAMMA * value_of(self.obs[k], self.priv[k])
+                    rewards[k] += contract.GAMMA * value_of(self.inputs()[k], self.priv[k])
                 dones[k] = 1.0
                 ended.append((info, bool(self.expert[k]), float(self.ep_reward[k])))
                 self._reset(k)
@@ -181,7 +197,7 @@ def collect(fleet: Fleet, actor: Actor, critic: Critic, h: torch.Tensor, steps: 
     Returns the rollout as (steps, n, ...) arrays, the GRU state after it, and the
     episodes that ended."""
     n = fleet.n
-    roll = {"obs": np.zeros((steps, n, contract.POLICY_INPUT_DIM), np.float32),
+    roll = {"obs": np.zeros((steps, n, actor.obs_dim), np.float32),   # what the actor reads
             "priv": np.zeros((steps, n, PRIVILEGED_DIM), np.float32),
             "actions": np.zeros((steps, n, contract.ACTION_DIM), np.float32),
             "logp": np.zeros((steps, n), np.float32), "values": np.zeros((steps, n), np.float32),
@@ -198,11 +214,12 @@ def collect(fleet: Fleet, actor: Actor, critic: Critic, h: torch.Tensor, steps: 
     with torch.no_grad():
         std = actor.std_now()
         for t in range(steps):
-            obs, priv = torch.as_tensor(fleet.obs), torch.as_tensor(fleet.priv)
+            x = fleet.inputs()
+            obs, priv = torch.as_tensor(x), torch.as_tensor(fleet.priv)
             starts = torch.as_tensor(fleet.starts)
             mean, h = actor.step(obs, h * (1.0 - starts)[:, None])
             action = mean + std * torch.randn_like(mean)
-            roll["obs"][t], roll["priv"][t], roll["starts"][t] = fleet.obs, fleet.priv, fleet.starts
+            roll["obs"][t], roll["priv"][t], roll["starts"][t] = x, fleet.priv, fleet.starts
             roll["logp"][t] = log_prob(action, mean, std).numpy()
             roll["values"][t] = critic(obs, priv).numpy()
             act = action.numpy()
@@ -214,7 +231,7 @@ def collect(fleet: Fleet, actor: Actor, critic: Critic, h: torch.Tensor, steps: 
             roll["actions"][t] = act
             roll["rewards"][t], roll["dones"][t], done = fleet.step(act, value_of)
             ended += done
-        roll["last_value"] = critic(torch.as_tensor(fleet.obs), torch.as_tensor(fleet.priv)).numpy()
+        roll["last_value"] = critic(torch.as_tensor(fleet.inputs()), torch.as_tensor(fleet.priv)).numpy()
     return roll, h, ended
 
 
@@ -431,11 +448,12 @@ def snapshot(folder: Path, total: int, state: dict, labels: Labels | None = None
 def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, resume: bool = False,
               dagger: int = len(DAGGER_BETA), run_in_share: float = train.RUN_IN_SHARE,
               select_episodes: int = train.SELECT_EPISODES, rollout_envs: int = ROLLOUT_ENVS,
-              bc_weight: float = BC_WEIGHT) -> Path:
+              bc_weight: float = BC_WEIGHT, privileged_actor: bool = False, teacher: str | None = None) -> Path:
     constants = {k: v for k, v in globals().items() if k.isupper() and isinstance(v, (int, float, str, tuple))}
     print(train.settings(extra=constants, algo="ppo", steps=steps, seed=seed, level=level, randomise=randomise,
                          resume=resume, dagger=dagger, run_in_share=run_in_share,
-                         select_episodes=select_episodes, rollout_envs=rollout_envs, bc_weight=bc_weight),
+                         select_episodes=select_episodes, rollout_envs=rollout_envs, bc_weight=bc_weight,
+                         privileged_actor=privileged_actor, teacher=teacher),
           flush=True)
     if rollout_envs < MINIBATCHES:
         # Fewer simulators than minibatches leaves some empty: NaN losses, no KL stop.
@@ -444,7 +462,10 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
     folder = out / "resume"
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    actor, critic = Actor(), Critic()
+    # A privileged actor (a teacher for the sim, train.py --privileged-actor) reads the true
+    # state too; the critic reads whatever the actor does, then the true state.
+    in_dim = contract.POLICY_INPUT_DIM + (PRIVILEGED_DIM if privileged_actor else 0)
+    actor, critic = Actor(in_dim), Critic(in_dim)
     opt_actor = torch.optim.Adam(actor.parameters(), ACTOR_LR)
     opt_critic = torch.optim.Adam(critic.parameters(), CRITIC_LR)
     opt_clone = torch.optim.Adam(actor.parameters(), BC_LR)
@@ -468,7 +489,8 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
         rng = np.random.default_rng(seed + run["steps"])
         print(f"resumed  from step {run['steps']} at level {level:.2f}", flush=True)
     done_steps = run["steps"]
-    fleet = Fleet(rollout_envs, level, randomise, run_in_share, seed + done_steps, rng)
+    fleet = Fleet(rollout_envs, level, randomise, run_in_share, seed + done_steps, rng,
+                  privileged_actor=privileged_actor, teacher=teacher)
     writer = SummaryWriter(str(_log_dir(name, resume)))
     tracker = Tracker(steps, level, writer, done_steps)
     h = actor.initial(rollout_envs)
@@ -502,6 +524,9 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
     rollouts = max(1, DAGGER_STEPS // per_rollout)
     if run["phase"] == "dagger":
         labels = Labels() if labels is None else labels
+        if fleet.scripted:
+            # teacher3 flies well only on its own drone: DAgger there, PPO on the full ranges.
+            fleet.set_ranges(DESIGN_RANGES)
         for i in range(run["next_round"], run["rounds"]):
             beta = DAGGER_BETA[i]
             fleet.beta = beta
@@ -521,9 +546,10 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
             run["next_round"] = i + 1
             if last:
                 fleet.beta = 0.0
+                fleet.set_ranges(Randomise())
                 fleet.restart()   # no teacher-flown episode runs on into PPO
                 # The clone alone, before PPO changes it: pick_best scores it with the rest.
-                save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip")
+                save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip", privileged_actor)
                 run.update(phase="ppo", ppo_start=done_steps)
             # Every round, so a job cut off in DAgger loses one round at most.
             save(with_labels=True)
@@ -550,8 +576,8 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
         tracker.record(done_steps, scalars)
         if done_steps // CHECKPOINT_EVERY > saved:
             saved = done_steps // CHECKPOINT_EVERY
-            save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip")
+            save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip", privileged_actor)
             save()
     writer.close()
-    save_actor(actor, out / "final.zip")
+    save_actor(actor, out / "final.zip", privileged_actor)
     return train.pick_best(out, randomise, select_episodes)
