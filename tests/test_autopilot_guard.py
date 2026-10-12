@@ -13,7 +13,7 @@ from mdp_guard import check  # noqa: E402
 
 ORIGINAL = (ROOT / "src/contract.py").read_text()
 REWARD_BODY = "            - R_WALL * on_wall)"
-LAGS = re.search(r"^OBS_LAGS = .*$", ORIGINAL, re.M).group(0)
+SLOTS = re.search(r"^SLOT_STEPS = .*$", ORIGINAL, re.M).group(0)
 
 
 def edited(old, new):
@@ -30,8 +30,6 @@ def edited(old, new):
         "R_WALL = 1.0", "R_WALL = 1.0\nR_SMOOTH = 0.1"),
     edited(REWARD_BODY, "            - R_WALL * on_wall - 0.02 * (1.0 - obs[6]))"),
     edited("# Reward per step", "# A new comment\n# Reward per step"),
-    edited(LAGS, "OBS_LAGS = (48, 40, 32, 24, 20, 16, 12, 8, 4, 2, 1, 0)"),
-    edited(LAGS, "OBS_LAGS = (8, 4, 2, 1, 0)"),
 ])
 def test_mdp_changes_are_allowed(new):
     assert check(ORIGINAL, new) == []
@@ -45,13 +43,13 @@ def test_sum_is_not_on_the_numpy_whitelist():
 @pytest.mark.parametrize("new", [
     edited('CRASHES = ("hit", "wrong_way", "roof", "side")', 'CRASHES = ("wrong_way",)'),
     edited("LAPS_MAX_STEPS = 600", "LAPS_MAX_STEPS = 1200"),
-    edited(LAGS, "OBS_LAGS = (24, 20, 16, 12, 8, 4, 2, 1)"),      # no "now"
-    edited(LAGS, "OBS_LAGS = (20, 24, 16, 12, 8, 4, 2, 1, 0)"),   # not oldest first
-    edited(LAGS, "OBS_LAGS = (24, 20, 16, 12, 8, 2, 1, 0)"),      # baseline reads lag 4
-    edited(LAGS, "OBS_LAGS = (200, 24, 20, 16, 12, 8, 4, 2, 1, 0)"),
-    edited(LAGS, "OBS_LAGS = tuple(range(30, -1, -1))"),
-    edited(LAGS, "OBS_LAGS = (24.0, 20, 16, 12, 8, 4, 2, 1, 0)"),
-    edited(LAGS, "OBS_LAGS = (48, 24, 20, 16, 12, 8, 4, 2, 1, 0)\nOBS_STACK = 3"),
+    # The history layout is frozen: the drone, the baseline and the teacher read it.
+    edited(SLOTS, "SLOT_STEPS = (4,) * 59 + (1, 1, 1, 1)"),
+    edited(SLOTS, "SLOT_STEPS = (4,) * 29 + (1, 1, 1)"),
+    edited(SLOTS, "SLOT_STEPS = (1, 1, 1, 1) + (4,) * 29"),
+    edited("HISTORY_STEPS = sum(SLOT_STEPS)", "HISTORY_STEPS = 60"),
+    edited("SLOT_DIM = OBS_DIM + 1 + ACTION_DIM", "SLOT_DIM = OBS_DIM + ACTION_DIM"),
+    edited(SLOTS, SLOTS + "\nOBS_LAGS = (8, 4, 2, 1, 0)"),
     edited("    ratio = minor / major", "    ratio = minor / major * 1.1"),
     edited("import cv2", "import cv2\nimport os"),
     edited("R_PASS = 40.0", "R_PASS = '40'"),
@@ -71,8 +69,8 @@ def test_everything_else_is_rejected(new):
     assert check(ORIGINAL, new)
 
 
-def test_removing_obs_lags_is_rejected():
-    assert check(ORIGINAL, ORIGINAL.replace(LAGS + "\n", ""))
+def test_removing_slot_steps_is_rejected():
+    assert check(ORIGINAL, ORIGINAL.replace(SLOTS + "\n", ""))
 
 
 def test_removing_reward_is_rejected():
@@ -102,8 +100,6 @@ def hook(work, tool, **tool_input):
 def test_hook_allows_mdp_edits_and_the_proposal(sandbox):
     assert hook(sandbox, "Edit", file_path=str(sandbox / "contract.py"),
                 old_string="R_PASS = 40.0", new_string="R_PASS = 50.0").returncode == 0
-    assert hook(sandbox, "Edit", file_path=str(sandbox / "contract.py"), old_string=LAGS,
-                new_string="OBS_LAGS = (48, 40, 32, 24, 20, 16, 12, 8, 4, 2, 1, 0)").returncode == 0
     assert hook(sandbox, "Write", file_path="proposal.md", content="x").returncode == 0
 
 
@@ -117,6 +113,8 @@ def test_hook_allows_mdp_edits_and_the_proposal(sandbox):
         {"old_string": "R_PASS = 40.0", "new_string": "R_PASS = 50.0"},
         {"old_string": "import cv2", "new_string": "import cv2, os"}]}),
     ("Write", {"file_path": "contract.py", "content": ORIGINAL.replace("MIN_RATIO = 0.2", "MIN_RATIO = 0.1")}),
+    ("Edit", {"file_path": "contract.py", "old_string": SLOTS,
+              "new_string": "SLOT_STEPS = (4,) * 59 + (1, 1, 1, 1)"}),
     ("NotebookEdit", {"notebook_path": "x.ipynb"}),
     ("Bash", {"command": "echo hi > ../../../src/sim.py"}),
 ])

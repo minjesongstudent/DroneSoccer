@@ -5,10 +5,13 @@ physics that carries it out, and params.py holds the measurements of the real
 setup. If a number changes what the agent is asked to do, it belongs here. If it
 describes the world, it belongs in params.py.
 
-The state: eight numbers, and nothing else. Seven describe the hoop's ellipse.
-The eighth, `marker`, says whether the front marker is in view: a disc on the
-noodle's front face that the noodle hides from behind. A hoop looks the same from
-both sides, so without it the policy cannot tell which way through is forwards.
+The state, each step: eight numbers from the camera and one from the height
+sensor. Seven camera numbers describe the hoop's ellipse. The eighth, `marker`,
+says whether the front marker is in view: a disc on the noodle's front face that
+the noodle hides from behind. A hoop looks the same from both sides, so without
+it the policy cannot tell which way through is forwards. The height is the
+Tello's downward time-of-flight reading, in metres. The policy sees 12 s of these
+with the commands it gave (policy_input).
 
 The detector (real camera) and the simulator (projected geometry) both produce
 points on the hoop's outer edge in normalised image coordinates, then call
@@ -103,20 +106,29 @@ NOT_VISIBLE = np.zeros(OBS_DIM, dtype=np.float32)
 ACTION_FIELDS = ("right", "forward", "up", "yaw_cw")
 ACTION_DIM = len(ACTION_FIELDS)
 
-# The policy sees a strided window of past observations and its own last 3
-# actions, enough to cover every command still in flight at up to 3 steps of
-# delay. OBS_LAGS holds the lags in control steps, oldest first, so the newest
-# frame stays last and frames[-1] still means "now".
+# The policy sees the last HISTORY_STEPS steps, each one a camera frame, a height
+# reading and the command that led to them, grouped into slots. SLOT_STEPS holds
+# how many steps each slot covers, oldest first, so the newest slot stays last.
+# Each slot gives, for its steps:
+#   the camera numbers of the newest frame that saw the hoop, with `visible` as
+#       the share of its steps that saw it (all 0 if none did),
+#   the newest height reading,
+#   the mean command.
+# So the slots tile the window with nothing left out between them: every sighting
+# and every command is in some slot, and the commands sum to how far the drone was
+# told to fly since any sighting. That is what it has to go on while blind.
 #
-# Close lags give velocity, far lags hold the last sighting through blind
-# stretches. On a lap the hoop leaves view 0.8 s before the pass and is back
-# about 3.7 s after it (seenflag-s1-level1: median 45 steps, max 53), so the
-# window spans 60 lags: the old 24 left the go-round with no hoop frame for
-# ~2 s of every lap. Striding covers 6 s with 12 frames instead of 61.
-OBS_LAGS = (60, 50, 40, 32, 24, 16, 12, 8, 4, 2, 1, 0)
-OBS_STACK = len(OBS_LAGS)
-FRAME_HISTORY = max(OBS_LAGS) + 1
-ACTION_HISTORY = 3
+# The newest four slots are single steps: the commands still in flight at up to
+# 4 steps of delay, and the frame-to-frame motion of the hoop to steer on. Older
+# slots are 0.4 s each, evenly spaced. 12 s covers the teacher's longest blind
+# stretch, from losing the hoop on the run in round to seeing it again in front
+# (teacher2, 150 flights: median 9.2 s, 90th percentile 10.9 s). The old window
+# was 6 s of frames and 0.3 s of commands, and 65% of the teacher2 students'
+# crashes came after 6 s or more without the hoop, when its input never changed.
+SLOT_STEPS = (4,) * 29 + (1, 1, 1, 1)
+HISTORY_STEPS = sum(SLOT_STEPS)
+N_SLOTS = len(SLOT_STEPS)
+SLOT_DIM = OBS_DIM + 1 + ACTION_DIM   # camera, height, command
 #
 # Last comes the not-yet-through flag: 1 until the hoop has left the frame
 # while big and centred, which is what flying at it looks like, then 0 until the
@@ -140,8 +152,14 @@ ACTION_HISTORY = 3
 # unchanged.
 PASS_MAJOR = 0.55   # ~0.8 m from a 0.45 m hoop
 PASS_U = 0.5
-POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM + 1
+POLICY_INPUT_DIM = N_SLOTS * SLOT_DIM + 1
 VISIBLE = FIELDS.index("visible")
+
+# The height reading: metres above the floor from the Tello's downward
+# time-of-flight sensor (state field "tof", in cm). On the drone,
+# labcheck.fly_policy drops its glitches (6553 with no return, single-packet
+# jumps); sim.HoopEnv adds the offset, noise and coarse steps params.Altimeter
+# allows for. It keeps the blind climb off the roof, which the camera cannot see.
 
 
 def not_yet_through(unseen: bool, frames) -> bool:
@@ -156,16 +174,44 @@ def not_yet_through(unseen: bool, frames) -> bool:
     return bool(unseen) and not flew_at_it
 
 
-def policy_input(frames, actions, unseen: bool) -> np.ndarray:
+def policy_input(frames, heights, actions, unseen: bool) -> np.ndarray:
     """What the policy sees, in the simulator and on the drone alike.
 
-    frames: the last FRAME_HISTORY observations, newest last.
-    actions: the last ACTION_HISTORY actions, newest last.
+    frames, heights, actions: the last HISTORY_STEPS steps, newest last. Step i is
+        the camera frame and height reading after it, and the command that led to
+        them: actions[-1] is the command just sent, frames[-1] what came after.
     unseen: the hoop has not been flown at until it left the frame since its front
         was last seen (not_yet_through).
     """
-    return np.concatenate([*(frames[-1 - lag] for lag in OBS_LAGS), *actions,
-                           [1.0 if unseen else 0.0]]).astype(np.float32)
+    frames = np.asarray(frames, np.float32)[-HISTORY_STEPS:]
+    heights = np.asarray(heights, np.float32)[-HISTORY_STEPS:]
+    actions = np.asarray(actions, np.float32)[-HISTORY_STEPS:]
+    slots, start = [], 0
+    for width in SLOT_STEPS:
+        f, a = frames[start:start + width], actions[start:start + width]
+        seen = np.flatnonzero(f[:, VISIBLE])
+        frame = f[seen[-1]].copy() if len(seen) else NOT_VISIBLE.copy()
+        frame[VISIBLE] = len(seen) / width
+        slots.append(np.concatenate([frame, heights[start + width - 1:start + width], a.mean(axis=0)]))
+        start += width
+    return np.concatenate([*slots, [1.0 if unseen else 0.0]]).astype(np.float32)
+
+
+def split_input(x: np.ndarray):
+    """The policy input taken apart: per slot, oldest first, the frames (N_SLOTS,
+    OBS_DIM), heights (N_SLOTS,) and mean commands (N_SLOTS, ACTION_DIM), and the flag."""
+    slots = np.asarray(x[:N_SLOTS * SLOT_DIM]).reshape(N_SLOTS, SLOT_DIM)
+    return slots[:, :OBS_DIM], slots[:, OBS_DIM], slots[:, OBS_DIM + 1:], bool(x[-1] > 0.5)
+
+
+def slot_of(lag: int) -> int:
+    """The slot that holds the step `lag` steps back (0 is now)."""
+    back = 0
+    for i in range(N_SLOTS - 1, -1, -1):
+        back += SLOT_STEPS[i]
+        if lag < back:
+            return i
+    raise ValueError(f"lag {lag} is beyond the {HISTORY_STEPS}-step window")
 
 MIN_ARC_FRACTION = 0.25  # share of the hoop's edge the detector needs in frame
 MIN_POINTS = 5     # fitEllipse needs at least five

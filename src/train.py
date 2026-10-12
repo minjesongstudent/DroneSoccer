@@ -71,7 +71,7 @@ DEMO_SEED = 2_000_000   # layouts apart from training's and evaluate.EVAL_SEED's
 # 0.6-1.0 m in front of the hoop, whatever the curriculum level, so the blind last
 # half metre of a pass gets practised. teacher2-level1 stopped there on the drone.
 # They do not count towards the curriculum (Progress), and evaluation never has them.
-RUN_IN_SHARE = 0.2
+RUN_IN_SHARE = 0.1
 
 # Picking the model: every checkpoint and the final model fly SELECT_EPISODES episodes
 # from SELECT_SEED, apart from evaluation's, so the reported score is not the one it
@@ -94,73 +94,106 @@ LEVEL_PASSES = 1
 MISSION_PASSES = 2
 
 
+class Episodes:
+    """The last LEVEL_WINDOW training episodes: they raise the curriculum level and make
+    the progress line. Progress (SAC) and src.ppo's Tracker keep one each, so both
+    algorithms climb the curriculum and print their progress the same way, which
+    src.report and hpc/progress.sh read. Run-in starts are kept apart."""
+
+    def __init__(self, total: int, level: float = 0.0, every: int = 10_000):
+        self.total, self.level, self.every = total, level, every
+        self.recent = deque(maxlen=LEVEL_WINDOW)
+        self.run_ins = deque(maxlen=LEVEL_WINDOW)   # run-in starts, kept apart
+        self.start_clock(0)
+
+    def start_clock(self, steps: int):
+        """The progress line's elapsed and eta count from here: non-zero after --resume."""
+        self.start, self.start_steps = time.time(), steps
+        self.printed = steps // self.every
+
+    def add(self, info: dict, reward: float):
+        """reward: the episode's summed (unscaled) reward."""
+        if info.get("run_in"):
+            self.run_ins.append(info["passes"] > 0)
+        else:
+            self.recent.append({**info, "reward": reward})
+
+    def level_up(self) -> bool:
+        """Step the level up if the full window met the bar. The caller tells its envs."""
+        if len(self.recent) == LEVEL_WINDOW and self.ready() >= LEVEL_UP and self.level < 1.0:
+            self.level = min(1.0, self.level + LEVEL_STEP)
+            self.recent.clear()   # judge the new level on its own episodes
+            return True
+        return False
+
+    def passes_per_ep(self) -> float:
+        return float(np.mean([i["passes"] for i in self.recent]))
+
+    def reward_per_ep(self) -> float:
+        return float(np.mean([i["reward"] for i in self.recent]))
+
+    def crash_rate(self) -> float:
+        return float(np.mean([i["outcome"] in CRASHES for i in self.recent]))
+
+    def ready(self) -> float:
+        """Share of recent episodes with LEVEL_PASSES+ passes, however they ended."""
+        return float(np.mean([i["passes"] >= LEVEL_PASSES for i in self.recent]))
+
+    def summary(self) -> str:
+        if not self.recent:
+            return "-"
+        # ready: how close the level-up is. It counts over up to LEVEL_WINDOW
+        # episodes, and the level only rises once the window is full.
+        ready = f"ready {self.ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
+        # Episodes that end before the minute are crashes.
+        seconds = np.mean([i["steps"] for i in self.recent]) * Drone().dt
+        return (f"passes/ep {self.passes_per_ep():.2f}  reward/ep {self.reward_per_ep():.2f}  "
+                f"crashed {self.crash_rate():.0%}  ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
+
+    def progress_line(self, steps: int) -> str | None:
+        """The line to print once every `every` steps, else None. N parallel envs raise
+        the count by N, so an exact multiple may never come round: it fires on the
+        step that crosses one instead."""
+        if steps // self.every <= self.printed:
+            return None
+        self.printed = steps // self.every
+        elapsed = time.time() - self.start
+        eta = elapsed / max(1, steps - self.start_steps) * (self.total - steps)
+        return (f"progress {steps:>7}/{self.total} ({steps / self.total:.0%})  {self.summary()}  "
+                f"elapsed {elapsed / 60:.0f}m  eta {eta / 60:.0f}m")
+
+
 class Progress(BaseCallback):
     """Logs how the last training episodes went, raises the curriculum level,
     and prints a one-line progress report every `every` steps."""
 
     def __init__(self, total: int, every: int = 10_000):
         super().__init__()
-        self.total, self.every = total, every
-        self.recent = deque(maxlen=LEVEL_WINDOW)
-        self.run_ins = deque(maxlen=LEVEL_WINDOW)   # run-in starts, kept apart
-        self.level = 0.0
+        self.episodes = Episodes(total, every=every)
 
     def _on_training_start(self) -> None:
-        self.start = time.time()
-        self.start_steps = self.num_timesteps   # non-zero after --resume
-        self.printed = self.num_timesteps // self.every
-        self.level = self.training_env.get_attr("level")[0]
+        self.episodes.start_clock(self.num_timesteps)
+        self.episodes.level = self.training_env.get_attr("level")[0]
 
     def _on_step(self) -> bool:
+        episodes = self.episodes
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
-            if done and info.get("run_in"):
-                self.run_ins.append(info["passes"] > 0)
-                self.logger.record("rollout/run_in_passed", float(np.mean(self.run_ins)))
-            elif done:
-                self.recent.append(info)
-                self._record()
-        # N parallel envs raise the count by N, so an exact multiple may never
-        # come round. Fire on the step that crosses one instead.
-        if self.num_timesteps // self.every > self.printed:
-            self.printed = self.num_timesteps // self.every
-            elapsed = time.time() - self.start
-            done = max(1, self.num_timesteps - self.start_steps)
-            eta = elapsed / done * (self.total - self.num_timesteps)
-            print(f"progress {self.num_timesteps:>7}/{self.total} "
-                  f"({self.num_timesteps / self.total:.0%})  {self._summary()}  "
-                  f"elapsed {elapsed / 60:.0f}m  eta {eta / 60:.0f}m", flush=True)
+            if not done:
+                continue
+            episodes.add(info, info["episode"]["r"])   # Monitor's episode sum
+            if info.get("run_in"):
+                self.logger.record("rollout/run_in_passed", float(np.mean(episodes.run_ins)))
+                continue
+            self.logger.record("rollout/passes_per_ep", episodes.passes_per_ep())
+            self.logger.record("rollout/crash_rate", episodes.crash_rate())
+            self.logger.record("curriculum/level", episodes.level)
+            if episodes.level_up():
+                self.training_env.env_method("set_level", episodes.level)
+                print(f"level    {episodes.level:.2f} at step {self.num_timesteps}", flush=True)
+        line = episodes.progress_line(self.num_timesteps)
+        if line:
+            print(line, flush=True)
         return True
-
-    def _passes_per_ep(self) -> float:
-        return float(np.mean([i["passes"] for i in self.recent]))
-
-    def _crash_rate(self) -> float:
-        return float(np.mean([i["outcome"] in CRASHES for i in self.recent]))
-
-    def _record(self):
-        self.logger.record("rollout/passes_per_ep", self._passes_per_ep())
-        self.logger.record("rollout/crash_rate", self._crash_rate())
-        self.logger.record("curriculum/level", self.level)
-        if len(self.recent) == LEVEL_WINDOW and self._ready() >= LEVEL_UP and self.level < 1.0:
-            self.level = min(1.0, self.level + LEVEL_STEP)
-            self.training_env.env_method("set_level", self.level)
-            self.recent.clear()   # judge the new level on its own episodes
-            print(f"level    {self.level:.2f} at step {self.num_timesteps}", flush=True)
-
-    def _ready(self) -> float:
-        """Share of recent episodes with LEVEL_PASSES+ passes, however they ended."""
-        return float(np.mean([i["passes"] >= LEVEL_PASSES for i in self.recent]))
-
-    def _summary(self) -> str:
-        if not self.recent:
-            return "-"
-        # ready: how close the level-up is. It counts over up to LEVEL_WINDOW
-        # episodes, and the level only rises once the window is full.
-        ready = f"ready {self._ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
-        # Episodes that end before the minute are crashes.
-        seconds = np.mean([i["steps"] for i in self.recent]) * Drone().dt
-        return (f"passes/ep {self._passes_per_ep():.2f}  crashed {self._crash_rate():.0%}  "
-                f"ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
 
 
 def scores(results: list[dict]) -> dict:
@@ -192,28 +225,35 @@ class Snapshot(BaseCallback):
         return True
 
     def save(self):
-        self.folder.mkdir(parents=True, exist_ok=True)
         state = {"steps": self.num_timesteps, "total": self.total,
                  "level": float(self.training_env.get_attr("level")[0])}
-        # Write every file in full before replacing any, so a job killed mid-save
-        # still leaves the previous snapshot to resume from.
-        files = {"model.zip": self.model.save, "replay_buffer.pkl": self.model.save_replay_buffer,
-                 "state.json": lambda f: f.write(json.dumps(state).encode())}
-        for file, write in files.items():
-            with open(self.folder / f"{file}.tmp", "wb") as f:
-                write(f)
-        for file in files:
-            os.replace(self.folder / f"{file}.tmp", self.folder / file)
-        print(f"snapshot at step {self.num_timesteps}", flush=True)
+        write_snapshot(self.folder, state, {"model.zip": self.model.save,
+                                            "replay_buffer.pkl": self.model.save_replay_buffer})
 
 
-def settings(**args) -> str:
+def write_snapshot(folder: Path, state: dict, files: dict):
+    """Write `files` ({name: writer(file)}) and state.json ({steps, total, level}, which
+    ds resume reads) into folder. Every file is written in full before any is replaced,
+    so a job killed mid-save still leaves the previous snapshot to resume from.
+    src.ppo's snapshots go through here too."""
+    folder.mkdir(parents=True, exist_ok=True)
+    files = {**files, "state.json": lambda f: f.write(json.dumps(state).encode())}
+    for file, write in files.items():
+        with open(folder / f"{file}.tmp", "wb") as f:
+            write(f)
+    for file in files:
+        os.replace(folder / f"{file}.tmp", folder / file)
+    print(f"snapshot at step {state['steps']}", flush=True)
+
+
+def settings(extra: dict | None = None, **args) -> str:
     """One `settings` line for the log: the run's options, every constant in
-    contract.py and sim.py, the constants here, and the git commit.
+    contract.py and sim.py, the constants here, any `extra` (src.ppo's), and the git commit.
     src.report reads it back, so a report shows what the run was trained with
     even after contract.py or sim.py is edited for the next experiment."""
     constants = {k: v for scope in (vars(contract), vars(sim), globals()) for k, v in scope.items()
                  if k.isupper() and isinstance(v, (int, float, str, tuple))}
+    constants.update(extra or {})
     try:  # compute nodes have no git
         git = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
                              capture_output=True, text=True).stdout.strip() or "unknown"
@@ -265,10 +305,10 @@ def grown(init: str, env, seed: int, envs: int, buffer: dict | None = None) -> S
     if added < 0:
         raise ValueError(f"{init} takes {n_old} inputs, more than the {n_old + added} the env gives")
     if added > 1:
-        # Growing only appends inputs at the end (the flag). A different OBS_LAGS
-        # moves every frame, so zero columns at the end would scramble the old weights.
+        # Growing only appends inputs at the end (the flag). A different history
+        # layout moves every input, so zero columns at the end would scramble the old weights.
         raise ValueError(f"{init} takes {n_old} inputs and the env gives {n_old + added}: only the flag can be "
-                         f"added. Set contract.OBS_LAGS to the window the model was trained on")
+                         f"added. Set contract.SLOT_STEPS to the layout the model was trained on")
 
     def widen(old_t, new_t):
         # First layers read [obs, (action)]: insert zero columns where the old obs ended.
@@ -317,7 +357,7 @@ def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
     for _ in range(steps // n):
         before, actions, after, rewards, dones, infos = list(obs), [], [], [], [], []
         for k, (env, teacher) in enumerate(zip(envs, teachers)):
-            action = np.clip(teacher.act(env) + rng.normal(0.0, DEMO_NOISE, contract.ACTION_DIM),
+            action = np.clip(teacher.act(env, obs[k]) + rng.normal(0.0, DEMO_NOISE, contract.ACTION_DIM),
                              -1.0, 1.0).astype(np.float32)
             o, r, terminated, truncated, info = env.step(action)
             actions.append(action)
@@ -405,6 +445,8 @@ def pick_best(out: Path, randomise: bool, episodes: int) -> Path:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--algo", choices=("sac", "ppo"), default="sac",
+                        help="ppo: src.ppo's privileged-critic PPO, warm-started by DAgger")
     parser.add_argument("--steps", type=int, default=500_000)
     parser.add_argument("--name", default="sac")
     parser.add_argument("--seed", type=int, default=0)
@@ -426,13 +468,32 @@ if __name__ == "__main__":
                         help="share of training episodes that start lined up in front of the hoop")
     parser.add_argument("--select-episodes", type=int, default=SELECT_EPISODES,
                         help="episodes each checkpoint flies to pick the best; 0 keeps the final model")
+    parser.add_argument("--dagger", type=int,
+                        help="ppo: DAgger rounds before PPO, 0 for none (default: all of ppo.DAGGER_BETA)")
+    parser.add_argument("--rollout-envs", type=int,
+                        help="ppo: simulators stepped in turn on the seed's one core (default ppo.ROLLOUT_ENVS)")
+    parser.add_argument("--bc-weight", type=float,
+                        help="ppo: weight of the pull towards the teacher's labels as PPO starts (default ppo.BC_WEIGHT)")
     args = parser.parse_args()
     if args.init and args.resume:
         parser.error("--init and --resume do not mix")
+    if args.algo == "ppo" and (args.init or args.demos or args.envs != 1):
+        parser.error("--init, --demos and --envs are SAC's; ppo warm-starts by --dagger and steps --rollout-envs")
+    if args.algo == "sac" and any(v is not None for v in (args.dagger, args.rollout_envs, args.bc_weight)):
+        parser.error("--dagger, --rollout-envs and --bc-weight need --algo ppo")
 
-    path = train(args.steps, args.name, args.seed, args.level, args.randomise,
-                 args.resume, args.envs, args.init, args.demos, args.demo_share,
-                 args.run_in_share, args.select_episodes)
+    if args.algo == "ppo":
+        from src import ppo
+        if args.rollout_envs is not None and args.rollout_envs < ppo.MINIBATCHES:
+            parser.error(f"--rollout-envs must be at least ppo.MINIBATCHES ({ppo.MINIBATCHES})")
+        given = {"dagger": args.dagger, "rollout_envs": args.rollout_envs, "bc_weight": args.bc_weight}
+        path = ppo.train_ppo(args.steps, args.name, args.seed, args.level, args.randomise, args.resume,
+                             run_in_share=args.run_in_share, select_episodes=args.select_episodes,
+                             **{k: v for k, v in given.items() if v is not None})
+    else:
+        path = train(args.steps, args.name, args.seed, args.level, args.randomise,
+                     args.resume, args.envs, args.init, args.demos, args.demo_share,
+                     args.run_in_share, args.select_episodes)
     print(f"saved {path}")
     episodes = args.eval_episodes or DEFAULT_EPISODES
 

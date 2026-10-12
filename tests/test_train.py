@@ -4,7 +4,7 @@ import pytest
 from stable_baselines3 import SAC
 from stable_baselines3.common.monitor import Monitor
 
-from src import train
+from src import report, train
 from src.params import Camera
 from src.contract import LAPS_MAX_STEPS
 from src.sim import HoopEnv
@@ -19,25 +19,35 @@ def test_curriculum_raises_the_level(monkeypatch):
     model = SAC("MlpPolicy", env, seed=0, device="cpu", learning_starts=10_000)
     callback = train.Progress(total=2 * LAPS_MAX_STEPS)
     model.learn(total_timesteps=2 * LAPS_MAX_STEPS, callback=callback)
-    assert callback.level > 0.0
-    assert env.get_wrapper_attr("level") == callback.level
+    assert callback.episodes.level > 0.0
+    assert env.get_wrapper_attr("level") == callback.episodes.level
 
 
 def test_curriculum_counts_passes_however_the_episode_ended():
     """The level changes only the start, so passes before a crash still count."""
-    callback = train.Progress(total=1)
-    callback.recent.extend([{"outcome": "side", "passes": train.LEVEL_PASSES}] * 3
+    episodes = train.Episodes(total=1)
+    episodes.recent.extend([{"outcome": "side", "passes": train.LEVEL_PASSES}] * 3
                            + [{"outcome": "timeout", "passes": 0}])
-    assert callback._ready() == pytest.approx(0.75)
+    assert episodes.ready() == pytest.approx(0.75)
 
 
 def test_one_pass_raises_the_level_but_seeds_rank_on_laps():
     """The level changes only the start, so one pass meets the curriculum's bar.
     The same pass, lasting the minute, is not the mission's bar of a lap."""
-    callback = train.Progress(total=1)
-    callback.recent.extend([{"outcome": "timeout", "passes": 1}] * 4)
-    assert callback._ready() == pytest.approx(1.0)
-    assert train.scores(list(callback.recent))["ready"] == pytest.approx(0.0)
+    episodes = train.Episodes(total=1)
+    episodes.recent.extend([{"outcome": "timeout", "passes": 1}] * 4)
+    assert episodes.ready() == pytest.approx(1.0)
+    assert train.scores(list(episodes.recent))["ready"] == pytest.approx(0.0)
+
+
+def test_progress_line_reads_the_reward_per_episode():
+    """reward/ep averages the episodes' summed reward and src.report parses it."""
+    episodes = train.Episodes(total=1)
+    for reward in (-3.0, 5.0):
+        episodes.add({"outcome": "timeout", "passes": 1, "steps": 10}, reward)
+    episodes.add({"outcome": "timeout", "passes": 1, "steps": 10, "run_in": True}, 99.0)
+    assert episodes.reward_per_ep() == pytest.approx(1.0)
+    assert report.pairs(episodes.summary())["reward/ep"] == pytest.approx(1.0)
 
 
 def test_passing_once_then_crashing_does_not_outscore_lapping():
@@ -108,9 +118,10 @@ def test_the_best_checkpoint_becomes_the_model(monkeypatch, tmp_path):
 
 def test_run_in_episodes_do_not_count_towards_the_curriculum():
     callback = train.Progress(total=1)
-    callback.locals = {"infos": [{"run_in": True, "passes": 1, "outcome": "timeout", "steps": 600}],
+    callback.locals = {"infos": [{"run_in": True, "passes": 1, "outcome": "timeout", "steps": 600,
+                                  "episode": {"r": 4.0}}],
                        "dones": [True]}
-    callback.num_timesteps, callback.printed = 0, 0
+    callback.num_timesteps = 0
     callback.model = SimpleNamespace(logger=SimpleNamespace(record=lambda *a: None))
     callback._on_step()
-    assert not callback.recent and list(callback.run_ins) == [True]
+    assert not callback.episodes.recent and list(callback.episodes.run_ins) == [True]

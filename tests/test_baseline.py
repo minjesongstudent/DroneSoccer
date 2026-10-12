@@ -6,14 +6,15 @@ BLIND = contract.NOT_VISIBLE
 
 
 def policy_input(frame, marker_seen=True, forward=0.0):
-    frames = np.tile(frame, (contract.OBS_STACK, 1))
+    frames = np.tile(frame, (contract.HISTORY_STEPS, 1))
     if marker_seen:
         frames[:, 7] = frame[6]
     else:
         frames[:, 7] = 0.0
-    actions = np.zeros((contract.ACTION_HISTORY, contract.ACTION_DIM), np.float32)
+    heights = np.ones(contract.HISTORY_STEPS, np.float32)
+    actions = np.zeros((contract.HISTORY_STEPS, contract.ACTION_DIM), np.float32)
     actions[-1][1] = forward
-    return np.concatenate([frames.ravel(), actions.ravel(), [0.0]]).astype(np.float32)
+    return contract.policy_input(frames, heights, actions, unseen=False)
 
 
 def hoop_ahead():
@@ -37,6 +38,11 @@ def test_climbing_stops_after_max_climbs():
 
 def test_flies_at_a_hoop_with_its_marker():
     assert baseline.Lapper()(policy_input(hoop_ahead()))[1] > 0.9
+
+
+def test_keeps_going_through_a_lost_hoop_when_committed():
+    # The newest slot is the last command alone, not a 4-step mean.
+    assert baseline.act(policy_input(BLIND, forward=1.0))[1] == 1.0
 
 
 def test_holds_back_from_a_hoop_without_a_marker():
