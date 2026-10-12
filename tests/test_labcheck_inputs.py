@@ -43,5 +43,22 @@ def test_motion_from_a_real_flight_reads_its_speed_and_turn():
         state = {k: float(r[k]) for k in ("vgx", "vgy", "yaw")}
         speed, s, c = labcheck.motion_from_state(state, start)
         assert speed == pytest.approx(np.hypot(state["vgx"], state["vgy"]) / 10)
-        turned = (state["yaw"] - start + 180) % 360 - 180
+        # Telemetry yaw grows clockwise, the turn counter-clockwise as in the sim.
+        turned = (start - state["yaw"] + 180) % 360 - 180
         assert np.degrees(np.arctan2(s, c)) == pytest.approx(turned, abs=1e-3)
+
+
+@pytest.mark.skipif(not FLIGHT.exists(), reason="lab logs not checked out")
+def test_a_right_turn_reads_negative_as_in_the_sim():
+    """rc yaw > 0 turns the Tello clockwise; the sim's yaw_cw > 0 lowers sin_turned
+    (test_sim), so on the drone it must too."""
+    rows = [r for r in csv.DictReader(open(FLIGHT)) if r["phase"] == "policy"]
+    start = float(rows[0]["yaw"])
+    signs = []
+    for i in range(len(rows) - 5):
+        if all(float(r["cmd_yaw"]) >= 20 for r in rows[i:i + 5]):
+            before = labcheck.motion_from_state({"yaw": float(rows[i]["yaw"])}, start)
+            after = labcheck.motion_from_state({"yaw": float(rows[i + 5]["yaw"])}, start)
+            turned = np.arctan2(after[1], after[2]) - np.arctan2(before[1], before[2])
+            signs.append(np.sign((turned + np.pi) % (2 * np.pi) - np.pi))
+    assert signs and np.mean(np.array(signs) < 0) > 0.7

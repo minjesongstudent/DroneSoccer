@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import itertools
+import os
 import sys
 from multiprocessing import Pool
 from pathlib import Path
@@ -30,7 +31,7 @@ import numpy as np
 from src import actor as actor_module
 from src.contract import CRASHES
 from src.params import Drone, Hoop, Randomise
-from src.sim import HoopEnv
+from src.sim import DYNAMICS_FIELDS, DYNAMICS_START, HoopEnv
 
 SEED = 2_000_000          # past evaluate's and train's selection seeds
 SPEEDS = (0.55, 0.8)
@@ -40,18 +41,16 @@ GATES = {"passes_per_ep": 3.0, "crashed": 0.05, "never_passed": 0.03, "centred":
 NOISE = 0.1
 NOISE_CRASHED = 0.08
 HIDDEN_DROP = 0.2        # the share of passes it may lose with the dynamics hidden
-# The dynamics block of HoopEnv.privileged(): after to_hoop pos (3), vel (3), facing and
-# yaw rate (3), pos/cage (3), cage (3), the six layout numbers.
-DYN_START = 21
-DYN_HIDDEN = {0: "delay_steps", 1: "tau", 2: "max_speed", 3: "max_up_speed", 4: "up_exponent",
-              7: "telemetry_lag", 8: "yaw_drift"}
+# The randomised dynamics in HoopEnv.privileged() (sim.DYNAMICS_FIELDS) that the check hides.
+DYN_HIDDEN = ("delay_steps", "tau", "max_speed", "max_up_speed", "up_exponent", "telemetry_lag", "yaw_drift")
 
 
 def _hidden_values() -> dict[int, float]:
     r, d = Randomise(), Drone()
     mid = lambda lo_hi: (lo_hi[0] + lo_hi[1]) / 2
-    return {DYN_START + i: (d.max_up_speed if name == "max_up_speed" else mid(getattr(r, name)))
-            for i, name in DYN_HIDDEN.items()}
+    return {DYNAMICS_START + DYNAMICS_FIELDS.index(name):
+            (d.max_up_speed if name == "max_up_speed" else mid(getattr(r, name)))
+            for name in DYN_HIDDEN}
 
 
 class _Hidden:
@@ -182,6 +181,16 @@ def report(result: dict) -> tuple[str, bool]:
     return "\n".join(lines), ok
 
 
+def _cores() -> int:
+    """The cores this job has: PBS's NCPUS, else the ones this process may run on."""
+    if os.environ.get("NCPUS", "").isdigit():
+        return int(os.environ["NCPUS"])
+    try:
+        return len(os.sched_getaffinity(0))
+    except AttributeError:
+        return os.cpu_count() or 1
+
+
 def pick(name: str, seeds: int, flights: int) -> int:
     """The seed whose worst corner is best; its gates are printed to stderr."""
     worst = {}
@@ -189,7 +198,7 @@ def pick(name: str, seeds: int, flights: int) -> int:
         path = Path("runs") / f"{name}_s{seed}" / "model.zip"
         if not path.exists():
             continue
-        result = check(str(path), flights, workers=len(corners()), full=False)
+        result = check(str(path), flights, workers=min(len(corners()), _cores()), full=False)
         worst[seed] = result["worst"]
         print(f"seed {seed}\n{report(result)[0]}", file=sys.stderr, flush=True)
     return max(worst, key=worst.get)

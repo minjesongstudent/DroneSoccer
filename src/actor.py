@@ -105,11 +105,16 @@ def is_privileged(path) -> bool:
     return bool(_saved(path).get("privileged", False))
 
 
-def load_actor(path) -> Actor:
+def load(path) -> tuple[Actor, bool]:
+    """The saved actor and whether it is privileged, from one read of the file."""
     saved = _saved(path)
     actor = Actor(saved["obs_dim"], hidden=saved["hidden"], memory=saved["memory"])
     actor.load_state_dict(saved["actor"])
-    return actor.eval()
+    return actor.eval(), bool(saved.get("privileged", False))
+
+
+def load_actor(path) -> Actor:
+    return load(path)[0]
 
 
 class Policy:
@@ -125,8 +130,12 @@ class Policy:
         self.h = self.actor.initial(1)
 
     def __call__(self, obs) -> np.ndarray:
+        obs = np.asarray(obs, np.float32)
+        # An actor saved before the motion readings flies on today's input without them.
+        if len(obs) == contract.POLICY_INPUT_DIM and self.actor.obs_dim == contract.SLOTS_V1_DIM:
+            obs = contract.slots_v1(obs)
         with torch.no_grad():
-            mean, self.h = self.actor.step(torch.as_tensor(np.asarray(obs, np.float32))[None], self.h)
+            mean, self.h = self.actor.step(torch.as_tensor(obs)[None], self.h)
         return mean[0].numpy().clip(-1.0, 1.0)
 
 
@@ -142,4 +151,5 @@ class PrivilegedPolicy(Policy):
 
 
 def load_policy(path) -> Policy:
-    return (PrivilegedPolicy if is_privileged(path) else Policy)(load_actor(path))
+    actor, privileged = load(path)
+    return (PrivilegedPolicy if privileged else Policy)(actor)

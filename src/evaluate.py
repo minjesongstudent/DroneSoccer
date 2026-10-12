@@ -16,7 +16,7 @@ from typing import Callable
 
 import numpy as np
 
-from src import baseline
+from src import baseline, contract
 from src.params import Drone
 from src.contract import CRASHES
 from src.sim import HoopEnv
@@ -57,7 +57,12 @@ def load_policy(model_path: str) -> Policy:
         return actor.load_policy(model_path)
     from stable_baselines3 import SAC
     model = SAC.load(model_path, device="cpu")
-    return lambda obs: model.predict(obs, deterministic=True)[0]
+    size = model.observation_space.shape[0]
+    adapt = contract.for_model(size)
+    if adapt is None:
+        raise ValueError(f"{model_path} takes {size} inputs; the sim gives {contract.POLICY_INPUT_DIM} "
+                         f"(or {contract.SLOTS_V1_DIM} without the motion readings)")
+    return lambda obs: model.predict(adapt(obs), deterministic=True)[0]
 
 
 def report(results: list[dict], dt: float = Drone().dt) -> str:

@@ -239,6 +239,25 @@ def split_input(x: np.ndarray):
     return slots[:, :OBS_DIM], slots[:, OBS_DIM], slots[:, OBS_DIM + 1 + MOTION_DIM:], bool(x[-1] > 0.5)
 
 
+# The slotted input before the motion readings (2026-10-12): each slot without
+# MOTION_FIELDS, as ppo-dagger and teacher3-12s-height were trained on.
+SLOTS_V1_DIM = N_SLOTS * (SLOT_DIM - MOTION_DIM) + 1
+
+
+def slots_v1(x: np.ndarray) -> np.ndarray:
+    """A policy input (POLICY_INPUT_DIM) in the SLOTS_V1_DIM layout: the motion dropped."""
+    x = np.asarray(x, np.float32)
+    slots = x[:N_SLOTS * SLOT_DIM].reshape(N_SLOTS, SLOT_DIM)
+    keep = np.r_[0:OBS_DIM + 1, OBS_DIM + 1 + MOTION_DIM:SLOT_DIM]
+    return np.append(slots[:, keep].ravel(), x[N_SLOTS * SLOT_DIM]).astype(np.float32)
+
+
+def for_model(size: int):
+    """What turns a policy input into the input a model of `size` inputs reads: as it is,
+    or slots_v1 for a model saved before the motion readings. None for any other size."""
+    return {POLICY_INPUT_DIM: lambda x: x, SLOTS_V1_DIM: slots_v1}.get(size)
+
+
 def split_motion(x: np.ndarray) -> np.ndarray:
     """The motion readings of a policy input, per slot, oldest first: (N_SLOTS, MOTION_DIM)."""
     slots = np.asarray(x[:N_SLOTS * SLOT_DIM]).reshape(N_SLOTS, SLOT_DIM)

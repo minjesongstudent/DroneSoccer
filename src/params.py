@@ -144,8 +144,9 @@ class Telemetry:
     """The motion the policy gets (contract.MOTION_FIELDS): the Tello's state packet, read
     each tick by labcheck.fly_policy. sim.HoopEnv copies its faults."""
     speed_step: float = 0.1     # MEASURED 2026-10-12: vgx, vgy are whole dm/s; at hover 95% read 0
-    speed_noise: float = 0.06   # MEASURED 2026-10-12: std, m/s, before the step: 5% of hover packets
-                                # (rc < 5) read 0.1, which a 0.06 std below the 0.1 step gives
+    speed_noise: float = 0.045  # MEASURED 2026-10-12: std, m/s, on each axis before its step: 5% of
+                                # hover packets (rc < 5) read 0.1 or more, which 0.045 gives with
+                                # each axis cut towards 0 (2.6% an axis reach 0.1, 5.2% either)
     stale: float = 0.02         # MEASURED 2026-10-12: share of ticks with no new packet (gap > 0.15 s)
     lag_steps: int = 1          # UNMEASURED: steps the packet trails the motion; Randomise.telemetry_lag
     yaw_step_deg: float = 1.0   # MEASURED 2026-10-12: yaw is whole degrees

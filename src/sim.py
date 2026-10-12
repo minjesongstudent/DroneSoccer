@@ -48,7 +48,14 @@ CENTRELINE_POINTS = 256
 # HoopEnv.privileged pads the commands still in flight to this many. Above
 # Randomise.delay_steps' top, so every draw fits.
 PENDING_MAX = 6
-PRIVILEGED_DIM = 3 + 3 + 3 + 3 + 3 + 6 + 12 + PENDING_MAX * contract.ACTION_DIM
+# The episode's draw of the setup in HoopEnv.privileged(), in order, from DYNAMICS_START
+# on: after the hoop-frame position and velocity (3 + 3), facing and yaw rate (3), the
+# position over the cage and the cage (3 + 3) and the six layout numbers.
+DYNAMICS_FIELDS = ("delay_steps", "tau", "max_speed", "max_up_speed", "up_exponent", "max_yaw_rate_deg",
+                   "yaw_deadband", "telemetry_lag", "yaw_drift", "camera_pitch_deg", "altimeter_offset",
+                   "height_step")
+DYNAMICS_START = 3 + 3 + 3 + 3 + 3 + 6
+PRIVILEGED_DIM = DYNAMICS_START + len(DYNAMICS_FIELDS) + PENDING_MAX * contract.ACTION_DIM
 
 def _wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -318,7 +325,7 @@ class HoopEnv(gym.Env):
         self._heights = deque([self._height_reading()] * n, maxlen=n)
         # Motion, as labcheck.fly_policy reads it: heading from where the policy started.
         self._start_heading, self._clock = self.heading, 0.0
-        self._motion_true = deque([(0.0, 0.0)] * (self.telemetry_lag + 1), maxlen=self.telemetry_lag + 1)
+        self._motion_true = deque([((0.0, 0.0), 0.0)] * (self.telemetry_lag + 1), maxlen=self.telemetry_lag + 1)
         self._last_motion = contract.NO_MOTION.copy()
         self._motion = deque([self._motion_reading()] * n, maxlen=n)
         self._streak = 0
@@ -383,7 +390,9 @@ class HoopEnv(gym.Env):
         straight to the centre.
         In front, not lined up: to the approach point CLEARANCE out front, then in.
         Inside the hole but too near the rim to clear it counts as not lined up, so
-        cutting in from the side towards the rim earns nothing.
+        cutting in from the side towards the rim earns nothing. Between the safe edge
+        and the hole's edge the two blend, so drifting a little off-centre close to
+        the plane costs a little, not the whole detour in one step.
         Behind, still within the rim's width: out to a point CLEARANCE behind a
         side gate, so the drone backs off the rim. Beside the rim: straight to
         the gate, then round to the approach point.
@@ -395,9 +404,16 @@ class HoopEnv(gym.Env):
         h = rel @ self._axis_h
         if along < 0.0:
             v = rel @ self._axis_v
-            if (h / self._safe_h) ** 2 + (v / self._safe_v) ** 2 < 1.0:
+            safe = np.hypot(h / self._safe_h, v / self._safe_v)   # 1 on the safe edge
+            if safe <= 1.0:
                 return float(np.linalg.norm(rel))
-            return float(np.linalg.norm(pos - self._approach)) + CLEARANCE
+            detour = float(np.linalg.norm(pos - self._approach)) + CLEARANCE
+            hole = np.hypot(h / self._hole_h, v / self._hole_v)   # 1 on the hole's edge
+            if hole >= 1.0:
+                return detour
+            # How far out from the safe edge to the hole's edge along this direction, 0 to 1.
+            w = (1.0 - 1.0 / safe) / (1.0 / hole - 1.0 / safe)
+            return float((1.0 - w) * np.linalg.norm(rel) + w * detour)
         best = np.inf
         for gate in self._gates:
             rest = float(np.linalg.norm(gate - self._approach)) + CLEARANCE
@@ -592,15 +608,20 @@ class HoopEnv(gym.Env):
 
     def _motion_reading(self) -> np.ndarray:
         """The motion the policy gets (contract.motion_reading), as the Tello's state packet
-        gives it: speed in whole steps with noise, heading in whole degrees with drift,
-        both telemetry_lag steps late, and now and then no new packet at all."""
+        gives it: speed from two axes each in whole steps with noise (vgx, vgy, which
+        labcheck.motion_from_state combines), heading in whole degrees with drift, both
+        telemetry_lag steps late, and now and then no new packet at all."""
         t = self.telemetry
         turned = _wrap(self.heading - self._start_heading + np.deg2rad(self.yaw_drift * self._clock))
-        self._motion_true.append((float(np.hypot(*self.vel[:2])), turned))
+        c, s = np.cos(self.heading), np.sin(self.heading)
+        body = (float(self.vel[0] * c + self.vel[1] * s), float(self.vel[0] * s - self.vel[1] * c))
+        self._motion_true.append((body, turned))
         if self.np_random.uniform() < t.stale:
             return self._last_motion.copy()
-        speed, turned = self._motion_true[0]
-        speed = max(0.0, np.floor((speed + self.np_random.normal(0.0, t.speed_noise)) / t.speed_step) * t.speed_step)
+        body, turned = self._motion_true[0]
+        noisy = np.asarray(body) + self.np_random.normal(0.0, t.speed_noise, 2)
+        steps = np.trunc(noisy / t.speed_step) * t.speed_step   # whole steps, towards 0
+        speed = float(np.hypot(*steps))
         step = np.deg2rad(t.yaw_step_deg)
         self._last_motion = contract.motion_reading(speed, np.round(turned / step) * step)
         return self._last_motion.copy()
@@ -624,15 +645,19 @@ class HoopEnv(gym.Env):
         queued = np.array(list(self._pending), float).reshape(-1, contract.ACTION_DIM)[:PENDING_MAX]
         pending[:len(queued)] = queued   # none queued at delay_steps 0
         d = self.dyn
+        dynamics = {"delay_steps": d.delay_steps, "tau": d.tau, "max_speed": d.max_speed,
+                    "max_up_speed": d.max_up_speed, "up_exponent": d.up_exponent,
+                    "max_yaw_rate_deg": d.max_yaw_rate_deg, "yaw_deadband": d.yaw_deadband,
+                    "telemetry_lag": self.telemetry_lag, "yaw_drift": self.yaw_drift,
+                    "camera_pitch_deg": self.camera.pitch_deg, "altimeter_offset": self.altimeter.offset,
+                    "height_step": self.height_step}
         return np.concatenate([
             to_hoop @ (self.pos - self.hoop_centre), to_hoop @ self.vel,
             [np.sin(facing), np.cos(facing), self.yaw_rate],
             self.pos / cage, cage,
             [self.hoop_centre[2], self._line_h, self._line_v, self._to_go(self.pos),
              float(self._unseen), float(self._found)],
-            [d.delay_steps, d.tau, d.max_speed, d.max_up_speed, d.up_exponent, d.max_yaw_rate_deg, d.yaw_deadband,
-             self.telemetry_lag, self.yaw_drift,
-             self.camera.pitch_deg, self.altimeter.offset, self.height_step],
+            [dynamics[name] for name in DYNAMICS_FIELDS],
             pending.ravel(),
         ]).astype(np.float32)
 

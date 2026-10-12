@@ -341,26 +341,44 @@ class Teacher:
                        up=v[2] / d.max_up_speed, yaw=yaw)
 
 
+class LearnedTeachers:
+    """A privileged src.ppo actor (train.py --privileged-actor) teaching n simulators at
+    once: one actor, one batched step for all of them, each with its own memory. It
+    reads the true state (env.privileged()) after the policy input, so act on every
+    step of every episode, as src.ppo's labels do."""
+
+    def __init__(self, path, n: int):
+        from src import actor
+        self.actor, privileged = actor.load(path)
+        if not privileged:
+            raise ValueError(f"{path} is not a privileged actor (train.py --privileged-actor)")
+        self.h = self.actor.initial(n)
+
+    def reset(self, k: int):
+        """Simulator k starts a new episode: its memory clears."""
+        self.h[k] = 0.0
+
+    def act(self, obs: np.ndarray, priv: np.ndarray) -> np.ndarray:
+        """Commands for every simulator from its policy input (n, ...) and true state (n, ...)."""
+        import torch
+        x = torch.as_tensor(np.concatenate([obs, priv], 1), dtype=torch.float32)
+        with torch.no_grad():
+            mean, self.h = self.actor.step(x, self.h)
+        return mean.numpy().clip(-1.0, 1.0).astype(np.float32)
+
+
 class LearnedTeacher:
-    """A privileged src.ppo actor (train.py --privileged-actor) as a teacher: the same
-    reset/act as Teacher, so src.ppo's DAgger labels with it. It reads the true state
-    (env.privileged()) after the policy input and keeps a memory, so act on every step
-    of an episode, as src.ppo's labels do."""
+    """LearnedTeachers for one simulator, with Teacher's reset/act."""
 
     def __init__(self, path):
-        from src import actor
-        if not actor.is_privileged(path):
-            raise ValueError(f"{path} is not a privileged actor (train.py --privileged-actor)")
-        self.policy = actor.load_policy(path)
+        self.teachers = LearnedTeachers(path, 1)
         self.run_ins = 0   # Teacher counts its run ins; this one has none to count
 
     def reset(self, env: HoopEnv | None = None):
-        self.policy.reset()
-        self.policy.bind(env)
+        self.teachers.reset(0)
 
     def act(self, env: HoopEnv, obs: np.ndarray) -> np.ndarray:
-        self.policy.bind(env)
-        return self.policy(obs).astype(np.float32)
+        return self.teachers.act(np.asarray(obs, np.float32)[None], env.privileged()[None])[0]
 
 
 def run(episodes: int, level: float = 1.0, seed: int = 0, noise: float = 0.0,

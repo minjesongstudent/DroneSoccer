@@ -45,7 +45,7 @@ from src import contract, plots, train
 from src.actor import HIDDEN, LOG_STD_INIT, LOG_STD_MIN, MEMORY, Actor, normalised, save_actor  # noqa: F401
 from src.sim import PRIVILEGED_DIM, HoopEnv
 from src.params import Randomise
-from src.teacher import DESIGN_RANGES, LearnedTeacher, Teacher
+from src.teacher import DESIGN_RANGES, LearnedTeachers, Teacher
 
 ROLLOUT_ENVS = 16        # simulators per seed, stepped in turn on one core
 ROLLOUT_STEPS = 128      # steps per simulator per update: 2048 a rollout
@@ -118,14 +118,15 @@ class Fleet:
     """ROLLOUT_ENVS simulators on this core, each with a teacher to label its states.
     A finished episode resets at once, so obs is always the next step's input.
 
-    teacher: a privileged actor's path (teacher.LearnedTeacher), or None for teacher3.
+    teacher: a privileged actor's path (teacher.LearnedTeachers), or None for teacher3.
     privileged_actor: the actor reads the true state after the policy input (inputs())."""
 
     def __init__(self, n: int, level: float, randomise: bool, run_in_share: float, seed: int,
                  rng: np.random.Generator, privileged_actor: bool = False, teacher: str | None = None):
         self.envs = [HoopEnv(level=level, randomise=randomise, run_in_share=run_in_share) for _ in range(n)]
-        self.teachers = [LearnedTeacher(teacher) if teacher else Teacher() for _ in range(n)]
         self.scripted = teacher is None
+        # teacher3 keeps its own state per simulator; a learned teacher steps them all at once.
+        self.teachers = [Teacher() for _ in range(n)] if self.scripted else LearnedTeachers(teacher, n)
         self.privileged_actor = privileged_actor
         self.rng, self.n, self.beta = rng, n, 0.0
         self.expert = np.zeros(n, bool)   # this episode is flown by the teacher
@@ -140,7 +141,10 @@ class Fleet:
         env = self.envs[k]
         self.obs[k] = env.reset(seed=seed)[0]
         self.priv[k] = env.privileged()
-        self.teachers[k].reset(env)
+        if self.scripted:
+            self.teachers[k].reset(env)
+        else:
+            self.teachers.reset(k)
         self.expert[k] = self.rng.uniform() < self.beta
         self.starts[k], self.ep_reward[k] = 1.0, 0.0
 
@@ -165,9 +169,15 @@ class Fleet:
         state when the actor is privileged. A student's actor reads the policy input only."""
         return np.concatenate([self.obs, self.priv], 1) if self.privileged_actor else self.obs.copy()
 
+    def _input(self, k: int) -> np.ndarray:
+        """inputs() for simulator k alone."""
+        return np.concatenate([self.obs[k], self.priv[k]]) if self.privileged_actor else self.obs[k].copy()
+
     def labels(self) -> np.ndarray:
         """The teacher's command for every simulator's current state. Call it every step
         of an episode or none: the teacher counts steps since it last saw the hoop."""
+        if not self.scripted:
+            return self.teachers.act(self.obs, self.priv)
         return np.stack([t.act(e, o) for t, e, o in zip(self.teachers, self.envs, self.obs)])
 
     def step(self, actions: np.ndarray, value_of):
@@ -183,7 +193,7 @@ class Fleet:
             self.obs[k], self.priv[k] = obs, env.privileged()
             if terminated or truncated:
                 if truncated and not terminated:
-                    rewards[k] += contract.GAMMA * value_of(self.inputs()[k], self.priv[k])
+                    rewards[k] += contract.GAMMA * value_of(self._input(k), self.priv[k])
                 dones[k] = 1.0
                 ended.append((info, bool(self.expert[k]), float(self.ep_reward[k])))
                 self._reset(k)
@@ -477,6 +487,10 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
     labels = None
     if resume:
         state = torch.load(folder / "state.pt", map_location="cpu", weights_only=False)
+        saved = state["actor"]["mean"].shape[0]
+        if saved != in_dim:
+            raise SystemExit(f"{folder} holds an actor on {saved} inputs; this code builds {in_dim} "
+                             f"(the policy input changed since). Start the run again with ./ds submit.")
         for net, key in ((actor, "actor"), (critic, "critic"), (opt_actor, "opt_actor"),
                          (opt_critic, "opt_critic"), (opt_clone, "opt_clone")):
             net.load_state_dict(state[key])

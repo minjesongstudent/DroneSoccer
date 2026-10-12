@@ -170,6 +170,26 @@ walltime_for() {
   printf '%02d:%02d:00' $(( mins / 60 )) $(( mins % 60 ))
 }
 
+# Minutes run_seeds.sh spends after training checking a --privileged-actor run's seeds
+# (src.teacher_check --pick): per seed, 8 corners of 100 one-minute flights, ~1.2 min a
+# corner on one core (measured on the login node), 3 allowed here for a slower node, on
+# as many cores as the job has, up to the 8 corners. 0 for any other run.
+check_min() {
+  local name=$1 seeds=$2 cpus
+  grep -qx -- --privileged-actor "runs/${name}.args" 2>/dev/null || { echo 0; return; }
+  cpus=$(( seeds * $(envs_for "$name") ))
+  [ "$cpus" -gt 8 ] && cpus=8
+  echo $(( seeds * ((8 + cpus - 1) / cpus) * 3 ))
+}
+
+# A walltime with extra minutes on top.
+add_min() {
+  local h m
+  IFS=: read -r h m _ <<<"$1"
+  m=$(( 10#$h * 60 + 10#$m + $2 ))
+  printf '%02d:%02d:00' $(( m / 60 )) $(( m % 60 ))
+}
+
 cmd_submit() {
   need_qsub
   have_venv || warn "no .venv on this machine. The job fails unless you ran ./ds setup here."
@@ -183,7 +203,8 @@ cmd_submit() {
   mkdir -p runs && printf '%s\n' "$name" > "$LAST"
   # Always rewrite, so a reused name never inherits an older run's options.
   if [ $# -gt 0 ]; then printf '%s\n' "$@"; fi > "runs/${name}.args"
-  queue "$name" "$seeds" "$steps" "$(walltime_for "$steps" "$(envs_for "$name")" "$(algo_for "$name")")"
+  queue "$name" "$seeds" "$steps" "$(add_min "$(walltime_for "$steps" "$(envs_for "$name")" "$(algo_for "$name")")" \
+                                             "$(check_min "$name" "$seeds")")"
 }
 
 # Cores one seed needs: one per --envs in runs/<name>.args, else one.
@@ -212,7 +233,8 @@ queue() {
   # DS_AFTER_ANY=<job id> holds it until that one ends however it ends.
   [ -n "${DS_AFTER:-}" ] && after=(-W "depend=afterok:${DS_AFTER}")
   [ -n "${DS_AFTER_ANY:-}" ] && after=(-W "depend=afterany:${DS_AFTER_ANY}")
-  qsub -N "hoop-$name" "${after[@]}" \
+  # The +"..." form expands an empty array safely under set -u on old bash.
+  qsub -N "hoop-$name" ${after[@]+"${after[@]}"} \
        -l "ncpus=${cpus},mem=${mem},walltime=${wall}" \
        -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
        "$JOB"
@@ -240,7 +262,8 @@ cmd_resume() {
   grep -qx -- --resume "runs/${name}.args" || echo --resume >> "runs/${name}.args"
   printf '%s\n' "$name" > "$LAST"
   printf '%sresuming from step %s of %s%s\n' "$D" "$least" "$total" "$N"
-  queue "$name" "$seeds" "$total" "$(walltime_for $(( total - least )) "$(envs_for "$name")" "$(algo_for "$name")")"
+  queue "$name" "$seeds" "$total" "$(add_min "$(walltime_for $(( total - least )) "$(envs_for "$name")" "$(algo_for "$name")")" \
+                                             "$(check_min "$name" "$seeds")")"
 }
 
 cmd_progress() {

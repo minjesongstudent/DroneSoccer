@@ -117,6 +117,16 @@ def test_yaw_clockwise_decreases_heading():
     assert env.heading < -0.05
 
 
+def test_a_clockwise_turn_reads_negative():
+    """The motion reading's turn is counter-clockwise, as the heading is: yaw_cw > 0
+    lowers sin_turned. labcheck.motion_from_state reads the Tello the same way."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, [8.0, 5.0, 1.5], [1.0, 0.0, 0.0])
+    for _ in range(10):
+        x, *_ = env.step([0.0, 0.0, 0.0, 1.0])
+    assert contract.split_motion(x)[-1][1] < -0.1
+
+
 def test_command_delay():
     env = make_env(drone=Drone(delay_steps=2))
     env.place([5.0, 5.0, 1.5], 0.0, [8.0, 5.0, 1.5], [1.0, 0.0, 0.0])
@@ -407,6 +417,17 @@ def test_lined_up_means_a_straight_run_clears_the_rim():
         pos = centre + [-0.3, lateral, 0.0]
         straight = np.linalg.norm(pos - centre)
         assert (env._to_go(pos) == pytest.approx(straight)) == lined_up
+
+
+def test_drifting_off_centre_near_the_plane_costs_a_little_at_a_time():
+    """Between lined up and the hole's edge the distance to go blends, so a centimetre
+    of drift just in front of the ring never costs the whole detour at once."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    centre = np.array(HOOP_AT)
+    to_go = [env._to_go(centre + [-0.05, lateral, 0.0]) for lateral in np.arange(0.0, 0.2, 0.005)]
+    detour = max(to_go) - min(to_go)
+    assert np.max(np.diff(to_go)) < detour / 4
 
 
 def _downhill(env, pos, e=1e-4):

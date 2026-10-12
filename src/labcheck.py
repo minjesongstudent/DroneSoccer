@@ -1798,25 +1798,22 @@ def lags60_policy_input(frames, heights, motion, actions, unseen: bool) -> np.nd
                            [1.0 if unseen else 0.0]]).astype(np.float32)
 
 
-# The 430-number slotted input before the motion readings (2026-10-12): each slot
-# without contract.MOTION_FIELDS, as ppo-dagger and teacher3-12s-height were trained on.
-SLOTS_V1_DIM = contract.N_SLOTS * (contract.SLOT_DIM - contract.MOTION_DIM) + 1
+SLOTS_V1_DIM = contract.SLOTS_V1_DIM
 
 
 def slots_v1_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
-    x = contract.policy_input(frames, heights, motion, actions, unseen)
-    slots = x[:-1].reshape(contract.N_SLOTS, contract.SLOT_DIM)
-    keep = np.r_[0:contract.OBS_DIM + 1, contract.OBS_DIM + 1 + contract.MOTION_DIM:contract.SLOT_DIM]
-    return np.append(slots[:, keep].ravel(), x[-1]).astype(np.float32)
+    return contract.slots_v1(contract.policy_input(frames, heights, motion, actions, unseen))
 
 
 # The motion the policy gets (contract.MOTION_FIELDS), from the Tello's state packet:
 # horizontal speed from vgx, vgy (whole dm/s; only the size, as their frame flipped
 # between flights) and the heading from yaw (whole degrees) since the policy started.
+# Telemetry yaw grows clockwise and the sim's heading counter-clockwise, so the turn is
+# start_yaw - yaw: a right turn reads negative in both (sim.HoopEnv._motion_reading).
 # In a crash the packet swings wildly, but then the flight is over.
 def motion_from_state(state: dict, start_yaw: float) -> np.ndarray:
     speed = float(np.hypot(state.get("vgx", 0), state.get("vgy", 0))) / 10
-    return contract.motion_reading(speed, np.deg2rad(float(state.get("yaw", start_yaw)) - start_yaw))
+    return contract.motion_reading(speed, np.deg2rad(start_yaw - float(state.get("yaw", start_yaw))))
 
 
 # The height the policy gets, from the Tello's downward tof in cm (contract.py).
@@ -1850,11 +1847,11 @@ def run_policy(args) -> None:
             sys.exit(f"{args.model} reads the sim's true state: a teacher for training, it cannot fly the drone")
         # One flight per run, so its memory starts clear as in every training episode.
         policy = actor.load_policy(args.model)
-        inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, SLOTS_V1_DIM: slots_v1_policy_input}
-        if policy.observation_size not in inputs:
+        if contract.for_model(policy.observation_size) is None:
             sys.exit(f"{args.model} takes {policy.observation_size} inputs; this code builds "
-                     f"{' or '.join(map(str, inputs))}")
-        fly_policy(args, "policy", policy, inputs[policy.observation_size], contract.not_yet_through)
+                     f"{contract.POLICY_INPUT_DIM} or {contract.SLOTS_V1_DIM}")
+        # actor.Policy drops the motion readings itself for a model saved before them.
+        fly_policy(args, "policy", policy, contract.policy_input, contract.not_yet_through)
         return
     from stable_baselines3 import SAC
     model = SAC.load(args.model, device="cpu")
@@ -1908,12 +1905,15 @@ def fly_policy(args, kind: str, policy, policy_input, flag_rule=contract.not_yet
         # One observation per control step, as in the simulator: the newest frame's.
         watcher.update()
         frames.append(watcher.obs.copy())
-        tof[:] = keep_tof(session.state().get("tof", 0), *tof)
-        heights.append(Drone().takeoff_height if tof[0] is None else tof[0] / 100)
+        # One packet a tick, so height and motion come from the same moment.
         state = session.state()
-        if not start_yaw:
-            start_yaw.append(float(state.get("yaw", 0)))
-        motion.append(motion_from_state(state, start_yaw[0]))
+        tof[:] = keep_tof(state.get("tof", 0), *tof)
+        heights.append(Drone().takeoff_height if tof[0] is None else tof[0] / 100)
+        # The turn counts from the first packet with a yaw; a packet without one reads
+        # not turned (motion_from_state), so 0 stands in until then.
+        if not start_yaw and "yaw" in state:
+            start_yaw.append(float(state["yaw"]))
+        motion.append(motion_from_state(state, start_yaw[0] if start_yaw else 0.0))
         unseen[0] = flag_rule(unseen[0], frames)
         x = policy_input(frames, heights, motion, actions, unseen[0])
         action = np.clip(policy(x), -1, 1)
