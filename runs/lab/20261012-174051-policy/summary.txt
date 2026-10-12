@@ -1,0 +1,2 @@
+Summary of 20261012-174051-policy
+  telemetry      9.8 Hz (median), worst gap 363 ms

@@ -1,0 +1,10 @@
+   0.000  connecting to 192.168.10.1
+   0.533  connected, battery 81%, temperature 71 C
+   0.536  mission pads on, downward
+   2.812  video reader open
+   2.813  policy: trainedModels/ppo-dagger.zip
+   2.868  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   2.993  phase: countdown
+   7.951  phase: takeoff
+   7.968  phase: airborne check
+  11.982  ! airborne check: not airborne after takeoff (h 0 cm, tof 10 cm). It probably tipped and cut its motors: check props and guards, power-cycle

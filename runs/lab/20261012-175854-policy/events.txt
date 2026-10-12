@@ -1,0 +1,9 @@
+   0.000  connecting to 192.168.10.1
+   0.208  connected, battery 78%, temperature 82 C
+   0.419  mission pads on, downward
+   2.614  video reader open
+   2.615  policy: trainedModels/ppo-dagger.zip
+   2.662  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   2.786  phase: countdown
+   7.682  phase: takeoff
+   7.999  ! takeoff: refused at 83 C. If it is hot, cool it; after a crash or motor cut, power-cycle it

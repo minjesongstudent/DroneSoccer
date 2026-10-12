@@ -1,0 +1,15 @@
+   0.000  connecting to 192.168.10.1
+   0.158  connected, battery 79%, temperature 64 C
+   0.415  mission pads on, downward
+   2.645  video reader open
+   2.646  policy: trainedModels/ppo-dagger.zip
+   2.701  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   2.826  phase: countdown
+   7.717  phase: takeoff
+  15.666  phase: airborne check
+  16.693  phase: settle
+  19.695  phase: policy
+  22.529  ! too high: tof 315 cm, landing
+  22.529  phase: land
+  22.849  ! land: Command 'land' was unsuccessful for 4 tries. Latest response:	'error'
+  23.163  ! land on exit failed: Command 'land' was unsuccessful for 4 tries. Latest response:	'error'
