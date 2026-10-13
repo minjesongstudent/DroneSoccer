@@ -70,12 +70,14 @@ class Actor(nn.Module):
         return self.log_std.clamp(min=LOG_STD_MIN).exp()
 
 
-def save_actor(actor: Actor, path: Path, privileged: bool = False):
-    """privileged: the actor reads the policy input followed by sim.HoopEnv.privileged(),
-    the true state. Such a one is a teacher for the sim only: it cannot fly the drone."""
+def save_actor(actor: Actor, path: Path, privileged: bool | str | None = False):
+    """privileged: the actor reads the policy input followed by the true state, all of it
+    (True or "full": sim.HoopEnv.privileged) or gated ("gated": sim.HoopEnv.gated). Such
+    a one is a teacher for the sim only: it cannot fly the drone."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    flag = "gated" if privileged == "gated" else bool(privileged)
     torch.save({"algo": "ppo", "obs_dim": actor.obs_dim, "hidden": actor.hidden, "memory": actor.memory,
-                "privileged": privileged, "actor": actor.state_dict()}, path)
+                "privileged": flag, "actor": actor.state_dict()}, path)
 
 
 def _resolve(path) -> Path:
@@ -105,12 +107,14 @@ def is_privileged(path) -> bool:
     return bool(_saved(path).get("privileged", False))
 
 
-def load(path) -> tuple[Actor, bool]:
-    """The saved actor and whether it is privileged, from one read of the file."""
+def load(path) -> tuple[Actor, str | None]:
+    """The saved actor and what true state it reads, from one read of the file: None (a
+    student), "full" or "gated" (save_actor)."""
     saved = _saved(path)
     actor = Actor(saved["obs_dim"], hidden=saved["hidden"], memory=saved["memory"])
     actor.load_state_dict(saved["actor"])
-    return actor.eval(), bool(saved.get("privileged", False))
+    flag = saved.get("privileged", False)
+    return actor.eval(), "gated" if flag == "gated" else ("full" if flag else None)
 
 
 def load_actor(path) -> Actor:
@@ -150,6 +154,13 @@ class PrivilegedPolicy(Policy):
         return super().__call__(np.concatenate([np.asarray(obs, np.float32), self.env.privileged()]))
 
 
+class GatedPolicy(PrivilegedPolicy):
+    """A gated teacher flying in the sim: reads env.gated() after the policy input."""
+
+    def __call__(self, obs) -> np.ndarray:
+        return Policy.__call__(self, np.concatenate([np.asarray(obs, np.float32), self.env.gated()]))
+
+
 def load_policy(path) -> Policy:
     actor, privileged = load(path)
-    return (PrivilegedPolicy if privileged else Policy)(actor)
+    return {None: Policy, "full": PrivilegedPolicy, "gated": GatedPolicy}[privileged](actor)

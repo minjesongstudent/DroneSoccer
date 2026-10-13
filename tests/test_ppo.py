@@ -317,3 +317,20 @@ def test_teacher_then_student_keeps_the_true_state_out_of_the_student(monkeypatc
     student = tmp_path / "s" / "final.zip"
     assert not actor_module.is_privileged(student)
     assert actor_module.load_actor(student).obs_dim == contract.POLICY_INPUT_DIM
+
+
+def test_gated_teacher_then_student(monkeypatch, tmp_path):
+    """--privileged-actor gated trains on sim.HoopEnv.gated after the policy input; its
+    student reads the policy input alone."""
+    from src.sim import GATED_DIM
+    _tiny(monkeypatch, tmp_path)
+    ppo.train_ppo(512, "g", seed=0, level=1.0, randomise=True, select_episodes=0, rollout_envs=4,
+                  privileged_actor="gated")
+    teacher = tmp_path / "g" / "final.zip"
+    assert actor_module.load(teacher)[1] == "gated"
+    assert actor_module.load_actor(teacher).obs_dim == contract.POLICY_INPUT_DIM + GATED_DIM
+    ppo.train_ppo(512, "gs", seed=0, level=1.0, randomise=True, select_episodes=0, rollout_envs=4,
+                  teacher=str(teacher))
+    student = tmp_path / "gs" / "final.zip"
+    assert not actor_module.is_privileged(student)
+    assert actor_module.load_actor(student).obs_dim == contract.POLICY_INPUT_DIM

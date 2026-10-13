@@ -56,6 +56,50 @@ DYNAMICS_FIELDS = ("delay_steps", "tau", "max_speed", "max_up_speed", "up_expone
                    "height_step")
 DYNAMICS_START = 3 + 3 + 3 + 3 + 3 + 6
 PRIVILEGED_DIM = DYNAMICS_START + len(DYNAMICS_FIELDS) + PENDING_MAX * contract.ACTION_DIM
+# A gated teacher (train.py --privileged-actor gated) reads the true state only as far as
+# a student could know it from its own input (HoopEnv.gated). teacher4 read all of it, and
+# every seed flew its blind stretches on where the hoop truly was: held at the last
+# sighting, seed 0 fell from 6.85 to 1.42 passes a flight and seed 1 (teacher4.zip, which
+# never saw the hoop) to 0.02, and seed 1's clone crashed every flight.
+#   GATE_HELD: where the drone is and how it moves in the hoop's frame, and the hoop's
+#     height and size. Live while the camera reports the hoop, held at the last reported
+#     value while it does not, 0 before the first report.
+#   GATE_NEVER: where it is over the cage, the cage, and the metres to go round the lap
+#     (from the true position). Always 0.
+#   The rest (the not-yet-through and front-found flags, the dynamics and the commands
+#   in flight) the student can work out from its readings and its own commands: kept.
+GATE_HELD = np.r_[0:9, 15:18]
+GATE_NEVER = np.r_[9:15, 18]
+GATE_FACING = (6, 7)           # sin and cos of the heading off the hoop's axis, in GATE_HELD
+GATED_DIM = PRIVILEGED_DIM + 2   # then: reported yet this episode, time since the last report
+GATE_SINCE_MAX = contract.HISTORY_STEPS   # steps; the time since saturates at 1 here
+# While the hoop is reported, the true numbers are sharper than the camera: seen nearly
+# square on, a hoop a few degrees off the axis looks like one dead on, and teacher3's run
+# in, which starts on true alignment within 3 cm and 3 degrees, left its clones hovering
+# in front of the hoop. So the held numbers get an error of what the policy input leaves
+# unresolved, by metres from the hoop centre (GATE_BLUR_DISTANCE, interpolated, flat past
+# the ends). Measured 2026-10-13: an MLP from the whole policy input to each number, on
+# 24k reported steps of 150 teacher3 flights (noise 0.1, full ranges), held-out RMS error.
+# Rows follow GATE_HELD; the facing's error is GATE_BLUR_FACING, in degrees, so its sin
+# and cos rows are 0. A draw is kept for the whole sighting, so it cannot be averaged
+# away, and made afresh after GATE_REACQUIRE blind steps.
+GATE_REACQUIRE = 5
+GATE_BLUR_DISTANCE = (0.5, 0.7, 0.9, 1.15)   # m; the hoop was never reported past 1.3
+GATE_BLUR = np.array([
+    (0.011, 0.010, 0.014, 0.032),   # m along the axis
+    (0.023, 0.016, 0.041, 0.173),   # m beside it
+    (0.007, 0.006, 0.007, 0.012),   # m above it
+    (0.021, 0.016, 0.017, 0.018),   # m/s, the same three ways
+    (0.015, 0.014, 0.015, 0.021),
+    (0.009, 0.007, 0.008, 0.013),
+    (0.0, 0.0, 0.0, 0.0),           # sin and cos of the facing: GATE_BLUR_FACING
+    (0.0, 0.0, 0.0, 0.0),
+    (0.027, 0.023, 0.022, 0.025),   # rad/s, yaw rate
+    (0.017, 0.012, 0.013, 0.020),   # m, hoop centre's height
+    (0.003, 0.002, 0.002, 0.004),   # m, hoop's half width and half height
+    (0.004, 0.002, 0.003, 0.006),
+])
+GATE_BLUR_FACING = (1.6, 1.2, 2.7, 10.8)   # degrees
 
 def _wrap(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -146,6 +190,10 @@ class HoopEnv(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
+        # The gate's blur (gated()) has its own generator, so the sim's own draws are the
+        # same with or without a gated teacher.
+        if seed is not None or not hasattr(self, "_gate_rng"):
+            self._gate_rng = np.random.default_rng([0 if seed is None else seed, 1])
         if self.randomise:
             self._apply_measurement_error()
         self._sample_layout()
@@ -332,6 +380,12 @@ class HoopEnv(gym.Env):
         self._unseen = True
         self._found = False   # the front reported yet this episode, for R_FOUND
         self._actions = deque([np.zeros(contract.ACTION_DIM, np.float32)] * n, maxlen=n)
+        # The gate (gated()): nothing reported yet. Tests start episodes without reset().
+        if not hasattr(self, "_gate_rng"):
+            self._gate_rng = np.random.default_rng([0, 1])
+        self._held = np.zeros(len(GATE_HELD), np.float32)
+        self._blur = np.zeros(len(GATE_HELD))
+        self._reported, self._since = False, GATE_SINCE_MAX
         return self._policy_input()
 
     # --- stepping --------------------------------------------------------
@@ -372,6 +426,7 @@ class HoopEnv(gym.Env):
         self._motion.append(self._motion_reading())
         self._unseen = contract.not_yet_through(self._unseen, self._frames)
         self._actions.append(action)
+        self._update_gate(obs)
 
         terminated = outcome in contract.CRASHES
         reward = contract.reward(outcome, self._to_go(prev), self._to_go(self.pos),
@@ -637,9 +692,6 @@ class HoopEnv(gym.Env):
         state alike. With this it knows where the drone is round the lap, how fast it
         flies, which commands are still in flight and the episode's draw of the setup.
         PRIVILEGED_DIM long, the same in every layout."""
-        n = self.hoop_normal
-        to_hoop = np.array([n, self._axis_h, self._axis_v])   # world offsets to the hoop's frame
-        facing = _wrap(self.heading - np.arctan2(n[1], n[0]))
         cage = np.array([self.cage.length, self.cage.width, self.cage.height])
         pending = np.zeros((PENDING_MAX, contract.ACTION_DIM))
         queued = np.array(list(self._pending), float).reshape(-1, contract.ACTION_DIM)[:PENDING_MAX]
@@ -651,15 +703,53 @@ class HoopEnv(gym.Env):
                     "telemetry_lag": self.telemetry_lag, "yaw_drift": self.yaw_drift,
                     "camera_pitch_deg": self.camera.pitch_deg, "altimeter_offset": self.altimeter.offset,
                     "height_step": self.height_step}
+        relative = self._relative()
         return np.concatenate([
-            to_hoop @ (self.pos - self.hoop_centre), to_hoop @ self.vel,
-            [np.sin(facing), np.cos(facing), self.yaw_rate],
+            relative[:9],
             self.pos / cage, cage,
-            [self.hoop_centre[2], self._line_h, self._line_v, self._to_go(self.pos),
-             float(self._unseen), float(self._found)],
+            relative[9:], [self._to_go(self.pos), float(self._unseen), float(self._found)],
             [dynamics[name] for name in DYNAMICS_FIELDS],
             pending.ravel(),
         ]).astype(np.float32)
+
+    def _relative(self) -> np.ndarray:
+        """privileged()'s GATE_HELD numbers, in order: the drone's position and velocity in
+        the hoop's frame, its facing and yaw rate, the hoop's height and size."""
+        n = self.hoop_normal
+        to_hoop = np.array([n, self._axis_h, self._axis_v])   # world offsets to the hoop's frame
+        facing = _wrap(self.heading - np.arctan2(n[1], n[0]))
+        return np.concatenate([
+            to_hoop @ (self.pos - self.hoop_centre), to_hoop @ self.vel,
+            [np.sin(facing), np.cos(facing), self.yaw_rate],
+            [self.hoop_centre[2], self._line_h, self._line_v]])
+
+    def _update_gate(self, frame: np.ndarray):
+        """After each step: while the camera reports the hoop (frame, the newest in the
+        policy input), the gate's held numbers follow the true ones, blurred by GATE_BLUR."""
+        if not frame[contract.VISIBLE]:
+            self._since = min(self._since + 1, GATE_SINCE_MAX)
+            return
+        true = self._relative()
+        if self._since >= GATE_REACQUIRE:   # a new sighting: a new error, kept while it lasts
+            self._blur = self._gate_rng.standard_normal(len(GATE_HELD))
+        distance = float(np.linalg.norm(true[:3]))
+        sd = np.array([np.interp(distance, GATE_BLUR_DISTANCE, row) for row in GATE_BLUR])
+        held = true + self._blur * sd
+        facing = np.arctan2(true[GATE_FACING[0]], true[GATE_FACING[1]])
+        facing += np.deg2rad(self._blur[GATE_FACING[0]] * np.interp(distance, GATE_BLUR_DISTANCE, GATE_BLUR_FACING))
+        held[list(GATE_FACING)] = np.sin(facing), np.cos(facing)
+        self._held = held.astype(np.float32)
+        self._reported, self._since = True, 0
+
+    def gated(self, privileged: np.ndarray | None = None) -> np.ndarray:
+        """What a gated teacher reads after the policy input: privileged() (pass it in if
+        already computed) with the hoop-relative numbers held at the last report and the
+        cage hidden (GATE_HELD, GATE_NEVER), then whether the hoop has been reported yet
+        and the time since, 0 to 1 over GATE_SINCE_MAX steps. GATED_DIM long."""
+        p = (self.privileged() if privileged is None else privileged).copy()
+        p[GATE_HELD] = self._held
+        p[GATE_NEVER] = 0.0
+        return np.concatenate([p, [float(self._reported), self._since / GATE_SINCE_MAX]]).astype(np.float32)
 
     def _info(self, outcome):
         return {"outcome": outcome, "passes": self.passes, "steps": self.steps,

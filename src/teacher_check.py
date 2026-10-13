@@ -10,8 +10,15 @@ A teacher is judged at its worst, not on average. It flies:
   - the full random mix, with the dynamics part of its true state hidden (set to the
     middle of the ranges). A teacher that leans on numbers the camera never shows
     teaches a clone that averages them away (teacher3's run-in trap);
-  - the full mix with action noise 0.1, as DAgger's mixed rounds fly it.
-Every corner must clear GATES. --pick ranks seeds by their worst corner.
+  - the full mix with action noise 0.1, as DAgger's mixed rounds fly it;
+  - a full (ungated) teacher also flies the mix with the hoop-relative part of its true
+    state held at the last step the camera reported the hoop (sim.HoopEnv.gated's view),
+    as a student would know it. teacher4 steered its blind stretches on where the hoop
+    truly was, and lost 80-100% of its passes this way; seed 1's clone crashed every
+    flight. A gated teacher (--privileged-actor gated) reads that view already.
+Every corner must clear GATES. --pick ranks seeds by their worst corner. Each line also
+gives the share of steps the camera reported the hoop: a teacher that never looks has
+nothing a student could copy.
 
 Whether a student can copy it is the student's own DAgger rounds: a short run with
 --teacher prints each round's clone loss and the clone's flights (see the end of main).
@@ -31,7 +38,8 @@ import numpy as np
 from src import actor as actor_module
 from src.contract import CRASHES
 from src.params import Drone, Hoop, Randomise
-from src.sim import DYNAMICS_FIELDS, DYNAMICS_START, HoopEnv
+from src import contract
+from src.sim import DYNAMICS_FIELDS, DYNAMICS_START, GATE_HELD, GATE_NEVER, HoopEnv
 
 SEED = 2_000_000          # past evaluate's and train's selection seeds
 SPEEDS = (0.55, 0.8)
@@ -41,6 +49,7 @@ GATES = {"passes_per_ep": 3.0, "crashed": 0.05, "never_passed": 0.03, "centred":
 NOISE = 0.1
 NOISE_CRASHED = 0.08
 HIDDEN_DROP = 0.2        # the share of passes it may lose with the dynamics hidden
+HELD_DROP = 0.2          # ... and a full teacher with the hoop held while out of view
 # The randomised dynamics in HoopEnv.privileged() (sim.DYNAMICS_FIELDS) that the check hides.
 DYN_HIDDEN = ("delay_steps", "tau", "max_speed", "max_up_speed", "up_exponent", "telemetry_lag", "yaw_drift")
 
@@ -63,16 +72,34 @@ class _Hidden:
         self.policy.reset()
 
     def bind(self, env):
-        real = env.privileged
-        def privileged():
-            p = real()
-            for i, v in self.values.items():
-                p[i] = v
-            return p
-        self.policy.bind(type("Env", (), {"privileged": staticmethod(privileged)})())
+        def hidden(view):
+            def read():
+                p = view()
+                for i, v in self.values.items():
+                    p[i] = v
+                return p
+            return staticmethod(read)
+        # The dynamics sit at the same places in the gated view.
+        self.policy.bind(type("Env", (), {"privileged": hidden(env.privileged), "gated": hidden(env.gated)})())
 
     def __call__(self, obs):
         return self.policy(obs)
+
+
+class _Held(_Hidden):
+    """A full teacher reading the gated view's hoop-relative numbers in its true state:
+    held at the last report while the camera does not report the hoop, the cage hidden."""
+
+    def __init__(self, policy):
+        self.policy = policy
+
+    def bind(self, env):
+        def privileged():
+            p = env.privileged()
+            g = env.gated(p)
+            p[GATE_HELD], p[GATE_NEVER] = g[GATE_HELD], g[GATE_NEVER]
+            return p
+        self.policy.bind(type("Env", (), {"privileged": staticmethod(privileged)})())
 
 
 def corner_env(speed: float | None = None, exponent: float | None = None, stretch: str | None = None) -> HoopEnv:
@@ -92,7 +119,7 @@ def fly(policy, env: HoopEnv, flights: int, noise: float = 0.0, seed: int = SEED
     """passes_per_ep, crashed, never_passed, median centred, median |pass height| and the
     median speed through the hoop over `flights` flights."""
     rng = np.random.default_rng(seed)
-    passes, crashed, centred, height, speed = [], [], [], [], []
+    passes, crashed, centred, height, speed, seen, steps = [], [], [], [], [], 0, 0
     for i in range(flights):
         obs, _ = env.reset(seed=seed + i)
         policy.reset()
@@ -104,6 +131,8 @@ def fly(policy, env: HoopEnv, flights: int, noise: float = 0.0, seed: int = SEED
                 action = np.clip(action + rng.normal(0.0, noise, action.shape), -1, 1).astype(np.float32)
             obs, _, terminated, truncated, info = env.step(action)
             done = terminated or truncated
+            seen += bool(contract.split_input(obs)[0][-1][contract.VISIBLE])
+            steps += 1
             if info["passes"] > before:
                 before = info["passes"]
                 centred.append(info["centred"])
@@ -114,7 +143,7 @@ def fly(policy, env: HoopEnv, flights: int, noise: float = 0.0, seed: int = SEED
     med = lambda x: float(np.median(x)) if x else float("nan")
     return {"passes_per_ep": float(np.mean(passes)), "crashed": float(np.mean(crashed)),
             "never_passed": float(np.mean(np.array(passes) == 0)), "centred": med(centred),
-            "pass_height": med(height), "pass_speed": med(speed)}
+            "pass_height": med(height), "pass_speed": med(speed), "seen": seen / max(steps, 1)}
 
 
 def failures(score: dict, crashed_limit: float = GATES["crashed"]) -> list[str]:
@@ -152,13 +181,16 @@ def check(path: str, flights: int, workers: int = 1, full: bool = True) -> dict:
         out["mix"] = fly(policy, corner_env(), flights)
         out["hidden"] = fly(_Hidden(policy), corner_env(), flights)
         out["noisy"] = fly(policy, corner_env(), flights, noise=NOISE)
+        if actor_module.load(path)[1] == "full":
+            out["held"] = fly(_Held(actor_module.load_policy(path)), corner_env(), flights)
     return out
 
 
 def _line(name: str, s: dict, fails: list[str]) -> str:
     return (f"{name:28s} passes/ep {s['passes_per_ep']:5.2f}  crashed {s['crashed']:4.0%}  "
             f"never {s['never_passed']:4.0%}  centred {s['centred']:.2f}  |height| {100 * s['pass_height']:4.1f} cm  "
-            f"speed {s['pass_speed']:.2f} m/s  {'ok' if not fails else 'FAIL ' + ', '.join(fails)}")
+            f"speed {s['pass_speed']:.2f} m/s  hoop seen {s['seen']:4.0%}  "
+            f"{'ok' if not fails else 'FAIL ' + ', '.join(fails)}")
 
 
 def report(result: dict) -> tuple[str, bool]:
@@ -177,6 +209,12 @@ def report(result: dict) -> tuple[str, bool]:
         noisy_fails = [f for f in failures(noisy, NOISE_CRASHED) if f in ("crashed", "passes")]
         lines.append(_line(f"mix, noise {NOISE}", noisy, noisy_fails))
         ok &= not (fails or hidden_fails or noisy_fails)
+        if "held" in result:
+            held = result["held"]
+            drop = 1 - held["passes_per_ep"] / mix["passes_per_ep"] if mix["passes_per_ep"] else 0.0
+            held_fails = ["flies on the hoop out of view"] if drop > HELD_DROP else []
+            lines.append(_line("mix, hoop held out of view", held, held_fails) + f"  (passes {-drop:+.0%})")
+            ok &= not held_fails
     lines.append(f"worst corner passes/ep {result['worst']:.2f}: {'PASSES every gate' if ok else 'NOT ready'}")
     return "\n".join(lines), ok
 

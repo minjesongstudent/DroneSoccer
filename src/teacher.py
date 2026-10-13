@@ -19,14 +19,23 @@ Blind, from the policy input:
     across the cage; lost big and mid-frame, it is too close, so back straight off to
     BACK_TO, then wait, then turn.
   - Lost it running in, big and centred: the pass and the way round, flown on the
-    commands since that last sighting (contract.policy_input sums them per slot): on
-    through to BEHIND past the hoop, out to GATE on the side it is already on, back past
-    the plane to CLEAR in front, across to FRONT out on the axis, then turn round to face
-    it. The hoop hangs within 0.15 m of the cage's middle, so every point of the way
-    stays clear of the net in any layout (see FRONT).
+    commands since that last sighting (contract.policy_input sums them per slot),
+    scaled to this flight's top speed by the speed readings (_flown): down to the hoop's
+    centre in full-scale pulses, on through to BEHIND past the hoop, holding the line it
+    was on, out to GATE on the side it is already on, back past the plane to CLEAR in
+    front, across to FRONT out on the axis, then turn round to face it. The leg of the
+    way round it has reached is kept until the hoop is seen again (Teacher.leg). The
+    hoop hangs within 0.15 m of the cage's middle, so every point of the way stays clear
+    of the net in any layout (see FRONT).
+Its commands assume the middle of the randomised top speed and up/down response (SPEED,
+UP_EXPONENT), which the policy cannot see either.
 With the hoop in view it may use true state, as teacher2 did, because the ellipse shows
 roughly where the hoop is: it lines up STAGE out on the axis, raised so the hoop sits
-mid-frame, and runs in down the camera's line of sight, steered on u and v.
+mid-frame, and runs in down the camera's line of sight, steered on v, held on the axis.
+
+2026-10-13 on the full ranges (150 flights a corner, top speed 0.55/0.8 x exponent
+1/1.6): 2.7-3.1 passes a flight, 1-5% crashed, passes 1.7 cm from the centre's height
+and 0.6 cm beside it (median). With noise 0.1 on its commands: 1.6-1.8, 14-21% crashed.
 
 Run: python -m src.teacher   (how well it flies, at level 1 with randomise on)
 """
@@ -34,7 +43,6 @@ from __future__ import annotations
 
 import argparse
 import collections
-import dataclasses
 
 import numpy as np
 
@@ -46,11 +54,6 @@ U, V, MAJOR = (contract.FIELDS.index(k) for k in ("u", "v", "major"))
 VISIBLE = contract.VISIBLE
 RIGHT, FORWARD, UP, YAW = range(contract.ACTION_DIM)
 
-# teacher3 was built for this drone: top speed 0.36-0.44 m/s and a linear up and down.
-# Under the 2026-10-12 ranges it passes 1.43 a flight, against 3.13 here, so src.ppo runs
-# its DAgger rounds on these, and LearnedTeacher covers the rest.
-DESIGN_RANGES = dataclasses.replace(Randomise(), max_speed=(0.36, 0.44), up_exponent=(1.0, 1.0))
-
 # Blind, the teacher knows only what the policy's designer knows: the measured setup,
 # never the episode's randomised draw of it.
 _CAMERA, _DRONE, _HOOP = Camera(), Drone(), Hoop()
@@ -58,9 +61,76 @@ PITCH = np.deg2rad(_CAMERA.pitch_deg)
 SLOPE = np.tan(PITCH)
 HALF_X, HALF_Y = _CAMERA.half_extent
 DIAMETER = (_HOOP.outer_diameter + _HOOP.outer_height) / 2
-STEP = _DRONE.max_speed * _DRONE.dt         # m flown in a step at full command
-STEP_UP = _DRONE.max_up_speed * _DRONE.dt
 WIDTHS = np.array(contract.SLOT_STEPS, float)
+# The episode's top speed and up/down response are drawn per flight (Randomise.max_speed
+# 0.55-0.8, up_exponent 1-1.6) and the policy never sees the draw, so commands assume the
+# middle of each range. Speeds then come out within +-20% of what was asked. Assuming
+# Drone.max_speed 0.4 made teacher3 fly 1.4-2x what it planned: it overran the hoop into
+# the net after passes and reached the rim before it had descended.
+SPEED = float(np.mean(Randomise().max_speed))
+UP_EXPONENT = float(np.mean(Randomise().up_exponent))
+# The speed readings (contract.MOTION_FIELDS) are whole dm/s cut towards 0 on each axis,
+# so they read ~0.05 m/s low while moving.
+TELEMETRY_BIAS = 0.05
+# The drone's response at the middle of the randomised ranges (Randomise.delay_steps,
+# Randomise.tau), for _speed_scale.
+DELAY = int(round(np.mean(Randomise().delay_steps)))
+TAU = float(np.mean(Randomise().tau))
+SCALE_RANGE = (0.7, 1.4)   # the speed readings' scale on the modelled path: the speed range's ends
+SCALE_MIN = 0.5            # sum of squared modelled speeds over the window, (m/s)^2, before the readings count
+
+
+def _up(speed: float) -> float:
+    """The up command for a climb (+) or descent (-) in m/s. Small commands are weak
+    (|command| ** up_exponent), so a descent of a few cm/s needs a bigger command than
+    a linear drone would."""
+    c = speed / _DRONE.max_up_speed
+    return float(np.sign(c) * min(abs(c), 1.0) ** (1.0 / UP_EXPONENT))
+
+
+def _pulse(dz: float) -> float:
+    """The up command that moves the drone dz metres up as one full-scale pulse: 1 or -1
+    until less than a step's worth is left, which goes as a part command."""
+    return float(np.clip(dz / (_DRONE.max_up_speed * _DRONE.dt), -1.0, 1.0))
+
+
+def _speed_scale(asked: np.ndarray, speeds: np.ndarray) -> float:
+    """This flight's top speed over SPEED, from the policy input: each slot's speed reading
+    against the speed the commands would give by then, through the sim's response at the
+    middle of the randomised delay and lag, weighted by that speed, so slow stretches
+    (which read 0 below 0.1 m/s) count for little and nothing switches in or out. Over
+    teacher flights on the way round: 0.80 for 0.81 (p10-p90 0.74-0.87), 1.18 for 1.19."""
+    per_step = np.repeat(asked, WIDTHS.astype(int), axis=0)
+    per_step = np.vstack([np.zeros((DELAY, 2)), per_step[:len(per_step) - DELAY]])
+    alpha = 1.0 - np.exp(-_DRONE.dt / TAU)
+    v, model = np.zeros(2), np.zeros(len(per_step))
+    for i, c in enumerate(per_step):
+        v += (c * SPEED - v) * alpha
+        model[i] = np.linalg.norm(v)
+    model = model[np.cumsum(WIDTHS.astype(int)) - 1]
+    weight = (model ** 2).sum()
+    if weight < SCALE_MIN:
+        return 1.0
+    read = speeds + TELEMETRY_BIAS * (speeds > 0)
+    return float(np.clip((read * model).sum() / weight, *SCALE_RANGE))
+
+
+def _flown(actions: np.ndarray, speeds: np.ndarray, steps: np.ndarray, k: int) -> np.ndarray:
+    """(forward, right) metres in each slot from slot k on: where the commands will have
+    taken the drone once it settles, at this flight's speed (_speed_scale).
+
+    Settled, not where it is now: steering on the drone's present place (its commands
+    through the delay and lag) left 0.25 m of momentum out, and a fast drone braked late,
+    0.5 m behind the hoop and 0.66 m beside it, towards the net. A drone answering a command
+    through a lag ends up where the command's sum says, so this is where it will stop.
+    The top speed is drawn per flight (+-19% of SPEED). On SPEED alone a slow drone slid
+    sideways 0.06 m behind the rim and a fast one went 0.7 m behind, where some layouts
+    leave 0.55 m to the net. Readings paired with each slot's own command were unstable:
+    which way a slot went flipped with every reversal of the commands."""
+    asked = actions[:, [FORWARD, RIGHT]]
+    asked = asked / np.maximum(1.0, np.linalg.norm(asked, axis=1))[:, None]   # sim.velocity_command
+    return asked[k:] * (_speed_scale(asked, speeds) * SPEED * _DRONE.dt * steps)[:, None]
+
 
 # Search: climb at half speed. The hoop is reported a few steps after it comes into
 # view (2-frame confirm, then up to 4 steps of command delay), and hoops hang as little
@@ -85,7 +155,9 @@ BACK_SPEED = 0.2     # m/s
 
 # The pass and the way round, blind. RAN_AT_IT tells a run in from a line-up that lost a
 # big, centred hoop: the run in commands 0.75 forward, the line-up near its stage little.
-RAN_AT_IT = 0.4      # mean forward command in the slot of the last sighting
+RAN_AT_IT = 0.4      # mean forward command in the slot before the last sighting's. The sighting's own slot
+                     # also holds the blind steps after it, whose back-off commands, under DAgger's noise,
+                     # flipped this test each step: the drone crept into the hoop and out of it, wrong_way
 # Within 0.775 m of the hoop centre the drone's box clears the net in any layout: the
 # hoop is within HOOP_FROM_CENTRE 0.15 of the middle of the 2.05 m cage, and the box
 # reaches 0.1 m. The commands overstate the distance flown by up to ~10% (max_speed
@@ -93,15 +165,19 @@ RAN_AT_IT = 0.4      # mean forward command in the slot of the last sighting
 # commands instead: aimed at FRONT 0.7 it turned round 0.55 m out (median, 200 flights),
 # where the hoop is too big to be reported, and searched there blind. FRONT 0.85 turns
 # round 0.59 m out (max 0.86) and passes 2.5 a flight, twice 0.7's, with no net crash.
-BEHIND = 0.3         # m past the hoop's plane
-GATE = 0.45          # m beside its centre: the rim and the drone's half-width reach 0.32
+BEHIND = 0.3         # m past the hoop's plane by the commands. 0.25 left a 0.55 m/s drone too near the
+                     # back of the rim when it slid sideways (9% of flights hit it)
+GATE = 0.52          # m beside its centre by the commands: the rim and the drone's half-width reach
+                     # 0.32. At 0.45 a 0.55 m/s drone, flying 0.81 of what SPEED plans, came back past
+                     # the rim 0.30 m out and hit it after 6-8% of passes
 CLEAR = 0.3          # m in front of the plane, still at GATE, before heading in
 FRONT = 0.85         # m out on the axis by the commands, where it turns round to see the hoop
 ARRIVED = 0.04       # m from a corner of the way round, by the commands, to head for the next
-K_BOX = 2.0          # velocity per metre from the corner, before the speed cap
+K_BOX = 1.5          # velocity per metre from the corner, before the speed cap: 2 braked too late for
+                     # up to 0.7 s of lag and 4 steps of delay
 RUN_SPEED = 0.3      # m/s, as the run in
 ROUND_SPEED = 0.35   # m/s round the box
-K_DZ = 1.0           # climb speed per metre of height error, by the commands
+K_HOLD = 4.0         # sideways velocity per metre drifted off the line, blind on the way in
 
 # Lining up, with the hoop in view: the furthest of these that fits ROOM inside the
 # fence. Facing the hoop on its axis, the detector reports it from 0.65-0.9 m within
@@ -114,8 +190,9 @@ LINE_UP_SPEED = 0.2  # m/s on the way to the stage point. At 0.4 it closed in fa
                      # hoop near the frame's edge, and on losing it coasted 15-20 cm nearer
 STAGE_TOL = 0.06     # m from the stage point
 LINED_UP = 0.03      # m off the axis
-FACING = 3.0         # degrees off the axis. Run ins that started 3-6 degrees off hit the rim
-                     # twice as often under demo noise: 7.2% of flights at 6, 3.8% at 3 (800)
+FACING = 3.0         # degrees off the axis. Run ins that started 3-6 degrees off hit the rim twice as
+                     # often under demo noise: 7.2% of flights at 6, 3.8% at 3 (800). The run in now
+                     # also holds the axis heading itself (Teacher.act)
 STILL = 0.08         # m/s
 TURNING = 2.0        # deg/s: still turning faster than this, it is not ready. Run ins that
                      # started still turning carried on 5-6 degrees (command delay and yaw lag)
@@ -126,12 +203,13 @@ GIVE_UP = 150        # steps lining up before it runs in anyway (a stage too clo
 RESET_BLIND = 5      # blind steps after which a sighting starts a fresh line-up
 
 # The run in, down the line of sight: forward at RUN_SPEED and down along the pitch.
-K_U = 1.5            # strafe command per unit of u
+K_LINE = 2.0         # sideways velocity per metre off the hoop's axis on the run in
 K_V = 1.0            # up command per unit of v
 
 K_POS = 0.9          # velocity command per metre of position error
 K_YAW = 1.5          # yaw command per radian of heading error
-ROOM = 0.05          # m inside the fence (cage.margin in from the net) for the stage point
+ROOM = 0.15          # m inside the fence (cage.margin in from the net) for the stage point. At 0.05 a
+                     # 0.8 m/s drone overran it into the net in front on 17% of flights
 
 
 def _wrap(a):
@@ -153,9 +231,13 @@ def _safe_up(up: float, height: float) -> float:
 
 # --- blind: the policy input and nothing else ---------------------------------------
 
-def blind_action(x: np.ndarray) -> np.ndarray:
-    """What the teacher does while the hoop is not reported, from the policy input x alone."""
+def blind_action(x: np.ndarray, reached: int = 0) -> np.ndarray:
+    """What the teacher does while the hoop is not reported, from the policy input x alone.
+    reached: the leg of the way round (_through_and_round) it has already reached since
+    the last sighting; the leg it is on now is in blind_action.leg afterwards."""
+    blind_action.leg = reached
     frames, heights, actions, unseen = contract.split_input(x)
+    speeds = contract.split_motion(x)[:, 0]
     height = float(heights[-1])
     seen = np.flatnonzero(frames[:, VISIBLE])
     if not len(seen):
@@ -182,9 +264,10 @@ def blind_action(x: np.ndarray) -> np.ndarray:
     # Steps in slot k after its last sighting, taking its sightings to come first.
     after = (1.0 - last[VISIBLE]) * WIDTHS[k]
     if (last[MAJOR] >= contract.PASS_MAJOR and abs(last[U]) < contract.PASS_U
-            and actions[k, FORWARD] >= RAN_AT_IT):
-        return _through_and_round(last, actions, k, after, height)
-    backed = -(actions[k:, FORWARD] * np.concatenate([[after], WIDTHS[k + 1:]])).sum() * STEP
+            and actions[max(k - 1, 0), FORWARD] >= RAN_AT_IT):
+        return _through_and_round(last, actions, speeds, heights, k, after, reached)
+    steps = np.concatenate([[after], WIDTHS[k + 1:]])
+    backed = -_flown(actions, speeds, steps, k)[:, 0].sum()
     return _lost(last, after + WIDTHS[k + 1:].sum(), backed, height)
 
 
@@ -196,27 +279,36 @@ def _lost(last: np.ndarray, age: float, backed: float, height: float) -> np.ndar
     up = _safe_up(-LOST_UP * np.sign(last[V]) if abs(last[V]) > LOST_EDGE else 0.0, height)
     if not yaw and not up:
         if DIAMETER / last[MAJOR] + backed < BACK_TO:
-            return _action(forward=-BACK_SPEED / _DRONE.max_speed, up=_safe_up(0.0, height))
+            return _action(forward=-BACK_SPEED / SPEED, up=_safe_up(0.0, height))
         if age > LOST_WAIT:
             yaw = TURN_YAW
     return _action(up=_safe_up(up, height), yaw=yaw)
 
 
-def _through_and_round(last, actions, k, after, height) -> np.ndarray:
-    """On through the hoop and round the box, on the commands since the last sighting."""
+def _through_and_round(last, actions, speeds, heights, k, after, reached=0) -> np.ndarray:
+    """On through the hoop and round the box, on the commands and heights since the
+    last sighting."""
     distance = DIAMETER / last[MAJOR]
     hoop_right = distance * last[U] * HALF_X
     hoop_below = distance * np.tan(PITCH + np.arctan(last[V] * HALF_Y))
     side = 1.0 if hoop_right <= 0 else -1.0   # the side of the axis it is already on
-    # Where the commands have taken it since the sighting, at the end of each slot:
-    # forward and right of where it was then, and how far it climbed.
+    # Where it has flown since the sighting, at the end of each slot: forward and right
+    # of where it was then, and how far it climbed by the height readings.
+    height = float(heights[-1])
     steps = np.concatenate([[after], WIDTHS[k + 1:]])
-    moved = actions[k:] * steps[:, None]
-    path = np.cumsum(moved[:, [FORWARD, RIGHT]], axis=0) * STEP
+    path = np.cumsum(_flown(actions, speeds, steps, k), axis=0)
     along = path[:, 0] - distance        # + behind the hoop's plane
     beside = path[:, 1] - hoop_right     # + right of its centre
-    climbed = moved[:, UP].sum() * STEP_UP
+    # How far it climbed since, by its own up commands: blind, they are full-scale pulses
+    # (_pulse), which move the drone max_up_speed a step whatever up_exponent is, and a
+    # pulse moves it the same distance however long the drone takes to respond. The
+    # height readings come in steps of up to 10 cm, and steering on them left passes
+    # 6-7 cm off the centre (p90).
+    climbed = float((actions[k:, UP] * steps).sum()) * _DRONE.max_up_speed * _DRONE.dt
     corners = [(BEHIND, 0.0), (BEHIND, side * GATE), (-CLEAR, side * GATE), (-FRONT, 0.0)]
+    # Never back to an earlier leg: rebuilt every step from the slots, the estimate moves a
+    # few cm as they regroup, and near a corner that flipped the leg each step and the drone
+    # hung there, alternating its commands, until the sighting left the window.
     leg = 0
     for a, b in zip(along, beside):
         if leg == 0 and a >= BEHIND - ARRIVED:
@@ -227,25 +319,29 @@ def _through_and_round(last, actions, k, after, height) -> np.ndarray:
             leg = 3
         if leg == 3 and np.hypot(a + FRONT, b) <= ARRIVED:
             leg = 4
-    # Through and round at the hoop's height, then up to see it mid-frame from FRONT.
-    dz = -hoop_below + (FRONT * SLOPE if leg >= 3 else 0.0) - climbed
-    if leg == 0 and along[-1] < 0:
-        # Not through yet: down the line of sight, as the run in flew.
-        up = -RUN_SPEED * SLOPE / _DRONE.max_up_speed
-    else:
-        up = K_DZ * dz / _DRONE.max_up_speed
-    up = _safe_up(up, height)
+    # The scan runs from leg 0, as the start of the path (in front, before the pass) would
+    # satisfy the later legs' tests.
+    leg = max(leg, reached)
+    blind_action.leg = leg
+    # Down to the hoop's centre at once, and through and round at its height, then up to
+    # see it mid-frame from FRONT.
+    up = _safe_up(_pulse(-hoop_below + (FRONT * SLOPE if leg >= 3 else 0.0) - climbed), height)
     if leg == 4:
         return _action(up=up, yaw=TURN_YAW)
     v = K_BOX * (np.array(corners[leg]) - [along[-1], beside[-1]])
     if leg == 0 and along[-1] < 0:
-        # Not through yet: straight on. The hoop was half out of frame at the last
-        # sighting, and the offset beside it read from that had no correlation with the
-        # true one (r -0.02 over 2000 run ins), so steering on it only added error.
-        v[1] = 0.0
-    speed = RUN_SPEED if leg == 0 else ROUND_SPEED
-    v *= min(1.0, speed / max(np.linalg.norm(v), 1e-9))
-    return _action(right=v[1] / _DRONE.max_speed, forward=v[0] / _DRONE.max_speed, up=up)
+        # Not through yet: straight on from where the last sighting left it. The hoop was
+        # half out of frame then, and the offset beside it read from that had no
+        # correlation with the true one (r -0.02 over 2000 run ins), so steering on it only
+        # added error. But it holds the line it was on: any drift beside it since, from
+        # the commands actually sent, is flown back. With DAgger's 0.1 noise on the
+        # commands, at 0.55-0.8 m/s, the drift hit the rim on 17% of flights.
+        v[0] = min(v[0], RUN_SPEED)
+        v[1] = -K_HOLD * path[-1, 1]
+    else:
+        speed = RUN_SPEED if leg == 0 else ROUND_SPEED
+        v *= min(1.0, speed / max(np.linalg.norm(v), 1e-9))
+    return _action(right=v[1] / SPEED, forward=v[0] / SPEED, up=up)
 
 
 # --- with the hoop in view: true state allowed ---------------------------------------
@@ -262,6 +358,7 @@ class Teacher:
         self.blind = 0      # blind steps in a row
         self.lining = 0     # steps in this line-up
         self.run_ins = 0
+        self.leg = 0        # leg of the way round reached since the last sighting
 
     def act(self, env: HoopEnv, obs: np.ndarray) -> np.ndarray:
         x = np.array(obs, np.float32)
@@ -269,10 +366,13 @@ class Teacher:
         frame = contract.split_input(x)[0][-1]
         if not frame[VISIBLE]:
             self.blind += 1
-            return blind_action(x)
+            action = blind_action(x, self.leg)
+            self.leg = blind_action.leg
+            return action
         if self.blind >= RESET_BLIND:
             self.phase, self.lining = "line_up", 0
         self.blind = 0
+        self.leg = 0
         if self.phase == "line_up":
             self.lining += 1
             stage = self._stage(env)
@@ -291,10 +391,18 @@ class Teacher:
             self.phase = "run_in"
             self.run_ins += 1
         # Down the line of sight, steered on the camera.
-        d = env.drone
-        forward = RUN_SPEED / d.max_speed
-        up = -RUN_SPEED * self._slope(env) / d.max_up_speed - K_V * frame[V]
-        return _action(right=K_U * frame[U], forward=forward, up=up)
+        forward = RUN_SPEED / SPEED
+        up = _up(-RUN_SPEED * self._slope(env)) - K_V * frame[V]
+        # Held on the axis: the last ~0.58 m are blind and flown straight along the heading,
+        # and 1.5 degrees off there put passes 1.5 cm to the side, which cost most of the
+        # centring (r -0.69 between heading at the start and offset at the pass).
+        # Held on the axis by the true offset, as the line-up was: the image's u is off by
+        # the heading and the cut-off arc near the end, and strafing on it left passes 1.1 cm
+        # to the side (median) against 0.5 without. Without any, under DAgger's noise the
+        # run ins started off the axis stayed off it and hit the rim (17 of 255).
+        beside = float((env.pos - env.hoop_centre) @ env._axis_h)   # + left of the axis, from the front
+        right = K_LINE * beside / SPEED
+        return _action(right=right, forward=forward, up=up, yaw=self._yaw_to(env, self._axis_heading(env)))
 
     # --- geometry ----------------------------------------------------------
 
@@ -325,33 +433,36 @@ class Teacher:
 
     def _towards(self, env, target, heading, speed=None):
         """Body-frame command towards a point, facing a heading, at up to `speed` m/s."""
-        d = env.drone
-        speed = d.max_speed if speed is None else min(speed, d.max_speed)
+        speed = SPEED if speed is None else min(speed, SPEED)
         v = K_POS * (target - env.pos)
         flat = np.linalg.norm(v[:2])
         if flat > speed:
             v[:2] *= speed / flat
         c, s = np.cos(env.heading), np.sin(env.heading)
-        # Past the measured yaw deadband, so the turn is K_YAW times the error however
-        # small: K_YAW alone asks 0.08 at 3 degrees off, which does not turn the drone.
+        return _action(right=(v[0] * s - v[1] * c) / SPEED, forward=(v[0] * c + v[1] * s) / SPEED,
+                       up=_up(v[2]), yaw=self._yaw_to(env, heading))
+
+    def _yaw_to(self, env, heading):
+        """The turn towards a heading. Past the measured yaw deadband, so the turn is K_YAW
+        times the error however small: K_YAW alone asks 0.08 at 3 degrees off, which does
+        not turn the drone."""
         yaw = -K_YAW * _wrap(heading - env.heading)
         db = _DRONE.yaw_deadband
-        yaw = np.sign(yaw) * (db + (1.0 - db) * abs(yaw)) if abs(yaw) > 1e-3 else 0.0
-        return _action(right=(v[0] * s - v[1] * c) / d.max_speed, forward=(v[0] * c + v[1] * s) / d.max_speed,
-                       up=v[2] / d.max_up_speed, yaw=yaw)
+        return np.sign(yaw) * (db + (1.0 - db) * abs(yaw)) if abs(yaw) > 1e-3 else 0.0
 
 
 class LearnedTeachers:
     """A privileged src.ppo actor (train.py --privileged-actor) teaching n simulators at
     once: one actor, one batched step for all of them, each with its own memory. It
-    reads the true state (env.privileged()) after the policy input, so act on every
-    step of every episode, as src.ppo's labels do."""
+    reads the true state after the policy input, env.privileged() or, when gated,
+    env.gated(), so act on every step of every episode, as src.ppo's labels do."""
 
     def __init__(self, path, n: int):
         from src import actor
         self.actor, privileged = actor.load(path)
         if not privileged:
             raise ValueError(f"{path} is not a privileged actor (train.py --privileged-actor)")
+        self.gated = privileged == "gated"
         self.h = self.actor.initial(n)
 
     def reset(self, k: int):
@@ -359,7 +470,8 @@ class LearnedTeachers:
         self.h[k] = 0.0
 
     def act(self, obs: np.ndarray, priv: np.ndarray) -> np.ndarray:
-        """Commands for every simulator from its policy input (n, ...) and true state (n, ...)."""
+        """Commands for every simulator from its policy input (n, ...) and true state (n, ...):
+        env.gated()'s when self.gated, else env.privileged()'s."""
         import torch
         x = torch.as_tensor(np.concatenate([obs, priv], 1), dtype=torch.float32)
         with torch.no_grad():
@@ -378,14 +490,15 @@ class LearnedTeacher:
         self.teachers.reset(0)
 
     def act(self, env: HoopEnv, obs: np.ndarray) -> np.ndarray:
-        return self.teachers.act(np.asarray(obs, np.float32)[None], env.privileged()[None])[0]
+        view = env.gated() if self.teachers.gated else env.privileged()
+        return self.teachers.act(np.asarray(obs, np.float32)[None], view[None])[0]
 
 
 def run(episodes: int, level: float = 1.0, seed: int = 0, noise: float = 0.0,
         ranges: Randomise | None = None, teacher=None) -> collections.Counter:
     """How the teacher's flights end, over `episodes` minutes at `level`, on ranges
-    (default DESIGN_RANGES, the drone teacher3 was built for)."""
-    env, out = HoopEnv(level=level, randomise=True, ranges=ranges or DESIGN_RANGES), collections.Counter()
+    (default the full training ranges)."""
+    env, out = HoopEnv(level=level, randomise=True, ranges=ranges or Randomise()), collections.Counter()
     rng = np.random.default_rng(seed)
     teacher = teacher or Teacher(rng)
     for i in range(episodes):

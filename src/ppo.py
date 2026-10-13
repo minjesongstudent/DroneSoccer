@@ -27,6 +27,13 @@ a random critic (the SAC fine-tune collapse). Then PPO takes over, still pulled 
 teacher's labels by a BC term that halves every BC_HALF_LIFE steps. Every step flown
 counts towards --steps, the teacher's too. The search stays learned: the teacher
 only labels training states and never flies on the drone.
+
+RL teachers (--privileged-actor): the critic reads the whole true state whatever the
+actor reads, since nothing copies the critic. The actor's true state is what a student
+must copy from its own input. "full" gives it all of HoopEnv.privileged(), and teacher4
+flew its blind stretches on where the hoop truly was: its students crashed every flight.
+"gated" gives it HoopEnv.gated(): the hoop-relative part only as the camera last
+reported it, blurred to what the input resolves, and the cage never.
 """
 from __future__ import annotations
 
@@ -43,9 +50,9 @@ from torch.utils.tensorboard import SummaryWriter
 from src import contract, plots, train
 # LOG_STD_* and MEMORY are imported so the settings line logs them with the rest.
 from src.actor import HIDDEN, LOG_STD_INIT, LOG_STD_MIN, MEMORY, Actor, normalised, save_actor  # noqa: F401
-from src.sim import PRIVILEGED_DIM, HoopEnv
+from src.sim import GATED_DIM, PRIVILEGED_DIM, HoopEnv
 from src.params import Randomise
-from src.teacher import DESIGN_RANGES, LearnedTeachers, Teacher
+from src.teacher import LearnedTeachers, Teacher
 
 ROLLOUT_ENVS = 16        # simulators per seed, stepped in turn on one core
 ROLLOUT_STEPS = 128      # steps per simulator per update: 2048 a rollout
@@ -119,19 +126,24 @@ class Fleet:
     A finished episode resets at once, so obs is always the next step's input.
 
     teacher: a privileged actor's path (teacher.LearnedTeachers), or None for teacher3.
-    privileged_actor: the actor reads the true state after the policy input (inputs())."""
+    privileged_actor: the actor reads the true state after the policy input (inputs()):
+    "full" all of it (HoopEnv.privileged), "gated" as far as a student could know it
+    (HoopEnv.gated). None: the policy input only. The critic always reads all of it."""
 
     def __init__(self, n: int, level: float, randomise: bool, run_in_share: float, seed: int,
-                 rng: np.random.Generator, privileged_actor: bool = False, teacher: str | None = None):
+                 rng: np.random.Generator, privileged_actor: str | None = None, teacher: str | None = None):
         self.envs = [HoopEnv(level=level, randomise=randomise, run_in_share=run_in_share) for _ in range(n)]
         self.scripted = teacher is None
         # teacher3 keeps its own state per simulator; a learned teacher steps them all at once.
         self.teachers = [Teacher() for _ in range(n)] if self.scripted else LearnedTeachers(teacher, n)
         self.privileged_actor = privileged_actor
+        # The gated view, for a gated actor or a gated teacher's labels.
+        self.gating = privileged_actor == "gated" or (not self.scripted and self.teachers.gated)
         self.rng, self.n, self.beta = rng, n, 0.0
         self.expert = np.zeros(n, bool)   # this episode is flown by the teacher
         self.obs = np.zeros((n, contract.POLICY_INPUT_DIM), np.float32)
         self.priv = np.zeros((n, PRIVILEGED_DIM), np.float32)
+        self.gate = np.zeros((n, GATED_DIM), np.float32)
         self.starts = np.ones(n, np.float32)
         self.ep_reward = np.zeros(n)
         for k in range(n):
@@ -140,7 +152,7 @@ class Fleet:
     def _reset(self, k: int, seed=None):
         env = self.envs[k]
         self.obs[k] = env.reset(seed=seed)[0]
-        self.priv[k] = env.privileged()
+        self._read_state(k)
         if self.scripted:
             self.teachers[k].reset(env)
         else:
@@ -164,20 +176,33 @@ class Fleet:
         for env in self.envs:
             env.ranges = ranges
 
+    def _read_state(self, k: int):
+        env = self.envs[k]
+        self.priv[k] = env.privileged()
+        if self.gating:
+            self.gate[k] = env.gated(self.priv[k])
+
+    def _view(self, gated: bool) -> np.ndarray:
+        return self.gate if gated else self.priv
+
     def inputs(self) -> np.ndarray:
         """What the actor reads for every simulator: the policy input, then the true
         state when the actor is privileged. A student's actor reads the policy input only."""
-        return np.concatenate([self.obs, self.priv], 1) if self.privileged_actor else self.obs.copy()
+        if not self.privileged_actor:
+            return self.obs.copy()
+        return np.concatenate([self.obs, self._view(self.privileged_actor == "gated")], 1)
 
     def _input(self, k: int) -> np.ndarray:
         """inputs() for simulator k alone."""
-        return np.concatenate([self.obs[k], self.priv[k]]) if self.privileged_actor else self.obs[k].copy()
+        if not self.privileged_actor:
+            return self.obs[k].copy()
+        return np.concatenate([self.obs[k], self._view(self.privileged_actor == "gated")[k]])
 
     def labels(self) -> np.ndarray:
         """The teacher's command for every simulator's current state. Call it every step
         of an episode or none: the teacher counts steps since it last saw the hoop."""
         if not self.scripted:
-            return self.teachers.act(self.obs, self.priv)
+            return self.teachers.act(self.obs, self._view(self.teachers.gated))
         return np.stack([t.act(e, o) for t, e, o in zip(self.teachers, self.envs, self.obs)])
 
     def step(self, actions: np.ndarray, value_of):
@@ -190,7 +215,8 @@ class Fleet:
             obs, reward, terminated, truncated, info = env.step(actions[k])
             self.ep_reward[k] += reward
             rewards[k] = REWARD_SCALE * reward
-            self.obs[k], self.priv[k] = obs, env.privileged()
+            self.obs[k] = obs
+            self._read_state(k)
             if terminated or truncated:
                 if truncated and not terminated:
                     rewards[k] += contract.GAMMA * value_of(self._input(k), self.priv[k])
@@ -458,7 +484,7 @@ def snapshot(folder: Path, total: int, state: dict, labels: Labels | None = None
 def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, resume: bool = False,
               dagger: int = len(DAGGER_BETA), run_in_share: float = train.RUN_IN_SHARE,
               select_episodes: int = train.SELECT_EPISODES, rollout_envs: int = ROLLOUT_ENVS,
-              bc_weight: float = BC_WEIGHT, privileged_actor: bool = False, teacher: str | None = None) -> Path:
+              bc_weight: float = BC_WEIGHT, privileged_actor: str | None = None, teacher: str | None = None) -> Path:
     constants = {k: v for k, v in globals().items() if k.isupper() and isinstance(v, (int, float, str, tuple))}
     print(train.settings(extra=constants, algo="ppo", steps=steps, seed=seed, level=level, randomise=randomise,
                          resume=resume, dagger=dagger, run_in_share=run_in_share,
@@ -473,8 +499,11 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     # A privileged actor (a teacher for the sim, train.py --privileged-actor) reads the true
-    # state too; the critic reads whatever the actor does, then the true state.
-    in_dim = contract.POLICY_INPUT_DIM + (PRIVILEGED_DIM if privileged_actor else 0)
+    # state too, all of it or gated; the critic reads whatever the actor does, then the true state.
+    privileged_actor = {True: "full", False: None}.get(privileged_actor, privileged_actor)
+    if privileged_actor not in (None, "full", "gated"):
+        raise ValueError(f"privileged_actor {privileged_actor!r}: None, 'full' or 'gated'")
+    in_dim = contract.POLICY_INPUT_DIM + {None: 0, "full": PRIVILEGED_DIM, "gated": GATED_DIM}[privileged_actor]
     actor, critic = Actor(in_dim), Critic(in_dim)
     opt_actor = torch.optim.Adam(actor.parameters(), ACTOR_LR)
     opt_critic = torch.optim.Adam(critic.parameters(), CRITIC_LR)
@@ -538,9 +567,6 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
     rollouts = max(1, DAGGER_STEPS // per_rollout)
     if run["phase"] == "dagger":
         labels = Labels() if labels is None else labels
-        if fleet.scripted:
-            # teacher3 flies well only on its own drone: DAgger there, PPO on the full ranges.
-            fleet.set_ranges(DESIGN_RANGES)
         for i in range(run["next_round"], run["rounds"]):
             beta = DAGGER_BETA[i]
             fleet.beta = beta

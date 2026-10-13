@@ -44,7 +44,7 @@ from src.params import ROOT, Drone
 from src.plots import save_plots
 from src.sim import HoopEnv
 from src.demo_buffer import DemoReplayBuffer
-from src.teacher import DESIGN_RANGES, Teacher
+from src.teacher import Teacher
 
 RUNS = ROOT / "runs"
 CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
@@ -346,8 +346,7 @@ def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
     environment at a time, and say how the flights went."""
     n = model.n_envs
     buffer = model.replay_buffer.demos
-    # teacher3's own drone (teacher.DESIGN_RANGES): on the wider ranges it crashes.
-    envs = [HoopEnv(level=DEMO_LEVEL, randomise=randomise, ranges=DESIGN_RANGES) for _ in range(n)]
+    envs = [HoopEnv(level=DEMO_LEVEL, randomise=randomise) for _ in range(n)]
     rng = np.random.default_rng(DEMO_SEED + seed)
     teachers = [Teacher(rng) for _ in range(n)]
     obs = []
@@ -475,9 +474,10 @@ if __name__ == "__main__":
                         help="ppo: simulators stepped in turn on the seed's one core (default ppo.ROLLOUT_ENVS)")
     parser.add_argument("--bc-weight", type=float,
                         help="ppo: weight of the pull towards the teacher's labels as PPO starts (default ppo.BC_WEIGHT)")
-    parser.add_argument("--privileged-actor", action="store_true",
-                        help="ppo: the actor also reads the sim's true state. Trains a teacher for "
-                             "--teacher, never a policy for the drone")
+    parser.add_argument("--privileged-actor", nargs="?", const="full", choices=("full", "gated"),
+                        help="ppo: the actor also reads the sim's true state, all of it (full, the "
+                             "default) or only as far as a student could know it (gated: "
+                             "sim.HoopEnv.gated). Trains a teacher for --teacher, never a policy for the drone")
     parser.add_argument("--teacher",
                         help="ppo: label DAgger with this privileged actor (a --privileged-actor run's "
                              "model) instead of src.teacher's teacher3")

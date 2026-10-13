@@ -171,3 +171,102 @@ def test_an_actor_saved_before_the_motion_readings_still_flies(tmp_path):
     policy = actor_module.load_policy(path)
     obs, _ = HoopEnv(randomise=True).reset(seed=0)
     assert policy(obs).shape == (contract.ACTION_DIM,)
+
+
+# --- the gated teacher (train.py --privileged-actor gated) ------------------------------
+
+def _seen() -> np.ndarray:
+    frame = contract.NOT_VISIBLE.copy()
+    frame[contract.VISIBLE] = 1.0
+    return frame
+
+
+def test_the_gated_view_is_blank_until_the_hoop_is_reported():
+    from src.sim import GATE_HELD, GATE_NEVER, GATED_DIM
+    env = HoopEnv(randomise=True)
+    env.reset(seed=3)
+    g = env.gated()
+    assert g.shape == (GATED_DIM,)
+    assert not g[GATE_HELD].any() and not g[GATE_NEVER].any()
+    assert g[-2] == 0.0 and g[-1] == 1.0   # not reported yet; the time since saturated
+
+
+def test_the_gated_view_follows_the_true_state_while_reported(monkeypatch):
+    from src import sim
+    monkeypatch.setattr(sim, "GATE_BLUR", np.zeros_like(sim.GATE_BLUR))
+    monkeypatch.setattr(sim, "GATE_BLUR_FACING", (0.0,) * len(sim.GATE_BLUR_DISTANCE))
+    env = HoopEnv(randomise=True)
+    env.reset(seed=3)
+    for _ in range(5):
+        env.step(np.array([0.1, 0.4, 0.1, 0.2], np.float32))
+    env._update_gate(_seen())
+    g = env.gated()
+    assert np.allclose(g[sim.GATE_HELD], env.privileged()[sim.GATE_HELD], atol=1e-5)
+    assert g[-2] == 1.0 and g[-1] == 0.0
+
+
+def test_the_gated_view_holds_while_the_hoop_is_out_of_view():
+    """Once the camera stops reporting the hoop, moving the drone, the hoop or the
+    heading changes nothing in the gated view: a student would not know either."""
+    from src.sim import GATE_NEVER
+    env = HoopEnv(randomise=True)
+    env.reset(seed=3)
+    env._update_gate(_seen())
+    env._update_gate(contract.NOT_VISIBLE.copy())
+    before = env.gated()
+    env.pos = env.pos + 0.3
+    env.vel = env.vel * -2.0 + 0.1
+    env.heading += 1.0
+    env.yaw_rate += 0.5
+    env.hoop_centre = env.hoop_centre + 0.2
+    after = env.gated()
+    assert np.array_equal(after, before)
+    assert not after[GATE_NEVER].any()   # the cage and the lap's metres to go, never
+
+
+def test_the_gated_blur_is_kept_for_a_sighting_and_drawn_afresh_after(monkeypatch):
+    from src import sim
+    monkeypatch.setattr(sim, "GATE_BLUR", np.full_like(sim.GATE_BLUR, 0.05))
+    env = HoopEnv(randomise=True)
+    env.reset(seed=3)
+    env._update_gate(_seen())
+    first = env._held - env._relative()
+    env._update_gate(_seen())
+    assert np.allclose(env._held - env._relative(), first, atol=1e-6)   # same sighting, same error
+    for _ in range(sim.GATE_REACQUIRE):
+        env._update_gate(contract.NOT_VISIBLE.copy())
+    env._update_gate(_seen())
+    assert not np.allclose(env._held - env._relative(), first, atol=1e-3)   # a new sighting
+
+
+def test_a_gated_actor_reads_the_gated_view_and_the_critic_the_true_state():
+    from src.sim import GATED_DIM
+    fleet = ppo.Fleet(2, 1.0, True, 0.0, 0, np.random.default_rng(0), privileged_actor="gated")
+    x = fleet.inputs()
+    assert x.shape == (2, contract.POLICY_INPUT_DIM + GATED_DIM)
+    assert np.array_equal(x[:, contract.POLICY_INPUT_DIM:], np.stack([e.gated() for e in fleet.envs]))
+    assert np.array_equal(fleet.priv, np.stack([e.privileged() for e in fleet.envs]))
+    fleet.priv[:] = 123.0     # what the critic reads never reaches the actor
+    assert np.array_equal(fleet.inputs(), x)
+
+
+def test_a_saved_gated_teacher_flies_and_teaches_on_the_gated_view(tmp_path):
+    from src.sim import GATED_DIM
+    from src.teacher import LearnedTeachers
+    path = tmp_path / "gated.zip"
+    torch.manual_seed(0)
+    actor_module.save_actor(actor_module.Actor(contract.POLICY_INPUT_DIM + GATED_DIM), path, privileged="gated")
+    assert actor_module.is_privileged(path)
+    assert actor_module.load(path)[1] == "gated"
+    policy = evaluate.load_policy(str(path))
+    assert isinstance(policy, actor_module.GatedPolicy)
+    env = HoopEnv(randomise=True)
+    obs, _ = env.reset(seed=1)
+    policy.bind(env)
+    assert policy(obs).shape == (contract.ACTION_DIM,)
+    assert LearnedTeachers(path, 1).gated
+    teacher = LearnedTeacher(path)
+    teacher.reset(env)
+    assert teacher.act(env, obs).shape == (contract.ACTION_DIM,)
+    fleet = ppo.Fleet(2, 1.0, True, 0.0, 0, np.random.default_rng(0), teacher=str(path))
+    assert fleet.gating and fleet.labels().shape == (2, contract.ACTION_DIM)
