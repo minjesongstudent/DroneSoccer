@@ -1,0 +1,36 @@
+teacher-demos
+job -   git unknown   seeds 6   steps 5,000,000
+written 2026-10-07 14:23
+
+SETTINGS
+args      --randomise --demos 200000
+run       steps 5000000  level 0.0  randomise True  resume False  envs 1  init none  demos 200000
+          R_PASS              40.0          R_CRASH             30.0          R_PROGRESS          4.0
+          R_TIME              0.1           R_WALL              1.0           GAMMA               0.995
+          CRASHES             hit,wrong_way,netLAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,marker
+          OBS_DIM             8             ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4
+          OBS_LAGS            60,50,40,32,24,16,12,8,4,2,1,0OBS_STACK           12            FRAME_HISTORY       61
+          ACTION_HISTORY      3             PASS_MAJOR          0.55          PASS_U              0.5
+          POLICY_INPUT_DIM    109           VISIBLE             6             MIN_ARC_FRACTION    0.25
+          MIN_POINTS          5             MIN_RATIO           0.2           CLIP                3.0
+          _FIT_SCALE          1000.0        HOOP_HEIGHT         1.33,1.73     HOOP_FROM_CENTRE    0.15
+          PAD_MIN_DISTANCE    0.6           LAPS_HOOP_ANGLE_DEG 30.0,75.0     CLEARANCE           0.4
+          SIDE_GAP            0.35          CENTRELINE_POINTS   256           DEFAULT_EPISODES    200
+          CHECKPOINT_EVERY    250000        BUFFER_SIZE         1000000       INIT_WARMUP         200000
+          DEMO_LEVEL          1.0           DEMO_NOISE          0.1           DEMO_SEED           2000000
+          LEVEL_STEP          0.25          LEVEL_WINDOW        200           LEVEL_UP            0.7
+          LEVEL_PASSES        1             MISSION_PASSES      2
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     1st pass  level      steps   time
+0     running           -   0.00       770k   144m
+1     running           -   0.00       770k   143m
+2     running           -   0.00       760k   143m
+3     running           -   0.00       750k   142m
+4     running           -   0.00       770k   144m
+5     running           -   0.00       770k   144m
+
+FLAGS
+  .. seed 0,1,2,3,4,5: running
+     seed 2,4: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)

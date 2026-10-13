@@ -1,0 +1,53 @@
+teacher4
+job 124104   git unknown   seeds 6/6   steps 40,000,000
+written 2026-10-13 07:44
+
+SETTINGS
+args      --algo ppo --privileged-actor --randomise --level 1
+run       algo ppo  steps 40000000  level 1.0  randomise True  resume False  dagger 6  run_in_share 0.1  select_episodes 50  rollout_envs 16  bc_weight 1.0  privileged_actor True  teacher None
+          R_PASS              40.0          R_CRASH             35.0          R_PROGRESS          4.0
+          R_TIME              0.1           R_WALL              1.0           R_FOUND             5.0
+          R_CENTRE            20.0          GAMMA               0.995         CRASHES             hit,wrong_way,roof,side
+          LAPS_MAX_STEPS      600           FIELDS              u,v,major,ratio,sin_2t,cos_2t,visible,markerOBS_DIM             8
+          ACTION_FIELDS       right,forward,up,yaw_cwACTION_DIM          4             SLOT_STEPS          4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,1,1,1,1
+          HISTORY_STEPS       120           N_SLOTS             33            MOTION_FIELDS       speed,sin_turned,cos_turned
+          MOTION_DIM          3             SLOT_DIM            16            PASS_MAJOR          0.55
+          PASS_U              0.5           POLICY_INPUT_DIM    529           VISIBLE             6
+          SLOTS_V1_DIM        430           MIN_ARC_FRACTION    0.25          MIN_POINTS          5
+          MIN_RATIO           0.2           CLIP                3.0           _FIT_SCALE          1000.0
+          HOOP_HEIGHT         1.33,1.73     HOOP_FROM_CENTRE    0.15          PAD_MIN_DISTANCE    0.6
+          LAPS_HOOP_ANGLE_DEG 30.0,75.0     CLEARANCE           0.4           SIDE_GAP            0.35
+          RUN_IN_DISTANCE     0.6,1.0       RUN_IN_OFFSET       0.05          RUN_IN_HEADING_DEG  5.0
+          RUN_IN_HEIGHT       -0.3,0.1      CENTRELINE_POINTS   256           PENDING_MAX         6
+          DYNAMICS_FIELDS     delay_steps,tau,max_speed,max_up_speed,up_exponent,max_yaw_rate_deg,yaw_deadband,telemetry_lag,yaw_drift,camera_pitch_deg,altimeter_offset,height_stepDYNAMICS_START      21            PRIVILEGED_DIM      57
+          DEFAULT_EPISODES    200           CHECKPOINT_EVERY    1000000       BUFFER_SIZE         1000000
+          INIT_WARMUP         200000        DEMO_LEVEL          1.0           DEMO_NOISE          0.1
+          DEMO_SHARE          0.25          DEMO_SEED           2000000       RUN_IN_SHARE        0.1
+          SELECT_EPISODES     50            SELECT_SEED         3000000       LEVEL_STEP          0.25
+          LEVEL_WINDOW        200           LEVEL_UP            0.7           LEVEL_PASSES        1
+          MISSION_PASSES      2             HIDDEN              256           LOG_STD_INIT        -1.8971199848858813
+          LOG_STD_MIN         -3.912023005428146MEMORY              128           ROLLOUT_ENVS        16
+          ROLLOUT_STEPS       128           EPOCHS              5             MINIBATCHES         4
+          GAE_LAMBDA          0.95          CLIP_RANGE          0.2           TARGET_KL           0.02
+          ACTOR_LR            0.0001        CRITIC_LR           0.0003        MAX_GRAD_NORM       1.0
+          REWARD_SCALE        0.1           STD_FLOOR           0.1           DAGGER_BETA         1.0,0.5,0.25,0.0,0.0,0.0
+          DAGGER_STEPS        100000        BC_EPOCHS           5             BC_FINAL_EPOCHS     40
+          BC_BATCH            64            BC_BURN_IN          32            BC_LR               0.0003
+          BC_WEIGHT           1.0           BC_HALF_LIFE        2000000       BC_PPO_SEQUENCES    8
+          BC_MIN              0.01          CRITIC_WARMUP       500000
+
+RESULTS   (* best seed; score is on held-out episodes at level 1)
+seed  status     pass/ep    never     laps  crashed     wall      hit    wrong     roof     side  timeout  1st pass  level      steps   time
+0*    done          7.33    18.0%    97.0%    35.5%     0.0%    28.0%     0.0%     0.0%     8.0%    64.0%      5.6s   1.00     40001k   486m
+1     done          7.45    28.0%    98.0%    42.5%     0.0%    42.0%     0.0%     0.0%     0.0%    57.0%      3.8s   1.00     40001k   509m
+2     done          6.94    16.0%    96.0%    44.5%     0.0%    32.0%     0.0%     0.0%    12.0%    56.0%      4.9s   1.00     40001k   487m
+3     done          5.41    25.0%    97.0%    40.0%     0.0%    32.0%     0.0%     0.0%     8.0%    60.0%      4.8s   1.00     40001k   492m
+4     done          6.41    16.0%    96.0%    40.0%     0.0%    25.0%     0.0%     0.0%    14.0%    60.0%      5.0s   1.00     40001k   492m
+5     done          4.29    18.0%    95.0%    35.0%     0.0%    24.0%     0.0%     0.0%    11.0%    65.0%      6.8s   1.00     40001k   493m
+base                0.01    98.0%     0.0%    66.5%     0.0%     0.0%     0.0%     0.0%    66.0%    34.0%     44.2s
+best      seed 0 -> trainedModels/teacher4.zip
+
+FLAGS
+  !  collapse - seed 2 (peak 8.09 at 27,160,576, ended 3.07), 4 (peak 7.13 at 33,341,440, ended 3.26)
+     seed 1,3: still improving at the end - more steps may help
+  !  seeds started with different settings (sim.py edited mid-launch?)

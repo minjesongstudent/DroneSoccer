@@ -5,10 +5,13 @@ physics that carries it out, and params.py holds the measurements of the real
 setup. If a number changes what the agent is asked to do, it belongs here. If it
 describes the world, it belongs in params.py.
 
-The state: eight numbers, and nothing else. Seven describe the hoop's ellipse.
-The eighth, `marker`, says whether the front marker is in view: a disc on the
-noodle's front face that the noodle hides from behind. A hoop looks the same from
-both sides, so without it the policy cannot tell which way through is forwards.
+The state, each step: eight numbers from the camera and one from the height
+sensor. Seven camera numbers describe the hoop's ellipse. The eighth, `marker`,
+says whether the front marker is in view: a disc on the noodle's front face that
+the noodle hides from behind. A hoop looks the same from both sides, so without
+it the policy cannot tell which way through is forwards. The height is the
+Tello's downward time-of-flight reading, in metres. The policy sees 12 s of these
+with the commands it gave (policy_input).
 
 The detector (real camera) and the simulator (projected geometry) both produce
 points on the hoop's outer edge in normalised image coordinates, then call
@@ -24,7 +27,8 @@ import cv2
 import numpy as np
 
 # Reward per step = R_PROGRESS * (to_go_before - to_go_after)
-#                 + R_PASS on a pass, - R_CRASH on a crash,
+#                 + R_PASS + R_CENTRE * centred on a pass, - R_CRASH on a crash,
+#                 + R_FOUND once per episode, the first time the front is reported,
 #                 - R_TIME always, - R_WALL each step on the floor.
 #
 # Shaping: R_PROGRESS per metre flown along the route round the lap to the next
@@ -39,9 +43,10 @@ import numpy as np
 # step nets ~+31 and the way round pays the 8.8 back.
 #
 # The policy cannot see the clock and timeouts bootstrap, so hovering anywhere is
-# worth -R_TIME / (1 - GAMMA) = -20. A crash is -30, 10 worse than hovering at the
+# worth -R_TIME / (1 - GAMMA) = -20. A crash is -35, 15 worse than hovering at the
 # same spot (progress made is kept either way), so crashing is never a cheap way
-# out. Pass then crash nets ~+1, pass then hover ~+11: no pass-and-die.
+# out. Pass then crash nets ~-4 (up to ~+16 with R_CENTRE), pass then hover 15 more:
+# no pass-and-die.
 # Raising the crash-vs-hover gap stopped learning before the first pass:
 # R_CRASH 50 (crash50-nogamma-progress) and R_CRASH 50 with R_TIME 0.15
 # (time15-crash50-nogamma, cancelled at 450k) both settled into hovering.
@@ -50,35 +55,60 @@ import numpy as np
 # picked spots where the marker stays in view, outside ~0.45 m. The last
 # 0.35-0.45 m of every pass is blind, so it charged the pass itself.
 R_PASS = 40.0
-R_CRASH = 30.0      # R_PASS 90 vs 15 taught pass-and-die
+R_CRASH = 35.0      # R_PASS 90 vs 15 taught pass-and-die. 30 until 2026-10-12: the value of
+                    # lapping faster bought up to ~33% more crash risk a lap; 35 trims that a little
 R_PROGRESS = 4.0    # per metre flown along the route
 R_TIME = 0.1        # R_TIME / (1 - GAMMA) must stay below R_CRASH
 R_WALL = 1.0        # each step held at min_altitude, which is no crash; the net is one.
                     # 5 cost an eighth of a pass a step, and low hoops are 10 cm above it
+# R_FOUND: in the 2026-10-09 flights a policy climbed blind, turning ~6 deg/s, to the
+# height limit without ever seeing the hoop. Paid once per episode (sim.HoopEnv tracks
+# it), on the first detector report with the front marker, so it cannot be farmed by
+# losing and refinding the hoop. Small next to R_PASS, so it guides the search and
+# nothing else: finding then crashing still nets R_FOUND - R_CRASH, worse than hovering.
+R_FOUND = 5.0
+# R_CENTRE: on the drone (2026-10-12, ppo-dagger) every run in that reached the hoop
+# touched it: three hit the noodle and two scraped through. Each lost sight of the hoop
+# 10-21 cm above its centre and up to 5 cm off the axis, then flew the rest blind. In the
+# sim any pass paid the same, and its passes kept a median 5.3 cm of the ~7 cm a centred
+# one has (10% under 3 cm), which the real drift, the narrower taped top and the weaker
+# real descent all eat. So a pass pays up to R_CENTRE more
+# by how centred it was (sim.HoopEnv._centred: the clearance left, 0 to 1). Only on a
+# pass, so it cannot pull the drone into hovering at the centre. On top of R_PASS, so
+# the crash and hover balances above hold for every pass: a scraping pass pays R_PASS.
+R_CENTRE = 20.0
 
 GAMMA = 0.995   # a lap is ~100 steps, so the next pass must still be worth chasing
 
 
 def reward(outcome: str, to_go_before: float, to_go_after: float, on_wall: bool,
-           obs: np.ndarray, action: np.ndarray) -> float:
+           obs: np.ndarray, action: np.ndarray, centred: float = 0.0) -> float:
     """The reward for one step. sim.HoopEnv.step calls this and nothing else scores.
 
-    outcome: "passed", "running", or a crash in CRASHES ("hit", "wrong_way", "net").
+    outcome: "passed", "running", "found" (a running step on which the front is
+        reported for the first time this episode), or a crash in CRASHES ("hit",
+        "wrong_way", "roof", "side").
     to_go_before, to_go_after: metres left round the lap to the next pass, before
         and after the step (sim.HoopEnv._to_go).
     on_wall: the drone touched the min_altitude floor or the net this step.
     obs: the eight numbers the camera reports after the step (FIELDS).
     action: the command the policy just gave (ACTION_FIELDS), each in [-1, 1].
+    centred: on a pass, how centred it was (sim.HoopEnv._centred), 0 (touching the
+        noodle) to 1 (the most clearance this hoop allows); 0 on any other step.
     """
     return (R_PROGRESS * (to_go_before - to_go_after)
-            + R_PASS * (outcome == "passed")
+            + (R_PASS + R_CENTRE * centred) * (outcome == "passed")
+            + R_FOUND * (outcome == "found")
             - R_CRASH * (outcome in CRASHES)
             - R_TIME
             - R_WALL * on_wall)
 
-# "net": the drone touched the net. The net is not in the state, but the hoop
-# is, and the hoop sits well in from it.
-CRASHES = ("hit", "wrong_way", "net")
+# "roof" and "side": the drone touched the net, above or beside it. The net is
+# not in the state, but the hoop is, and the hoop sits well in from it. Both
+# faces cost the same R_CRASH. They carry separate names only so the logs say
+# which one the drone met: the old single "net" hid whether a run died on the
+# ceiling in the blind climb or in the walls on the way round.
+CRASHES = ("hit", "wrong_way", "roof", "side")
 LAPS_MAX_STEPS = 600   # 60 s cut-off, not a failure
 
 FIELDS = ("u", "v", "major", "ratio", "sin_2t", "cos_2t", "visible", "marker")
@@ -90,40 +120,158 @@ NOT_VISIBLE = np.zeros(OBS_DIM, dtype=np.float32)
 ACTION_FIELDS = ("right", "forward", "up", "yaw_cw")
 ACTION_DIM = len(ACTION_FIELDS)
 
-# The policy sees a strided window of past observations and its own last 3
-# actions, enough to cover every command still in flight at up to 3 steps of
-# delay. OBS_LAGS holds the lags in control steps, oldest first, so the newest
-# frame stays last and frames[-1] still means "now".
+# The policy sees the last HISTORY_STEPS steps, each one a camera frame, a height
+# reading and the command that led to them, grouped into slots. SLOT_STEPS holds
+# how many steps each slot covers, oldest first, so the newest slot stays last.
+# Each slot gives, for its steps:
+#   the camera numbers of the newest frame that saw the hoop, with `visible` as
+#       the share of its steps that saw it (all 0 if none did),
+#   the newest height reading,
+#   the mean command.
+# So the slots tile the window with nothing left out between them: every sighting
+# and every command is in some slot, and the commands sum to how far the drone was
+# told to fly since any sighting. That is what it has to go on while blind.
 #
-# Close lags give velocity, far lags hold the last sighting through blind
-# stretches. On a lap the hoop leaves view 0.8 s before the pass and is back
-# about 3.7 s after it (seenflag-s1-level1: median 45 steps, max 53), so the
-# window spans 60 lags: the old 24 left the go-round with no hoop frame for
-# ~2 s of every lap. Striding covers 6 s with 12 frames instead of 61.
-OBS_LAGS = (60, 50, 40, 32, 24, 16, 12, 8, 4, 2, 1, 0)
-OBS_STACK = len(OBS_LAGS)
-FRAME_HISTORY = max(OBS_LAGS) + 1
-ACTION_HISTORY = 3
+# The newest four slots are single steps: the commands still in flight at up to
+# 4 steps of delay, and the frame-to-frame motion of the hoop to steer on. Older
+# slots are 0.4 s each, evenly spaced. 12 s covers the teacher's longest blind
+# stretch, from losing the hoop on the run in round to seeing it again in front
+# (teacher2, 150 flights: median 9.2 s, 90th percentile 10.9 s). The old window
+# was 6 s of frames and 0.3 s of commands, and 65% of the teacher2 students'
+# crashes came after 6 s or more without the hoop, when its input never changed.
+SLOT_STEPS = (4,) * 29 + (1, 1, 1, 1)
+HISTORY_STEPS = sum(SLOT_STEPS)
+N_SLOTS = len(SLOT_STEPS)
 #
-# Last comes the seen-hoop flag: 1 until the detector has first seen the hoop
-# this flight, then 0 for good. Without it, blind at takeoff (hoop above the
-# frame, net 0.3 m behind) and blind for 2.5 s mid-lap (hoop behind, just
-# passed) gave the same input, and the lap's turn-back reversed into the net
-# at takeoff. It reads 1 at takeoff, not 0, so that a policy grown from an
-# 84-input one with a zero weight on it keeps the lap's inputs unchanged.
-POLICY_INPUT_DIM = OBS_STACK * OBS_DIM + ACTION_HISTORY * ACTION_DIM + 1
+# Each slot also gives the newest motion reading (MOTION_FIELDS): the Tello's own
+# horizontal speed (state vgx, vgy: whole dm/s, in a frame that flipped 180 degrees
+# between 2026-10-12 flights, so only its size is used) and its heading since the
+# policy started (state yaw, whole degrees from the IMU, zero arbitrary per flight),
+# as sin and cos. Blind, the commands alone said how far the drone went, and on
+# 2026-10-12 the real drone flew 1.4-2x the sim's speed: it overran the hoop into
+# the net after both passes. sim.HoopEnv reads them as params.Telemetry says.
+MOTION_FIELDS = ("speed", "sin_turned", "cos_turned")
+MOTION_DIM = len(MOTION_FIELDS)
+NO_MOTION = np.array([0.0, 0.0, 1.0], np.float32)   # still, not turned
+SLOT_DIM = OBS_DIM + 1 + MOTION_DIM + ACTION_DIM   # camera, height, motion, command
+#
+# Last comes the not-yet-through flag: 1 until the hoop has left the frame
+# while big and centred, which is what flying at it looks like, then 0 until the
+# front (the marker) is reported again, then 1. It used to stay 0 for good, but
+# then circling at 0.6-0.8 m dropped it with no pass, and the 2026-10-09 flights
+# (teacher2-level1) flew the after-pass turn-back from in front of the hoop and
+# into the net. Re-armed by the front only, so the back seen just after a pass
+# keeps it 0. It separates takeoff
+# (net 0.3 m behind) from mid-lap (hoop behind, just passed): without it the
+# lap's turn-back reversed into the net at takeoff. It used to drop at the first
+# sighting (seenflag-s1-level1), but then the first sighting after a blind climb
+# looked like finding the hoop again after a pass, and every 2026-10-06 flight
+# flew the lap's go-round (strafe left, turn right) from the corner, lost the
+# hoop and backed into the net. A size alone does not work: with the detector
+# needing ~60% of the rim in frame, a hoop approached level is last reported at
+# 0.57-1.08 across, depending on the detector and the height. But on every
+# straight approach it leaves the frame at least PASS_MAJOR across and within
+# PASS_U of the centre, while the flights' losses before any pass were off the
+# top or side at 0.42 or less. It reads 1 at takeoff, not 0, so that a policy
+# grown from an 84-input one with a zero weight on it keeps the lap's inputs
+# unchanged.
+PASS_MAJOR = 0.55   # ~0.8 m from a 0.45 m hoop
+PASS_U = 0.5
+POLICY_INPUT_DIM = N_SLOTS * SLOT_DIM + 1
 VISIBLE = FIELDS.index("visible")
 
+# The height reading: metres above the floor from the Tello's downward
+# time-of-flight sensor (state field "tof", in cm). On the drone,
+# labcheck.fly_policy drops its glitches (6553 with no return, single-packet
+# jumps); sim.HoopEnv adds the offset, noise and coarse steps params.Altimeter
+# allows for. It keeps the blind climb off the roof, which the camera cannot see.
 
-def policy_input(frames, actions, unseen: bool) -> np.ndarray:
+
+def not_yet_through(unseen: bool, frames) -> bool:
+    """The flag after the newest frame: 0 once the hoop leaves the frame having last
+    been seen at least PASS_MAJOR across within PASS_U of the centre, and 1 again
+    once the hoop is reported with its front marker."""
+    before, now = frames[-2], frames[-1]
+    if now[VISIBLE] and now[FIELDS.index("marker")]:
+        return True
+    flew_at_it = (before[VISIBLE] and not now[VISIBLE]
+                  and before[FIELDS.index("major")] >= PASS_MAJOR and abs(before[FIELDS.index("u")]) < PASS_U)
+    return bool(unseen) and not flew_at_it
+
+
+def motion_reading(speed: float, turned_rad: float) -> np.ndarray:
+    """One motion row (MOTION_FIELDS): horizontal speed in m/s and the heading change
+    since the policy started, in radians."""
+    return np.array([speed, np.sin(turned_rad), np.cos(turned_rad)], np.float32)
+
+
+def policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
     """What the policy sees, in the simulator and on the drone alike.
 
-    frames: the last FRAME_HISTORY observations, newest last.
-    actions: the last ACTION_HISTORY actions, newest last.
-    unseen: no frame this flight has had the hoop visible yet.
+    frames, heights, motion, actions: the last HISTORY_STEPS steps, newest last. Step
+        i is the camera frame, height and motion readings after it, and the command
+        that led to them: actions[-1] is the command just sent, frames[-1] what came
+        after. motion rows come from motion_reading.
+    unseen: the hoop has not been flown at until it left the frame since its front
+        was last seen (not_yet_through).
     """
-    return np.concatenate([*(frames[-1 - lag] for lag in OBS_LAGS), *actions,
-                           [1.0 if unseen else 0.0]]).astype(np.float32)
+    frames = np.asarray(frames, np.float32)[-HISTORY_STEPS:]
+    heights = np.asarray(heights, np.float32)[-HISTORY_STEPS:]
+    motion = np.asarray(motion, np.float32).reshape(-1, MOTION_DIM)[-HISTORY_STEPS:]
+    actions = np.asarray(actions, np.float32)[-HISTORY_STEPS:]
+    slots, start = [], 0
+    for width in SLOT_STEPS:
+        f, a = frames[start:start + width], actions[start:start + width]
+        seen = np.flatnonzero(f[:, VISIBLE])
+        frame = f[seen[-1]].copy() if len(seen) else NOT_VISIBLE.copy()
+        frame[VISIBLE] = len(seen) / width
+        end = start + width - 1
+        slots.append(np.concatenate([frame, heights[end:end + 1], motion[end], a.mean(axis=0)]))
+        start += width
+    return np.concatenate([*slots, [1.0 if unseen else 0.0]]).astype(np.float32)
+
+
+def split_input(x: np.ndarray):
+    """The policy input taken apart: per slot, oldest first, the frames (N_SLOTS,
+    OBS_DIM), heights (N_SLOTS,) and mean commands (N_SLOTS, ACTION_DIM), and the flag.
+    The motion readings: split_motion."""
+    slots = np.asarray(x[:N_SLOTS * SLOT_DIM]).reshape(N_SLOTS, SLOT_DIM)
+    return slots[:, :OBS_DIM], slots[:, OBS_DIM], slots[:, OBS_DIM + 1 + MOTION_DIM:], bool(x[-1] > 0.5)
+
+
+# The slotted input before the motion readings (2026-10-12): each slot without
+# MOTION_FIELDS, as ppo-dagger and teacher3-12s-height were trained on.
+SLOTS_V1_DIM = N_SLOTS * (SLOT_DIM - MOTION_DIM) + 1
+
+
+def slots_v1(x: np.ndarray) -> np.ndarray:
+    """A policy input (POLICY_INPUT_DIM) in the SLOTS_V1_DIM layout: the motion dropped."""
+    x = np.asarray(x, np.float32)
+    slots = x[:N_SLOTS * SLOT_DIM].reshape(N_SLOTS, SLOT_DIM)
+    keep = np.r_[0:OBS_DIM + 1, OBS_DIM + 1 + MOTION_DIM:SLOT_DIM]
+    return np.append(slots[:, keep].ravel(), x[N_SLOTS * SLOT_DIM]).astype(np.float32)
+
+
+def for_model(size: int):
+    """What turns a policy input into the input a model of `size` inputs reads: as it is,
+    or slots_v1 for a model saved before the motion readings. None for any other size."""
+    return {POLICY_INPUT_DIM: lambda x: x, SLOTS_V1_DIM: slots_v1}.get(size)
+
+
+def split_motion(x: np.ndarray) -> np.ndarray:
+    """The motion readings of a policy input, per slot, oldest first: (N_SLOTS, MOTION_DIM)."""
+    slots = np.asarray(x[:N_SLOTS * SLOT_DIM]).reshape(N_SLOTS, SLOT_DIM)
+    return slots[:, OBS_DIM + 1:OBS_DIM + 1 + MOTION_DIM]
+
+
+def slot_of(lag: int) -> int:
+    """The slot that holds the step `lag` steps back (0 is now)."""
+    back = 0
+    for i in range(N_SLOTS - 1, -1, -1):
+        back += SLOT_STEPS[i]
+        if lag < back:
+            return i
+    raise ValueError(f"lag {lag} is beyond the {HISTORY_STEPS}-step window")
 
 MIN_ARC_FRACTION = 0.25  # share of the hoop's edge the detector needs in frame
 MIN_POINTS = 5     # fitEllipse needs at least five

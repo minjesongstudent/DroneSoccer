@@ -1,0 +1,18 @@
+teacher_check for teacher4, Tue Oct 13 07:44:33 AEDT 2026
+speed 0.55 exp 1.0 short     passes/ep  6.36  crashed  56%  never  25%  centred 0.64  |height|  2.3 cm  speed 0.43 m/s  FAIL crashed, never_passed, centred
+speed 0.55 exp 1.0 tall      passes/ep  6.68  crashed  53%  never  21%  centred 0.71  |height|  2.5 cm  speed 0.43 m/s  FAIL crashed, never_passed, centred
+speed 0.55 exp 1.6 short     passes/ep  5.46  crashed  58%  never  36%  centred 0.61  |height|  2.6 cm  speed 0.44 m/s  FAIL crashed, never_passed, centred
+speed 0.55 exp 1.6 tall      passes/ep  5.71  crashed  57%  never  32%  centred 0.68  |height|  2.7 cm  speed 0.44 m/s  FAIL crashed, never_passed, centred
+speed 0.8 exp 1.0 short      passes/ep  6.68  crashed  50%  never  29%  centred 0.54  |height|  1.9 cm  speed 0.62 m/s  FAIL crashed, never_passed, centred
+speed 0.8 exp 1.0 tall       passes/ep  7.25  crashed  46%  never  26%  centred 0.56  |height|  1.9 cm  speed 0.62 m/s  FAIL crashed, never_passed, centred
+speed 0.8 exp 1.6 short      passes/ep  6.21  crashed  56%  never  36%  centred 0.62  |height|  2.6 cm  speed 0.63 m/s  FAIL crashed, never_passed, centred
+speed 0.8 exp 1.6 tall       passes/ep  6.61  crashed  51%  never  34%  centred 0.67  |height|  2.8 cm  speed 0.63 m/s  FAIL crashed, never_passed, centred
+full mix                     passes/ep  7.71  crashed  40%  never  26%  centred 0.68  |height|  2.0 cm  speed 0.52 m/s  FAIL crashed, never_passed, centred
+mix, dynamics hidden         passes/ep  6.01  crashed  55%  never  36%  centred 0.61  |height|  2.8 cm  speed 0.52 m/s  FAIL leans on hidden dynamics  (passes -22%)
+mix, noise 0.1               passes/ep  6.33  crashed  56%  never  28%  centred 0.60  |height|  2.2 cm  speed 0.50 m/s  FAIL crashed
+worst corner passes/ep 5.46: NOT ready
+
+Can a student copy it? Its DAgger rounds say:
+  python -m src.train --algo ppo --teacher trainedModels/teacher4.zip --randomise --level 1 --steps 1500000 --name clone-check
+and read each 'dagger round' line: the student's flights and the clone loss.
+teacher_check exit 1 (0: every gate passed). The student trains either way.

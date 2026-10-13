@@ -11,13 +11,19 @@
     python -m src.labcheck hover            flies: hands-off hover, then an optional descent ladder
     python -m src.labcheck hoop             no flight: the hoop detector on the live video
     python -m src.labcheck baseline         flies: the hand-written baseline, camera to rc
+    python -m src.labcheck policy --model trainedModels/nogamma-progress.zip
+                                            flies: a trained policy, camera to rc
+    python -m src.labcheck survey           flies, hands off: climb and turn rates, then finds the hoop and
+                                            measures how much of it must be in frame, and the marker rate
+    python -m src.labcheck markercheck runs/lab/<folder>
+                                            no drone: marker detection re-run on a recording at other settings
     python -m src.labcheck summary runs/lab/<folder>
                                             re-print the numbers from an earlier run
 
 Each run writes a folder under runs/lab/: state.csv (every telemetry packet),
 commands.csv (every rc sent), frames.csv (every video frame and its image shift),
-events.txt, summary.txt, and video.mp4 with --record. hoop and baseline add
-detect.csv (the eight numbers per frame, and the rc sent under baseline).
+events.txt, summary.txt, and video.mp4 with --record. hoop, baseline and policy add
+detect.csv (the eight numbers per frame, and the rc sent under baseline or policy).
 
 Keys in the video window (click it first so it has focus):
     Space    emergency: motors off at once, the drone drops
@@ -50,7 +56,7 @@ from djitellopy import Tello
 
 from src import baseline, contract
 from src.detect import CONFIRM_FRAMES, HoopDetector, draw
-from src.params import CALIB_PATH, ROOT
+from src.params import CALIB_PATH, ROOT, Cage, Camera, Detector, Drone, Hoop
 
 PARAMS_PATH = ROOT / "src" / "params.py"
 
@@ -116,6 +122,8 @@ class Session:
         self.record = record
         self._last_frame = None
         self._last_small = None
+        self.shift = (0.0, 0.0)   # newest frame's whole-image shift from the one before, full-frame px
+        self.moved = np.zeros(2)
         self.frame_bgr = None
         self._placeholder_at = -1.0
         self.decorate: Optional[Callable[[np.ndarray], np.ndarray]] = None   # draws on the view
@@ -223,6 +231,8 @@ class Session:
             shift, _ = cv2.phaseCorrelate(self._last_small, small)
         self._last_small = small
         scale = width / 160
+        self.shift = (shift[0] * scale, shift[1] * scale)
+        self.moved = self.moved + np.array(self.shift)   # running total, for tracking a hoop off screen
         self._frames.writerow([f"{self.now():.4f}", self.phase, width, height,
                                f"{shift[0] * scale:.2f}", f"{shift[1] * scale:.2f}"])
         if self.record:
@@ -317,6 +327,10 @@ def fly(session: Session, items: list, fence_cm: float, max_height_cm: float) ->
     fix, drift = 0.0, np.zeros(2)
     fixes: list = []          # recent pad distances; the median ignores a single glitched fix
     last_packet, last_t = None, session.now()
+    # tof reads 6553 (no return) on the ground and swings wildly when the drone tilts,
+    # and the drone can claim to be flying before it has left the floor (a stale "ok"
+    # to takeoff). Only a valid reading over the limit, twice in a row, lands it.
+    too_high = 0
 
     def run(item: Do) -> threading.Thread:
         def target() -> None:
@@ -350,10 +364,12 @@ def fly(session: Session, items: list, fence_cm: float, max_height_cm: float) ->
                     fix, drift = float(np.median(fixes)), np.zeros(2)
                 elif session.drone.is_flying:
                     drift += 10.0 * np.array([s.get("vgx", 0), s.get("vgy", 0)], float) * (now - last_t)
+                tof = s.get("tof", 0)
+                too_high = too_high + 1 if 10 < tof < 1000 and tof > max_height_cm else 0
                 last_packet, last_t = s, now
             reach = fix + float(np.hypot(*drift))
             if session.drone.is_flying and not land_wanted:
-                if s.get("tof", 0) > max_height_cm:
+                if too_high >= 2:
                     warn = f"too high: tof {s.get('tof')} cm"
                 elif reach > fence_cm:
                     seen = "pad" if not drift.any() else "estimated"
@@ -397,7 +413,11 @@ def fly(session: Session, items: list, fence_cm: float, max_height_cm: float) ->
                 until, rc = now + item.seconds, item.rc
 
             if rc is not None and now >= next_tick:
-                session.send_rc(rc() if callable(rc) else rc)
+                sent = rc() if callable(rc) else rc
+                if sent is None:   # a callable rc says its item is done
+                    until, rc = now, None
+                    continue
+                session.send_rc(sent)
                 next_tick += DT
                 if now - next_tick > DT:  # fell behind: restart the deadline, don't burst
                     next_tick = now + DT
@@ -457,8 +477,8 @@ def recentre_item(session: Session) -> Do:
     """Fly back over the pad. The drone drifts tens of cm during rests, and
     without this the steps walk it into the net."""
     def recentre() -> None:
+        mid = pad_seen(session, 1.5)
         s = session.state()
-        mid = s.get("mid", -1)
         if mid <= 0:
             session.event("recentre: pad not seen, skipped")
             return
@@ -469,6 +489,44 @@ def recentre_item(session: Session) -> Do:
         except Exception as ex:
             session.event(f"recentre failed: {ex}")
     return Do("recentre", recentre)
+
+
+PAD_SEARCH_STEPS = 2      # 25 cm moves back looking for the pad: it is 0.1-0.4 m behind
+PAD_LOOK_CM = 100         # pads are read 30-120 cm below the drone
+
+
+def pad_seen(session: Session, wait: float = 1.0) -> int:
+    """The pad id if a pad is read within `wait` seconds, else 0."""
+    deadline = time.perf_counter() + wait
+    while time.perf_counter() < deadline:
+        mid = session.state().get("mid", -1)
+        if mid > 0:
+            return mid
+        time.sleep(0.05)
+    return 0
+
+
+def to_pad_items(session: Session, may_back_up: Callable[[], bool] = lambda: False) -> list:
+    """Come down to where the pad camera reads, back up until the pad shows, and
+    stop over it, so the landing after these puts the drone back on its pad.
+
+    The survey and the policy start over the pad facing the hoop, and the survey
+    ends 1 m from the hoop facing it, so the pad is usually a little behind. Backing
+    up is only safe from there (may_back_up): from over the corner it backs into the
+    net. If the pad never shows, the drone lands where it is."""
+    def to_pad() -> None:
+        mid = pad_seen(session, 1.5)
+        for _ in range(PAD_SEARCH_STEPS if may_back_up() else 0):
+            if mid:
+                break
+            session.drone.move_back(25)
+            mid = pad_seen(session)
+        if not mid:
+            session.event("! pad not found: landing where it is")
+            return
+        session.drone.go_xyz_speed_mid(0, 0, 60, 30, mid)
+        session.event(f"over pad {mid}")
+    return [to_height_item(session, PAD_LOOK_CM), Do("to pad", to_pad), Hold("over pad", 1.0)]
 
 
 def step_items(session: Session, axis: str, amps: tuple, seconds: float, rest: float, repeat: int) -> list:
@@ -906,6 +964,14 @@ def summarise(folder: Path) -> str:
             f" {1 / np.median(gaps):4.1f} fps (median), worst gap {gaps.max() * 1000:.0f} ms")
     if (folder / "detect.csv").exists():
         out += summarise_detect(load(folder / "detect.csv"))
+    try:   # the dynamics this flight shows, against the sim's ranges (src.sysid)
+        from src import sysid
+        out += sysid.summary_lines(folder)
+    except Exception as ex:   # a summary never fails for want of a fit
+        out.append(f"  sysid        not fitted: {ex}")
+    if (folder / "survey.csv").exists():
+        out += summarise_survey(folder)
+    out += summarise_holds(state, cmds)
     if not state:
         return "\n".join(out)
 
@@ -1029,10 +1095,12 @@ def summarise(folder: Path) -> str:
 # ---------------------------------------------------------------------------
 
 # Policy action to rc, per axis in send_rc_control order (contract.ACTION_FIELDS).
-# Full action is params.Drone.max_speed (0.4 m/s) and max_yaw_rate_deg (60 deg/s).
-# MEASURED 2026-10-01: fb and lr reach 0.4 m/s at rc ~50, yaw 60 deg/s at rc ~70.
-# ud only reached 0.26 m/s at rc 60, so up gets the whole range and still falls short.
-RC_FULL = (50, 50, 100, 70)
+# Full action is params.Drone.max_speed (0.4 m/s), max_up_speed (0.4 m/s) and
+# max_yaw_rate_deg (55 deg/s). MEASURED 2026-10-01: fb and lr reach 0.4 m/s at rc ~50
+# (1 s steps, which under-read ud, so these may too). MEASURED 2026-10-06 (labcheck
+# survey, 3 s holds): ud 0.4 m/s at rc 51 up and 47 down; yaw 55 deg/s at rc 70. With
+# ud 100 the drone had climbed 1.7x the simulator's speed.
+RC_FULL = (50, 50, 50, 70)
 
 
 class Watcher:
@@ -1135,24 +1203,719 @@ def run_hoop(args) -> None:
     finish(session)
 
 
+# ---------------------------------------------------------------------------
+# Survey: hands-off measurements for the simulator
+# ---------------------------------------------------------------------------
+
+# Rates: 3 s holds, long enough to reach steady speed (the 1 s steps did not).
+RATE_AMPS = {"ud": (30, 50, 70, 100), "yaw": (5, 10, 20, 40, 70)}
+RATE_SECONDS = 3.0
+RATE_TOP_CM, RATE_BOTTOM_CM = 165, 60   # climbs stop short of these, allowing for momentum
+SETTLE_S = {"ud": 0.5, "yaw": 0.8}   # command delay plus about two taus: steady after this.
+                                     # ud's tau is ~0.25 s, and its holds are short (the roof)
+
+# Hoop part. The hoop hangs near the roof, so the drone never goes above it. Level
+# with it, the camera (pitched down) shows it high in the frame with its top cut
+# off at 1 m, so the drone parks just low enough to see the whole ring.
+NEAR, FAR = 0.65, 0.45          # major at ~0.7 m and ~1.0 m from a 0.45 m hoop
+FULL_VIEW = 0.97                # rim share in frame that counts as the whole hoop
+# Slides: from a full view, turn (left, right) or descend (top) until the hoop is off
+# that edge, then come back. Turning moves the whole image alike, so the image shift
+# says where the hoop is; descending does not (the cage behind moves less than the
+# hoop), so the top slide moves it by the tof change over its distance instead. Either
+# way, the prediction is checked against where the hoop is found again on the way
+# back, and a slide that missed by more than SLIDE_MAX_ERROR of its size is dropped.
+SLIDE_RC = {"left": (0, 0, 0, 25), "right": (0, 0, 0, -25), "top": (0, 0, -40, 0)}
+SLIDE_REPEATS = 3
+SLIDE_MAX_ERROR = 0.1
+SLIDE_FLOOR_CM = 70             # the top slide descends; never below this
+# Orbits: strafe at FAR, holding ORBIT_HOLD_S at each angle off the hoop's axis, to
+# measure the marker there. The angle is read from the ellipse against its face-on
+# ratio (the hoop sags, so face-on is not 1).
+ORBIT_RC = 20
+ORBIT_ANGLES = (20, 35, 50)
+ORBIT_HOLD_S = 3.0
+ORBIT_TOO_CLOSE = 0.6           # major: closer than ~0.75 m while orbiting, give up and come back
+
+
+def rim_fraction(ellipse, width: int, height: int, dx: float = 0.0, dy: float = 0.0):
+    """Share of the ellipse's rim inside the frame, after moving it by (dx, dy), and
+    which edge most of the rest is beyond ("" if none)."""
+    (cx, cy), (w, h), ang = ellipse
+    t = np.linspace(0, 2 * np.pi, 360, endpoint=False)
+    th = np.deg2rad(ang)
+    x = cx + dx + w / 2 * np.cos(t) * np.cos(th) - h / 2 * np.sin(t) * np.sin(th)
+    y = cy + dy + w / 2 * np.cos(t) * np.sin(th) + h / 2 * np.sin(t) * np.cos(th)
+    out = {"left": (x < 0).sum(), "right": (x >= width).sum(), "top": (y < 0).sum(), "bottom": (y >= height).sum()}
+    inside = float(np.mean((x >= 0) & (x < width) & (y >= 0) & (y < height)))
+    edge = max(out, key=out.get) if inside < 1.0 else ""
+    return inside, edge
+
+
+def fully_in_frame(u, v, major) -> np.ndarray:
+    """From the detector's own numbers: the fitted ring lies inside the frame."""
+    hx, hy = Camera().half_extent
+    return (np.abs(u) + major / 2 / hx < 0.98) & (np.abs(v) + major / 2 / hy < 0.98)
+
+
+def to_height_item(session: Session, cm: float) -> Do:
+    def go() -> None:
+        tof = session.state().get("tof", 0)
+        if not 10 < tof < 1000:
+            session.event(f"to {cm:.0f} cm: tof {tof} unreadable, skipped")
+            return
+        diff = cm - tof
+        if abs(diff) >= 20:
+            (session.drone.move_up if diff > 0 else session.drone.move_down)(int(min(abs(diff), 500)))
+    return Do(f"to {cm:.0f} cm", go)
+
+
+def climb_rc(session: Session, amp: int) -> Callable:
+    """rc ud = amp until the drone would pass RATE_TOP_CM (or RATE_BOTTOM_CM going
+    down), counting the ~0.6 s it carries on after the command stops."""
+    stopped = [False]
+
+    def rc():
+        s = session.state()
+        tof = s.get("tof", 0)
+        up = -10.0 * s.get("vgz", 0)          # vgz is dm/s, negative going up
+        ahead = tof + 0.6 * up
+        if not 10 < tof < 1000 or (amp > 0 and ahead >= RATE_TOP_CM) or (amp < 0 and ahead <= RATE_BOTTOM_CM):
+            stopped[0] = True
+        return (0, 0, 0, 0) if stopped[0] else (0, 0, amp, 0)
+    return rc
+
+
+def rate_items(session: Session, axis: str) -> list:
+    items = []
+    for amp in RATE_AMPS[axis]:
+        if axis == "ud":   # down to where the pad can be read first, then over it
+            items += [to_height_item(session, RATE_BOTTOM_CM + 10), recentre_item(session), Hold("steady", 1.5),
+                      Hold(f"hold ud {amp:+d}", RATE_SECONDS, climb_rc(session, amp)), Hold("rest", 2.0),
+                      Hold(f"hold ud {-amp:+d}", RATE_SECONDS, climb_rc(session, -amp)), Hold("rest", 2.0)]
+        else:
+            items.append(recentre_item(session))
+            for sign in (1, -1):
+                items += [Hold("steady", 1.0), Hold(f"hold yaw {sign * amp:+d}", RATE_SECONDS, (0, 0, 0, sign * amp)),
+                          Hold("rest", 1.5)]
+    return items
+
+
+class HoopSurvey:
+    """The hoop part of the survey, as one Hold whose rc is this object.
+
+    A queue of stages, each run until done or timed out:
+      find              climb (then turn) until the whole hoop is in view
+      centre far/near   hoop centred, just below level, at 1.0 / 0.7 m, held 1.5 s
+      slide EDGE N      from a full view, off that edge and back (see SLIDE_RC);
+                        its rows carry the predicted rim share, and slides.csv says
+                        whether the prediction held when the hoop was found again
+      orbit SIDE        strafe at 1 m, holding at each of ORBIT_ANGLES off the axis
+    Every frame goes to survey.csv.
+    """
+
+    def __init__(self, session: Session, behind: bool):
+        self.session = session
+        self.behind = behind
+        self.detector = HoopDetector(confirm=1)
+        slides = [s for edge in SLIDE_RC for n in range(1, SLIDE_REPEATS + 1) for s in (f"slide {edge} {n}", "centre far")]
+        self.queue = (["find", "centre far"] + slides
+                      + ["centre near", "centre far", "orbit left", "centre far", "orbit right", "centre far"])
+        self.stage, self.started, self.good_since, self.phase = None, 0.0, None, ""
+        self.last_frame, self.obs, self.det = None, contract.NOT_VISIBLE.copy(), None
+        self.lost_since = None
+        self.flying = False
+        self.finished = False   # every stage done: it ends 1 m from the hoop, facing it
+        self.ratios = collections.deque(maxlen=15)   # face-on ratios from centre far
+        self.anchor = None      # slide: (ellipse, image moved, tof, distance) at the start
+        self.hold = ""          # orbit: the angle being held, for the log
+        self._row = None
+        self._file = open(session.dir / "survey.csv", "w", newline="")
+        self._csv = csv.writer(self._file)
+        self._csv.writerow(["t", "stage", "phase", "hold", "detected", "marker", "u", "v", "major", "ratio",
+                            "rim", "side", "tof", "rc_lr", "rc_fb", "rc_ud", "rc_yaw"])
+        self._slides_file = open(session.dir / "slides.csv", "w", newline="")
+        self._slides = csv.writer(self._slides_file)
+        self._slides.writerow(["slide", "edge", "valid", "error", "why"])
+        session.decorate = self.draw
+        self._next()
+
+    def _next(self):
+        self.stage = self.queue.pop(0) if self.queue else None
+        self.finished = self.stage is None
+        self.started, self.good_since, self.phase, self.anchor, self.hold = self.session.now(), None, "", None, ""
+        if self.stage:
+            self.session.event(f"survey: {self.stage}")
+
+    def close(self):
+        self._file.close()
+        self._slides_file.close()
+
+    @property
+    def face_on(self) -> float:
+        return float(np.median(self.ratios)) if len(self.ratios) >= 5 else 0.95
+
+    # -- seeing ---------------------------------------------------------------
+
+    def predicted(self):
+        """Where the slide's start view says the hoop is now: an ellipse, or None."""
+        if self.anchor is None:
+            return None
+        (cx, cy), size, ang = self.anchor["ellipse"]
+        dx, dy = self.session.moved - self.anchor["moved"]
+        if self.anchor["edge"] == "top":
+            # Descending: the hoop rises in the image by the drop over its distance.
+            tof = self.session.state().get("tof", 0)
+            if 10 < tof < 1000:
+                dy = -Camera().fy * (self.anchor["tof"] - tof) / 100 / self.anchor["distance"]
+            else:
+                dy = self.anchor.get("last_dy", 0.0)
+            self.anchor["last_dy"] = dy
+        return ((cx + dx, cy + dy), size, ang)
+
+    def draw(self, view):
+        if self.det is not None:
+            view = draw(view, self.det)
+        p = self.predicted()
+        if p is not None:
+            cv2.ellipse(view, p, (0, 255, 255), 2)
+        return view
+
+    def _see(self) -> bool:
+        """Detect on the newest frame and get its log row ready. False if no new frame."""
+        s = self.session
+        frame = s.frame_bgr
+        if frame is None or frame is self.last_frame:
+            return False
+        self.last_frame = frame
+        self.size = frame.shape[1::-1]
+        self.det = self.detector(frame)
+        self.obs = self.det.obs
+        p = self.predicted()
+        rim = rim_fraction(p, *self.size)[0] if p is not None else np.nan
+        self.rim = rim
+        self._row = [f"{s.now():.4f}", self.stage, self.phase, self.hold, int(self.obs[6] > 0), int(self.obs[7] > 0),
+                     *(f"{v:.4f}" for v in self.obs[:4]), f"{rim:.3f}",
+                     "back" if self.behind else "front", s.state().get("tof", "")]
+        return True
+
+    def full_view(self) -> bool:
+        return bool(self.obs[contract.VISIBLE]) and rim_fraction(self.det.ellipse_px, *self.size)[0] >= FULL_VIEW
+
+    # -- moving ---------------------------------------------------------------
+
+    @staticmethod
+    def _v_target(major: float) -> float:
+        """Level with the hoop, or lower if that cuts its top off: v of the centre
+        with the top of the ring 10% of its height inside the frame."""
+        half = major / 2 / Camera().half_extent[1]
+        return max(baseline.V_LEVEL, -1 + 1.1 * half)
+
+    def _centre(self, target: float, lr: int = 0) -> tuple:
+        """Yaw to centre it, climb or descend to just below level, fly to the target distance."""
+        u, v, major = self.obs[0], self.obs[1], self.obs[2]
+        yaw = int(np.clip(60 * u, -30, 30))
+        ud = int(np.clip(-60 * (v - self._v_target(major)), -30, 30))
+        fb = int(np.clip(60 * (target - major) / target, -20, 20))
+        return (lr, fb, ud, yaw)
+
+    def __call__(self):
+        if not self.flying:   # built before takeoff: start the first stage's clock now
+            self.flying, self.started = True, self.session.now()
+        if not self._see():
+            return self.session.cmd   # no new frame: keep doing what it was doing
+        rc = self._step()
+        if rc is None:
+            self.close()
+            return None
+        self._csv.writerow(self._row + list(rc))
+        return rc
+
+    def _step(self):
+        s, now = self.session, self.session.now()
+        if self.stage is None:
+            return None
+        seen = bool(self.obs[contract.VISIBLE])
+        age = now - self.started
+        self.lost_since = None if seen else (self.lost_since or now)
+        kind, _, arg = self.stage.partition(" ")
+
+        if kind == "find":
+            if self.full_view():
+                self._next()
+                return (0, 0, 0, 0)
+            if age > 40:
+                s.event("! survey: hoop not found in 40 s; is the drone facing it?")
+                return None
+            if seen:   # part of it: centre on it, which brings the rest into view
+                return self._centre(FAR)
+            tof = s.state().get("tof", 0)
+            return (0, 0, 35, 0) if tof < RATE_TOP_CM else (0, 0, 0, 20)
+
+        if kind == "centre":
+            if self.lost_since and now - self.lost_since > 4.0:
+                s.event("survey: hoop lost, searching again")
+                self.queue.insert(0, self.stage)
+                self.stage, self.started = "find", now
+                return (0, 0, 0, 0)
+            if not seen:
+                return (0, 0, 0, 0)
+            target = NEAR if arg == "near" else FAR
+            rc = self._centre(target)
+            ok = abs(self.obs[0]) < 0.12 and abs(self.obs[1] - self._v_target(self.obs[2])) < 0.15 \
+                and abs(self.obs[2] - target) / target < 0.15
+            if ok and arg == "far":
+                self.ratios.append(float(self.obs[3]))
+            self.good_since = (self.good_since or now) if ok else None
+            if (self.good_since and now - self.good_since > 1.5) or age > 15:
+                self._next()
+            return rc
+
+        if kind == "slide":
+            return self._slide(arg.split()[0], seen, now, age)
+        if kind == "orbit":
+            return self._orbit(arg, seen, now, age)
+        return None
+
+    def _slide(self, edge: str, seen: bool, now: float, age: float):
+        rc = SLIDE_RC[edge]
+        if self.phase == "":
+            # Start only from the whole hoop in view; that view is what is tracked.
+            if self.full_view():
+                self.anchor = {"ellipse": self.det.ellipse_px, "moved": self.session.moved.copy(), "edge": edge,
+                               "tof": self.session.state().get("tof", 0),
+                               "distance": Hoop().outer_height / max(float(self.obs[2]), 1e-3)}
+                self.phase, self.started = "out", now
+                return rc
+            if age > 3.0:
+                self._end_slide(edge, False, np.nan, "no full view to start from")
+            return (0, 0, 0, 0)
+        if self.phase == "out":
+            tof = self.session.state().get("tof", 0)
+            gone = (np.isfinite(self.rim) and self.rim < 0.15) or \
+                   (self.lost_since and now - self.lost_since > 0.5 and np.isfinite(self.rim) and self.rim < 0.35)
+            low = edge == "top" and 10 < tof < SLIDE_FLOOR_CM
+            if gone or low or age > 8.0:
+                self.phase, self.started = "back", now
+                return (0, 0, 0, 0)
+            return rc
+        # back: undo the slide until the whole hoop is found, then check the prediction
+        if self.full_view():
+            (px, py), _, _ = self.predicted()
+            (cx, cy), (w, h), _ = self.det.ellipse_px
+            error = float(np.hypot(px - cx, py - cy) / max(w, h))
+            self._end_slide(edge, error <= SLIDE_MAX_ERROR, error,
+                            "" if error <= SLIDE_MAX_ERROR else "prediction drifted")
+            return (0, 0, 0, 0)
+        if age > 10.0:
+            self._end_slide(edge, False, np.nan, "not found again")
+            return (0, 0, 0, 0)
+        return tuple(-x for x in rc)
+
+    def _end_slide(self, edge, valid, error, why):
+        self._slides.writerow([self.stage, edge, int(valid), f"{error:.3f}", why])
+        self._slides_file.flush()
+        self.session.event(f"survey: {self.stage} " + ("ok" if valid else f"dropped ({why})")
+                           + (f", error {error:.2f}" if np.isfinite(error) else ""))
+        self._next()
+
+    def _orbit(self, side: str, seen: bool, now: float, age: float):
+        lr = ORBIT_RC if side == "right" else -ORBIT_RC
+        if self.phase == "":
+            self.phase, self.targets = "move", list(ORBIT_ANGLES)
+        if self.phase != "back" and (not seen and self.lost_since and now - self.lost_since > 1.0
+                                     or seen and self.obs[2] > ORBIT_TOO_CLOSE or age > 30.0):
+            self.session.event(f"survey: {self.stage} cut short at {self.hold or 'start'}")
+            self.phase, self.started, self.hold = "back", now, ""
+        if self.phase == "move":
+            angle = self.targets[0]
+            if seen and self.obs[3] <= self.face_on * np.cos(np.deg2rad(angle)):
+                self.phase, self.hold, self.hold_from = "hold", str(angle), now
+            return self._centre(FAR, lr) if seen else (0, 0, 0, 0)
+        if self.phase == "hold":
+            if now - self.hold_from >= ORBIT_HOLD_S:
+                self.targets.pop(0)
+                self.hold = ""
+                self.phase = "move" if self.targets else "back"
+                self.started = now if self.phase == "back" else self.started
+            return self._centre(FAR) if seen else (0, 0, 0, 0)
+        # back to face-on
+        if seen and self.obs[3] >= self.face_on - 0.03 or now - self.started > 10.0:
+            self._next()
+            return (0, 0, 0, 0)
+        return self._centre(FAR, -lr) if seen else (-lr, 0, 0, 0)
+
+
+def survey_parts(args) -> list:
+    return args.parts or (["rates-ud", "rates-yaw", "hoop"] if not args.behind else ["hoop"])
+
+
+def run_survey(args) -> None:
+    """One flight, hands off. Put the drone on the pad facing the hoop and run it."""
+    session = Session("survey", args.host, record=args.record)
+    hoop = None
+    try:
+        start = countdown_and_takeoff(session, args.min_battery)
+        if start:
+            items = list(start)
+            parts = survey_parts(args)
+            if "rates-ud" in parts:
+                items += rate_items(session, "ud")
+            if "rates-yaw" in parts:
+                items += rate_items(session, "yaw")
+            if "hoop" in parts:
+                hoop = HoopSurvey(session, args.behind)
+                items += [Hold("hoop survey", 240.0, hoop)]
+            items += to_pad_items(session, lambda: hoop is not None and hoop.finished)
+            fly(session, items, args.fence_cm, args.max_height_cm)
+    finally:
+        if hoop is not None:
+            hoop.close()
+        session.close()
+    finish(session)
+
+
+AXIS_COL = {"ud": "ud", "yaw": "yaw"}
+
+
+def summarise_holds(state: dict, cmds: dict) -> list:
+    """Steady speed per rc from the 3 s holds: the slope of tof (ud) or yaw over the
+    part of each hold after SETTLE_S, no model fitted. Compared with what the
+    simulator gives that rc through RC_FULL."""
+    if not state or not cmds:
+        return []
+    rows = []
+    for label in dict.fromkeys(p for p in cmds["phase"] if str(p).startswith("hold ")):
+        _, axis, amp = label.split()
+        amp = int(amp)
+        m = (cmds["phase"] == label) & (cmds[AXIS_COL[axis]] != 0)
+        if m.sum() < 3:
+            continue
+        a, b = float(cmds["t"][m][0]) + SETTLE_S[axis], float(cmds["t"][m][-1]) + 0.15
+        w = (state["t"] >= a) & (state["t"] <= b)
+        if axis == "ud":
+            # tof jumps for a packet now and then (35 cm mid-descent, 6553): drop
+            # samples far from their neighbours' median.
+            y, scale = state["tof"], 0.01
+            w = deglitch(y, w & (y > 10) & (y < 1000), limit=12.0)
+        else:
+            y, scale = np.degrees(np.unwrap(np.radians(state["yaw"]))), 1.0
+        rate = np.nan
+        if w.sum() >= 4 and b - a >= 0.4:
+            # Median of pairwise slopes: one stray sample cannot drag it.
+            tt, yy = state["t"][w], y[w]
+            i, j = np.triu_indices(len(tt), 1)
+            ok = tt[j] - tt[i] > 0.15
+            rate = float(np.median((yy[j] - yy[i])[ok] / (tt[j] - tt[i])[ok]) * scale)
+        rows.append({"axis": axis, "amp": amp, "rate": rate, "steady_s": max(0.0, b - a)})
+    if not rows:
+        return []
+    drone = Drone()
+    out = ["", "  hold          steady   measured        simulator for this rc"]
+    for r in rows:
+        if r["axis"] == "ud":
+            sim = r["amp"] / RC_FULL[2] * drone.max_speed
+            out.append(f"  ud  {r['amp']:+4d}     {r['steady_s']:4.1f} s   {r['rate']:+6.2f} m/s      {sim:+.2f} m/s")
+        else:
+            # Telemetry yaw grows clockwise, as rc yaw does, so the signs match.
+            sim = r["amp"] / RC_FULL[3] * drone.max_yaw_rate_deg
+            out.append(f"  yaw {r['amp']:+4d}     {r['steady_s']:4.1f} s   {r['rate']:+6.1f} deg/s    {sim:+.1f} deg/s")
+    def crossing(pts, value):
+        """rc where the measured rate reaches value, interpolating between holds
+        (the response bends, so a straight-line fit puts it in the wrong place)."""
+        pts = sorted(pts)
+        for (a0, r0), (a1, r1) in zip(pts, pts[1:]):
+            if r0 < value <= r1:
+                return a0 + (value - r0) / (r1 - r0) * (a1 - a0)
+        return None
+
+    for sign, name in ((1, "up"), (-1, "down")):
+        pts = [(abs(r["amp"]), abs(r["rate"])) for r in rows if r["axis"] == "ud" and np.sign(r["amp"]) == sign
+               and np.isfinite(r["rate"]) and r["steady_s"] >= 0.4]
+        rc = crossing(pts, drone.max_up_speed)
+        if rc is not None:
+            out.append(f"  -> ud {name}: {drone.max_up_speed} m/s (the simulator's full up/down) at rc {rc:.0f}. "
+                       f"RC_FULL ud is {RC_FULL[2]}")
+    pts = [(abs(r["amp"]), abs(r["rate"])) for r in rows if r["axis"] == "yaw" and np.isfinite(r["rate"])]
+    big = [p for p in pts if p[0] >= 10]
+    if len(big) >= 2:
+        k, c = np.polyfit(*zip(*big), 1)
+        at_full = [v for a, v in pts if a == RC_FULL[3]]
+        small = ", ".join(f"rc {a} = {v:.1f} deg/s" for a, v in pts if a < 10)
+        out.append(f"  -> yaw: deadband ~rc {max(0.0, -c / k):.0f} (yaw_deadband {max(0.0, -c / k) / RC_FULL[3]:.2f}); "
+                   + (f"{np.mean(at_full):.0f} deg/s at RC_FULL yaw {RC_FULL[3]} (max_yaw_rate_deg "
+                      f"{drone.max_yaw_rate_deg:.0f})" if at_full else f"{k:.2f} deg/s per rc")
+                   + (f". Small: {small}" if small else ""))
+    return out
+
+
+def summarise_survey(folder: Path) -> list:
+    d = load(folder / "survey.csv")
+    if not d or "phase" not in d:
+        return []
+    out = [""]
+    stage = np.array([str(x) for x in d["stage"]])
+    phase = np.array([str(x) if str(x) != "nan" else "" for x in d["phase"]])
+    det = d["detected"] > 0
+    # Edges: only slides whose prediction held up when the hoop was found again.
+    slides = load(folder / "slides.csv") if (folder / "slides.csv").exists() else {}
+    crossings = {}
+    if slides:
+        names = np.array([str(x) for x in slides["slide"]])
+        edges = np.array([str(x) for x in slides["edge"]])
+        valid = slides["valid"] > 0
+        whys = np.array([str(x) for x in slides["why"]])
+        out.append("  slides kept (prediction checked when the hoop was found again):")
+        for edge in SLIDE_RC:
+            m = edges == edge
+            dropped = ", ".join(sorted(set(whys[m & ~valid]))) or "-"
+            out.append(f"    {edge:6s} {int((m & valid).sum())}/{int(m.sum())} kept   dropped: {dropped}")
+        bins = [(0.15, 0.35), (0.35, 0.5), (0.5, 0.6), (0.6, 0.7), (0.7, 0.8), (0.8, 0.9), (0.9, 1.01)]
+        out.append("  rim share in frame -> detected, kept slides only")
+        out.append("    edge    " + "  ".join(f"{lo:.2f}-" for lo, _ in bins) + "   half detected at")
+        for edge in SLIDE_RC:
+            keep = names[(edges == edge) & valid]
+            rows = np.isin(stage, keep) & np.isin(phase, ("out", "back")) & np.isfinite(d["rim"])
+            rates = []
+            cells = []
+            for lo, hi in bins:
+                b = rows & (d["rim"] >= lo) & (d["rim"] < hi)
+                rates.append(det[b].mean() if b.sum() >= 3 else np.nan)
+                cells.append(f"{rates[-1]:5.0%}" if b.sum() >= 3 else "    -")
+            mids = [(lo + hi) / 2 for lo, hi in bins]
+            cross = next((mids[i - 1] + (0.5 - rates[i - 1]) / (rates[i] - rates[i - 1]) * (mids[i] - mids[i - 1])
+                          for i in range(1, len(bins)) if np.isfinite(rates[i - 1]) and np.isfinite(rates[i])
+                          and rates[i - 1] < 0.5 <= rates[i]), None)
+            if cross is not None:
+                crossings[edge] = cross
+            out.append(f"    {edge:6s}  " + "  ".join(cells) + (f"   {cross:.2f}" if cross is not None else "   -"))
+        if crossings:
+            out.append(f"  -> params.Detector.min_arc_fraction: {np.mean(list(crossings.values())):.2f} "
+                       f"(edges {', '.join(f'{k} {v:.2f}' for k, v in crossings.items())}; "
+                       f"randomise over that spread). Now {Detector().min_arc_fraction}")
+    # Marker: frames with the whole ring in frame by the detector's own fit.
+    hold = np.asarray(d["hold"], dtype=float)   # the angle held, nan elsewhere
+    whole = det & fully_in_frame(d["u"], d["v"], d["major"])
+    side = str(d["side"][0])
+    out.append(f"  marker reported, whole hoop in frame, {side} side "
+               + ("(should be ~100%)" if side == "front" else "(should be 0%)"))
+    groups = [("1 m, face-on", (stage == "centre far") & whole), ("0.7 m, face-on", (stage == "centre near") & whole)]
+    groups += [(f"1 m, {a} deg off", (hold == a) & whole) for a in ORBIT_ANGLES]
+    for name, m in groups:
+        out.append(f"    {name:16s} {d['marker'][m].mean():5.0%}  ({int(m.sum())} frames)" if m.sum() >= 5
+                   else f"    {name:16s}     -  ({int(m.sum())} frames)")
+    if side == "front":
+        far, near = groups[0][1], groups[1][1]
+        if far.sum() >= 5 and near.sum() >= 5:
+            out.append(f"  -> params.Detector.marker_miss {1 - d['marker'][far].mean():.2f}, "
+                       f"marker_miss_near {1 - d['marker'][near].mean():.2f}. "
+                       f"Now {Detector().marker_miss}, {Detector().marker_miss_near}")
+    return out
+
+
+def run_markercheck(args) -> None:
+    """No drone: the marker's white test at detect.WHITE_MAX_S against other values,
+    re-run over a recorded video on every frame with the whole hoop in view. Front-side
+    footage should read ~100%; --behind footage (or --side back) should read 0%."""
+    from src import detect as det_mod
+    folder = Path(args.folder)
+    side = args.side
+    if side is None and (folder / "survey.csv").exists():
+        side = str(load(folder / "survey.csv")["side"][0])
+    side = side or "front"
+    # Each setting is the saturation limits tried in turn, e.g. "60,100".
+    limits = [tuple(det_mod.MARKER_WHITE_MAX_S)] + [tuple(int(x) for x in v.split(","))
+                                                    for v in args.white_max_s]
+    limits = list(dict.fromkeys(limits))
+    detector = HoopDetector(confirm=1)
+    cap = cv2.VideoCapture(str(folder / "video.mp4"))
+    counts = {v: {"near": [0, 0], "far": [0, 0]} for v in limits}
+    i = 0
+    original = det_mod.MARKER_WHITE_MAX_S
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            i += 1
+            if i % args.every:
+                continue
+            found = detector(frame)
+            u, v, major = found.obs[0], found.obs[1], found.obs[2]
+            if not found.obs[contract.VISIBLE] or not fully_in_frame(u, v, major):
+                continue
+            small = cv2.GaussianBlur(cv2.resize(frame, None, fx=detector.scale, fy=detector.scale,
+                                                interpolation=cv2.INTER_AREA), (5, 5), 0)
+            (cx, cy), (w, h), ang = found.ellipse_px
+            s_ = detector.scale
+            ellipse = ((cx * s_, cy * s_), (w * s_, h * s_), ang)
+            near = "near" if major >= Detector().near_major else "far"
+            for limit in limits:
+                det_mod.MARKER_WHITE_MAX_S = limit
+                counts[limit][near][0] += detector._marker(small, ellipse) is not None
+                counts[limit][near][1] += 1
+    finally:
+        det_mod.MARKER_WHITE_MAX_S = original
+    print(f"{folder.name}: {side} side, whole hoop in view, every {args.every} frames. Marker reported "
+          + ("(should be ~100%):" if side == "front" else "(should be 0%):"))
+    for limit in limits:
+        label = {"near": "closer than 0.8 m", "far": "0.8 m and further"}
+        cells = "   ".join(f"{label[k]}: {c[0] / c[1]:4.0%} of {c[1]}" if c[1] else f"{label[k]}: -"
+                           for k, c in counts[limit].items())
+        now = "  (now)" if limit == original else ""
+        print(f"  saturation {','.join(map(str, limit)):>7s}{now}:  {cells}")
+
+
+# The 84-number policy input before the seen-hoop flag and the 60-lag window
+# (3258eae, 16e09df), so models trained on it still fly. The old inputs all end
+# with the last OLD_ACTIONS commands, newest last.
+OLD_LAGS = (24, 20, 16, 12, 8, 4, 2, 1, 0)
+OLD_ACTIONS = 3
+
+
+def old_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
+    frames, actions = list(frames), list(actions)
+    return np.concatenate([*(frames[-1 - lag] for lag in OLD_LAGS),
+                           *actions[-OLD_ACTIONS:]]).astype(np.float32)
+
+
+# The 85-number input between them: the old window plus the seen-hoop flag
+# (3258eae), as seenflag-s1-level1 was trained on.
+def flag_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
+    return np.append(old_policy_input(frames, heights, motion, actions, unseen),
+                     1.0 if unseen else 0.0).astype(np.float32)
+
+
+# The 109-number input before the slotted history (39a323c): 12 frames back to
+# 6 s, the last 3 commands and the flag, as teacher2-level1 and lags60-scratch
+# were trained on.
+LAGS60 = (60, 50, 40, 32, 24, 16, 12, 8, 4, 2, 1, 0)
+
+
+def lags60_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
+    frames, actions = list(frames), list(actions)
+    return np.concatenate([*(frames[-1 - lag] for lag in LAGS60), *actions[-OLD_ACTIONS:],
+                           [1.0 if unseen else 0.0]]).astype(np.float32)
+
+
+SLOTS_V1_DIM = contract.SLOTS_V1_DIM
+
+
+def slots_v1_policy_input(frames, heights, motion, actions, unseen: bool) -> np.ndarray:
+    return contract.slots_v1(contract.policy_input(frames, heights, motion, actions, unseen))
+
+
+# The motion the policy gets (contract.MOTION_FIELDS), from the Tello's state packet:
+# horizontal speed from vgx, vgy (whole dm/s; only the size, as their frame flipped
+# between flights) and the heading from yaw (whole degrees) since the policy started.
+# Telemetry yaw grows clockwise and the sim's heading counter-clockwise, so the turn is
+# start_yaw - yaw: a right turn reads negative in both (sim.HoopEnv._motion_reading).
+# In a crash the packet swings wildly, but then the flight is over.
+def motion_from_state(state: dict, start_yaw: float) -> np.ndarray:
+    speed = float(np.hypot(state.get("vgx", 0), state.get("vgy", 0))) / 10
+    return contract.motion_reading(speed, np.deg2rad(start_yaw - float(state.get("yaw", start_yaw))))
+
+
+# The height the policy gets, from the Tello's downward tof in cm (contract.py).
+# It reads 6553 with no return and jumps for a single packet now and then (35 cm
+# mid-descent), so a reading outside 10-1000 cm is dropped and one more than
+# TOF_JUMP_CM from the last kept is held back until the next agrees with it.
+# Full up is 0.4 m/s, 4 cm a step, so a real change never jumps that far.
+TOF_JUMP_CM = 15
+
+
+def keep_tof(tof, kept, jumped):
+    """The tof reading to use and the one held back, after a new packet's `tof`.
+    kept is None until the first valid reading."""
+    if not 10 < tof < 1000:
+        return kept, jumped
+    if kept is None or abs(tof - kept) <= TOF_JUMP_CM or (jumped is not None and abs(tof - jumped) <= TOF_JUMP_CM):
+        return tof, None
+    return kept, tof
+
+
 def run_baseline(args) -> None:
-    """The Lapper from baseline.py on the real drone: the same policy input the
-    simulator builds, from the real detector, sent as rc at 10 Hz."""
-    session = Session("baseline", args.host, record=args.record)
+    """The Lapper from baseline.py on the real drone."""
+    fly_policy(args, "baseline", baseline.Lapper(), contract.policy_input)
+
+
+def run_policy(args) -> None:
+    """A trained SAC model or src.ppo actor on the real drone, flown exactly like the baseline."""
+    from src import actor
+    if actor.is_ppo(args.model):
+        if actor.is_privileged(args.model):
+            sys.exit(f"{args.model} reads the sim's true state: a teacher for training, it cannot fly the drone")
+        # One flight per run, so its memory starts clear as in every training episode.
+        policy = actor.load_policy(args.model)
+        if contract.for_model(policy.observation_size) is None:
+            sys.exit(f"{args.model} takes {policy.observation_size} inputs; this code builds "
+                     f"{contract.POLICY_INPUT_DIM} or {contract.SLOTS_V1_DIM}")
+        # actor.Policy drops the motion readings itself for a model saved before them.
+        fly_policy(args, "policy", policy, contract.policy_input, contract.not_yet_through)
+        return
+    from stable_baselines3 import SAC
+    model = SAC.load(args.model, device="cpu")
+    size = model.observation_space.shape[0]
+    old = len(OLD_LAGS) * contract.OBS_DIM + OLD_ACTIONS * contract.ACTION_DIM
+    lags60 = len(LAGS60) * contract.OBS_DIM + OLD_ACTIONS * contract.ACTION_DIM + 1
+    inputs = {contract.POLICY_INPUT_DIM: contract.policy_input, SLOTS_V1_DIM: slots_v1_policy_input,
+              old: old_policy_input, old + 1: flag_policy_input, lags60: lags60_policy_input}
+    if size not in inputs:
+        sys.exit(f"{args.model} takes {size} inputs; this code builds {' or '.join(map(str, inputs))}")
+    # Models on the 85-number input learned the old flag: 0 from the first sighting.
+    # 109-input models trained before 2026-10-09 learned it latched: --flag latched.
+    rule = (seen_once if size == old + 1
+            else latched_not_yet_through if args.flag == "latched" else contract.not_yet_through)
+    fly_policy(args, "policy", lambda x: model.predict(x, deterministic=True)[0], inputs[size], rule)
+
+
+def seen_once(unseen: bool, frames) -> bool:
+    """The flag seenflag-s1-level1 was trained on: 0 from the first sighting."""
+    return bool(unseen) and not frames[-1][contract.VISIBLE]
+
+
+def latched_not_yet_through(unseen: bool, frames) -> bool:
+    """The flag before 2026-10-09 (teacher2-*, firstpass-curriculum, lags60-scratch):
+    contract.not_yet_through without the re-arm, so 0 for good once dropped."""
+    before, now = frames[-2], frames[-1]
+    major, u = contract.FIELDS.index("major"), contract.FIELDS.index("u")
+    flew_at_it = (before[contract.VISIBLE] and not now[contract.VISIBLE]
+                  and before[major] >= contract.PASS_MAJOR and abs(before[u]) < contract.PASS_U)
+    return bool(unseen) and not flew_at_it
+
+
+def fly_policy(args, kind: str, policy, policy_input, flag_rule=contract.not_yet_through) -> None:
+    """The same policy input the simulator builds, from the real detector, sent
+    as rc at 10 Hz."""
+    session = Session(kind, args.host, record=args.record)
+    session.event(f"policy: {getattr(args, 'model', None) or kind}")
     watcher = Watcher(session)
-    policy = baseline.Lapper()
-    frames = collections.deque([contract.NOT_VISIBLE.copy()] * contract.FRAME_HISTORY,
-                               maxlen=contract.FRAME_HISTORY)
-    actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * contract.ACTION_HISTORY,
-                                maxlen=contract.ACTION_HISTORY)
-    unseen = [True]   # the seen-hoop flag, latched off at the first sighting
+    # Every step of the window, as sim.HoopEnv keeps them: frames[i] and heights[i]
+    # came after actions[i]. Before the first valid tof the height is the takeoff one.
+    n = contract.HISTORY_STEPS
+    frames = collections.deque([contract.NOT_VISIBLE.copy()] * n, maxlen=n)
+    heights = collections.deque([Drone().takeoff_height] * n, maxlen=n)
+    motion = collections.deque([contract.NO_MOTION.copy()] * n, maxlen=n)
+    start_yaw = []   # yaw at the first policy tick
+    actions = collections.deque([np.zeros(contract.ACTION_DIM, np.float32)] * n, maxlen=n)
+    unseen = [True]   # the policy's flag, set by flag_rule
+    tof = [None, None]  # the kept reading and the one held back (keep_tof), cm
 
     def tick() -> tuple:
         # One observation per control step, as in the simulator: the newest frame's.
         watcher.update()
         frames.append(watcher.obs.copy())
-        unseen[0] = unseen[0] and not frames[-1][contract.VISIBLE]
-        x = contract.policy_input(frames, actions, unseen[0])
+        # One packet a tick, so height and motion come from the same moment.
+        state = session.state()
+        tof[:] = keep_tof(state.get("tof", 0), *tof)
+        heights.append(Drone().takeoff_height if tof[0] is None else tof[0] / 100)
+        # The turn counts from the first packet with a yaw; a packet without one reads
+        # not turned (motion_from_state), so 0 stands in until then.
+        if not start_yaw and "yaw" in state:
+            start_yaw.append(float(state["yaw"]))
+        motion.append(motion_from_state(state, start_yaw[0] if start_yaw else 0.0))
+        unseen[0] = flag_rule(unseen[0], frames)
+        x = policy_input(frames, heights, motion, actions, unseen[0])
         action = np.clip(policy(x), -1, 1)
         actions.append(action.astype(np.float32))
         watcher.rc = tuple(int(round(a * full)) for a, full in zip(action, RC_FULL))
@@ -1161,7 +1924,7 @@ def run_baseline(args) -> None:
     try:
         start = countdown_and_takeoff(session, args.min_battery)
         if start:
-            fly(session, start + [Hold("baseline", args.seconds, tick)], args.fence_cm, args.max_height_cm)
+            fly(session, start + [Hold(kind, args.seconds, tick)], args.fence_cm, args.max_height_cm)
     finally:
         watcher.close()
         session.close()
@@ -1278,6 +2041,8 @@ def run_tilt(args) -> None:
 
 TAPE = (  # name in params.py, question, factor to the stored value (None: stored as typed)
     ("thickness", "Noodle diameter (cm)", 0.01),
+    ("outer_diameter", "Hoop width as hung, outside edge to outside edge (cm)", 0.01),
+    ("outer_height", "Hoop height as hung, outside edge to outside edge (cm)", 0.01),
     ("hanger_half_width", "Bar on top of the hoop, full length (cm)", 0.005),
     ("offset_forward", "Camera lens ahead of the drone's centre, horizontally (cm)", 0.01),
     ("marker_max_angle_deg", "Widest angle off the hoop's front at which the marker still shows (deg)", None),
@@ -1300,6 +2065,20 @@ def run_tape(args) -> None:
         else:
             half = " / 2" if name == "hanger_half_width" else ""
             set_param(name, f"{value * factor:.4g}", f"tape, {answer} cm{half}")
+    answer = input("Gap from the top of the hoop to the cage roof (cm): ").strip()
+    if answer:
+        try:
+            gap = float(answer)
+        except ValueError:
+            print(f"  '{answer}' is not a number, skipped")
+            return
+        from src.sim import HOOP_HEIGHT
+        centre = Cage().height - gap / 100 - Hoop().outer_height / 2
+        (OUT / "hoop.json").write_text(json.dumps({"gap_cm": gap, "centre_m": round(centre, 3),
+                                                   "date": f"{datetime.now():%Y-%m-%d}"}) + "\n")
+        inside = HOOP_HEIGHT[0] <= centre <= HOOP_HEIGHT[1]
+        print(f"  hoop centre {centre:.2f} m above the floor: {'inside' if inside else 'OUTSIDE'} "
+              f"sim.HOOP_HEIGHT {HOOP_HEIGHT}. Saved to {(OUT / 'hoop.json').relative_to(ROOT)}")
 
 
 # ---------------------------------------------------------------------------
@@ -1389,13 +2168,14 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def drone_args(p, flies: bool, fence_cm: float = 60):
+    def drone_args(p, flies: bool, fence_cm: float = 60, max_height_cm: float = 170):
         p.add_argument("--host", default=default_host(), help="drone IP (default from settings.json)")
         p.add_argument("--record", action="store_true", help="also save video.mp4")
         if flies:
             p.add_argument("--fence-cm", type=float, default=fence_cm,
                            help=f"land if the pad reads further than this from the drone (default {fence_cm:g})")
-            p.add_argument("--max-height-cm", type=float, default=170, help="land above this tof (default 170)")
+            p.add_argument("--max-height-cm", type=float, default=max_height_cm,
+                           help=f"land above this tof (default {max_height_cm:g})")
             p.add_argument("--min-battery", type=int, default=30, help="refuse to take off below this")
 
     p = sub.add_parser("check", help="no flight: link, battery, frame size, rates, live view")
@@ -1447,9 +2227,37 @@ def main(argv=None) -> None:
     # The hoop is at least 0.6 m from the pad and the far corner ~2.3 m, so the
     # 60 cm fence would land it on the way in. The net is the wall; this only
     # catches a drone the pad has lost track of.
-    drone_args(p, flies=True, fence_cm=200)
+    drone_args(p, flies=True, fence_cm=200, max_height_cm=190)
     p.add_argument("--seconds", type=float, default=60, help="flight time before landing (default 60)")
     p.set_defaults(fn=run_baseline)
+
+    p = sub.add_parser("policy", help="flies: a trained SAC model on the real detector")
+    # The hoop's centre hangs up to 1.73 m (sim.HOOP_HEIGHT), so 170 would land it on the way through.
+    drone_args(p, flies=True, fence_cm=200, max_height_cm=190)
+    p.add_argument("--model", required=True, help="a model.zip, e.g. trainedModels/nogamma-progress.zip")
+    p.add_argument("--flag", choices=("rearm", "latched"), default="rearm",
+                   help="not-yet-through rule the model was trained on: latched for 109-input models "
+                        "from before 2026-10-09, e.g. teacher2-level1 (default rearm)")
+    p.add_argument("--seconds", type=float, default=60, help="flight time before landing (default 60)")
+    p.set_defaults(fn=run_policy)
+
+    p = sub.add_parser("survey", help="flies, hands off: rates, then hoop edge and marker measurements")
+    # The hoop hangs near the roof and the drone parks level with it.
+    drone_args(p, flies=True, fence_cm=200, max_height_cm=185)
+    p.add_argument("--parts", nargs="+", choices=("rates-ud", "rates-yaw", "hoop"),
+                   help="only these parts (default all; --behind: hoop only)")
+    p.add_argument("--behind", action="store_true",
+                   help="the drone starts behind the hoop: the marker should never be reported")
+    p.set_defaults(fn=run_survey)
+
+    p = sub.add_parser("markercheck", help="no drone: the marker's white test re-run over a recorded video")
+    p.add_argument("folder", help="a run folder with video.mp4, e.g. runs/lab/<survey>")
+    p.add_argument("--white-max-s", nargs="+", default=["60", "100", "60,100"],
+                   help="marker saturation limits to compare with detect.MARKER_WHITE_MAX_S, each tried "
+                        "in turn: e.g. 60 100 60,100 (the default)")
+    p.add_argument("--side", choices=("front", "back"), help="default: from survey.csv")
+    p.add_argument("--every", type=int, default=3, help="use every Nth frame (default 3)")
+    p.set_defaults(fn=run_markercheck)
 
     p = sub.add_parser("summary", help="re-print the numbers from a run folder")
     p.add_argument("folder")

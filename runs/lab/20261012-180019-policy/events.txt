@@ -1,0 +1,15 @@
+   0.000  connecting to 192.168.10.1
+   0.728  connected, battery 81%, temperature 52 C
+   0.932  mission pads on, downward
+   3.145  video reader open
+   3.145  policy: trainedModels/teacher3-12s-height.zip
+   3.147  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   3.304  phase: countdown
+   8.160  phase: takeoff
+  12.496  phase: airborne check
+  13.509  phase: settle
+  16.517  phase: policy
+  19.360  ! too high: tof 217 cm, landing
+  19.360  phase: land
+  19.676  ! land: Command 'land' was unsuccessful for 4 tries. Latest response:	'error'
+  19.982  ! land on exit failed: Command 'land' was unsuccessful for 4 tries. Latest response:	'error'

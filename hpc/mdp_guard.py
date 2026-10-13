@@ -9,10 +9,12 @@ autopilot Claude following its instructions.
 
 Allowed to differ:
     numeric constants named R_* (edit, add or remove) and GAMMA,
-    the body of reward(), whose signature stays fixed,
-    OBS_LAGS, which frames of the history the policy sees (see _check_lags).
+    the body of reward(), whose signature stays fixed.
 Everything else in contract.py must parse to the same AST: the observation
-code the real detector shares, CRASHES, LAPS_MAX_STEPS, imports, and so on.
+code the real detector shares, the policy's history layout (SLOT_STEPS and
+what follows from it), CRASHES, LAPS_MAX_STEPS, imports, and so on. The layout
+used to be tunable (OBS_LAGS), but labcheck.py, baseline.py and the teacher all
+read the slots, and a retrained model has to fly on the drone, so it is frozen.
 Comments and blank lines are free, since the AST ignores them.
 
 reward() is sandboxed by a whitelist, not a blacklist: it may read its own
@@ -27,13 +29,7 @@ import math
 import re
 import sys
 
-TUNABLE = re.compile(r"^(R_[A-Z0-9_]+|GAMMA|OBS_LAGS)$")
-# OBS_LAGS: frames back in time, oldest first, newest (0) last. baseline.Lapper
-# reads lags 0, 1, 2, 4 and 8, so those stay. The frame deque and the policy
-# input grow with the largest lag and the count, so both are capped.
-LAGS_REQUIRED = {0, 1, 2, 4, 8}
-LAGS_MAX = 100        # 10 s at 10 Hz
-LAGS_COUNT_MAX = 16
+TUNABLE = re.compile(r"^(R_[A-Z0-9_]+|GAMMA)$")
 FUNCTION = "reward"
 READABLE_CONSTANTS = re.compile(r"^(R_[A-Z0-9_]+|GAMMA|CRASHES)$")
 BUILTINS = {"abs", "min", "max", "float", "int", "bool"}
@@ -74,29 +70,6 @@ def _number(node) -> float | None:
             and not isinstance(node.value, bool)):
         return float(node.value)
     return None
-
-
-def _check_lags(node) -> list[str]:
-    """OBS_LAGS must be a tuple literal of ints, strictly decreasing, ending in 0."""
-    if not isinstance(node, ast.Tuple):
-        return ["OBS_LAGS must be a tuple literal of ints"]
-    lags = []
-    for element in node.elts:
-        if not (isinstance(element, ast.Constant) and type(element.value) is int):
-            return ["OBS_LAGS must be a tuple literal of ints"]
-        lags.append(element.value)
-    errors = []
-    if not lags or lags[-1] != 0 or any(a <= b for a, b in zip(lags, lags[1:])):
-        errors.append("OBS_LAGS must be strictly decreasing (oldest first) and end in 0 (now)")
-    if lags and max(lags) > LAGS_MAX:
-        errors.append(f"OBS_LAGS may reach back at most {LAGS_MAX} steps")
-    if len(lags) > LAGS_COUNT_MAX:
-        errors.append(f"OBS_LAGS may hold at most {LAGS_COUNT_MAX} frames")
-    missing = LAGS_REQUIRED - set(lags)
-    if missing:
-        errors.append(f"OBS_LAGS must keep lags {sorted(LAGS_REQUIRED)}, which baseline.py reads; "
-                      f"missing {sorted(missing)}")
-    return errors
 
 
 def _check_function(new: ast.FunctionDef, old: ast.FunctionDef) -> list[str]:
@@ -143,16 +116,11 @@ def check(original: str, new: str) -> list[str]:
         errors.append("contract.py changed outside the MDP surface (only R_* constants, GAMMA "
                       "and the body of reward() may change): " + _first_difference(old_frozen, new_frozen))
     for name, node in constants.items():
-        if name == "OBS_LAGS":
-            errors += _check_lags(node.value)
-            continue
         value = _number(node.value)
         if value is None or not math.isfinite(value):
             errors.append(f"{name} must be a finite number literal")
         elif name == "GAMMA" and not 0.0 < value < 1.0:
             errors.append("GAMMA must be between 0 and 1")
-    if "OBS_LAGS" not in constants:
-        errors.append("OBS_LAGS must stay defined")
     if "GAMMA" not in constants:
         errors.append("GAMMA must stay defined")
     if new_function is None:

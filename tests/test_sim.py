@@ -5,13 +5,14 @@ import pytest
 from gymnasium.utils.env_checker import check_env
 
 from src import contract
-from src.params import Cage, Camera, Drone, Hoop, Randomise
+from src.params import Cage, Camera, Detector, Drone, Hoop, Randomise
 from src.contract import GAMMA, LAPS_MAX_STEPS, R_CRASH, R_PASS
 from src.sim import HOOP_FROM_CENTRE, SIDE_GAP, HoopEnv
 
 # A roomy cage and an exact hoop, so the geometry tests are not about the real layout.
 BIG = Cage(length=10.0, width=10.0, height=4.0)
-EXACT = Hoop(diameter_tolerance=0.0, marker_max_angle_deg=70.0)  # tests pin these, not the measured hoop
+EXACT = Hoop(outer_diameter=0.45, outer_height=0.45, diameter_tolerance=0.0, stretch_tolerance=0.0,
+             marker_max_angle_deg=70.0)  # a round hoop: tests pin these, not the measured one
 IDEAL = Drone(tau=0.3, delay_steps=0)  # scripted paths assume no lag, not the measured drone
 U, V, MAJOR, RATIO, SIN, COS, VISIBLE, MARKER = range(8)
 
@@ -42,18 +43,18 @@ def fly(env, action, max_steps=200):
 
 
 def first_event(env, action, max_steps=200):
-    """The first outcome that is not "running": a pass, or how the episode ended."""
+    """The first outcome that is not "running" (or "found"): a pass, or how the episode ended."""
     for _ in range(max_steps):
         info = env.step(action)[4]
-        if info["outcome"] != "running":
+        if info["outcome"] not in ("running", "found"):
             return info["outcome"]
     return "running"
 
 
 def newest(policy_input):
     """The latest camera frame in a policy input: what contract.reward was given."""
-    n = contract.OBS_STACK * contract.OBS_DIM
-    return policy_input[n - contract.OBS_DIM:n]
+    frames, _heights, _actions, _unseen = contract.split_input(policy_input)
+    return frames[-1]   # the newest slot is one step
 
 
 # --- observation geometry ---------------------------------------------------
@@ -116,6 +117,16 @@ def test_yaw_clockwise_decreases_heading():
     assert env.heading < -0.05
 
 
+def test_a_clockwise_turn_reads_negative():
+    """The motion reading's turn is counter-clockwise, as the heading is: yaw_cw > 0
+    lowers sin_turned. labcheck.motion_from_state reads the Tello the same way."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, [8.0, 5.0, 1.5], [1.0, 0.0, 0.0])
+    for _ in range(10):
+        x, *_ = env.step([0.0, 0.0, 0.0, 1.0])
+    assert contract.split_motion(x)[-1][1] < -0.1
+
+
 def test_command_delay():
     env = make_env(drone=Drone(delay_steps=2))
     env.place([5.0, 5.0, 1.5], 0.0, [8.0, 5.0, 1.5], [1.0, 0.0, 0.0])
@@ -164,12 +175,16 @@ def test_squashed_hoop_is_scored_as_seen(lateral, vertical, expected):
 
 
 def test_touching_the_net_ends_the_episode():
+    """The outcome names the face it met: the four walls are "side", the
+    ceiling is "roof", so the logs say whether a run died climbing or beside
+    the hoop."""
     env = make_env()
-    for action, axis, expected in [([0.0, 1.0, 0.0, 0.0], 0, BIG.length - IDEAL.length / 2),
-                                   ([0.0, -1.0, 0.0, 0.0], 0, IDEAL.length / 2),
-                                   ([1.0, 0.0, 0.0, 0.0], 1, IDEAL.width / 2),
-                                   ([-1.0, 0.0, 0.0, 0.0], 1, BIG.width - IDEAL.width / 2),
-                                   ([0.0, 0.0, 1.0, 0.0], 2, BIG.height - IDEAL.height / 2)]:
+    for action, axis, expected, face in [
+            ([0.0, 1.0, 0.0, 0.0], 0, BIG.length - IDEAL.length / 2, "side"),
+            ([0.0, -1.0, 0.0, 0.0], 0, IDEAL.length / 2, "side"),
+            ([1.0, 0.0, 0.0, 0.0], 1, IDEAL.width / 2, "side"),
+            ([-1.0, 0.0, 0.0, 0.0], 1, BIG.width - IDEAL.width / 2, "side"),
+            ([0.0, 0.0, 1.0, 0.0], 2, BIG.height - IDEAL.height / 2, "roof")]:
         # The hoop sits out of the way, so only the net can stop the drone.
         env.place([5.0, 5.0, 1.5], 0.0, [5.0, 9.0, 3.5], [0.0, 1.0, 0.0])
         for _ in range(300):
@@ -177,10 +192,10 @@ def test_touching_the_net_ends_the_episode():
             policy_input, reward, terminated, _, info = env.step(action)
             if terminated:
                 break
-        assert info["outcome"] == "net" and info["wall_steps"] == 1
+        assert info["outcome"] == face and info["wall_steps"] == 1
         # Scored as a crash and a wall touch, whatever the reward makes of them.
         args = before, env._to_go(env.pos), True, newest(policy_input), np.float32(action)
-        assert reward == pytest.approx(contract.reward("net", *args))
+        assert reward == pytest.approx(contract.reward(face, *args))
         assert reward < contract.reward("running", *args)
         # The drone's box is at the net, not its centre.
         assert env.pos[axis] == pytest.approx(expected)
@@ -246,6 +261,37 @@ def test_lap_pass_scores_and_keeps_flying():
     assert not terminated and not truncated and info["passes"] == 1
 
 
+def test_a_centred_pass_pays_more():
+    """Every pass scores, but the further off the centre it crossed, the less it pays:
+    the real drone touched the rim on passes the sim scored in full."""
+    rewards, centred = [], []
+    for lateral in (0.0, 0.035, 0.065):   # contact from 0.075 m sideways
+        env = make_env()
+        env.place([5.0, 5.0 + lateral, 1.5], 0.0, HOOP_AT, BACK)
+        for _ in range(100):
+            _, reward, _, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+            if info["outcome"] == "passed":
+                break
+        assert info["outcome"] == "passed"
+        rewards.append(reward)
+        centred.append(info["centred"])
+    assert centred[0] == pytest.approx(1.0, abs=0.02) and centred[1] == pytest.approx(0.5, abs=0.1)
+    assert centred[2] < 0.2
+    assert rewards[0] > rewards[1] > rewards[2]
+    assert rewards[0] - rewards[2] > 0.75 * contract.R_CENTRE
+
+
+def test_centred_counts_height_and_crabbing_too():
+    """High in the ring, the rim curves in beside the box; turned, the box is wider."""
+    env = make_env(hoop=dataclasses.replace(EXACT, outer_height=0.50))
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    assert env._centred(np.zeros(3)) == pytest.approx(1.0)
+    assert env._centred(np.array([0.0, 0.0, 0.10])) < 0.7
+    env.heading = np.deg2rad(30)
+    assert env._centred(np.zeros(3)) < 0.9
+    assert env.step([0.0, 0.0, 0.0, 0.0])[4]["centred"] is None   # only a pass has one
+
+
 def test_a_crash_costs_less_than_a_pass_pays():
     """Otherwise the safest policy is to hover out of reach and never try."""
     assert R_CRASH < R_PASS
@@ -290,6 +336,7 @@ def test_holding_still_never_pays():
     cage = env.cage
     for seed in range(100):
         env.reset(seed=seed)
+        env._found = True   # R_FOUND is paid once, not per step: this is about the per-step cost
         spots = rng.uniform([0.1, 0.1, cage.min_altitude], [cage.length - 0.1, cage.width - 0.1,
                                                             cage.height - 0.1], (300, 3))
         front = [p for p in spots if (p - env.hoop_centre) @ env.hoop_normal < 0.0]
@@ -356,6 +403,31 @@ def test_hanger_blocks_going_over_the_top(y, z, expected):
         if terminated or info["route"]:
             break
     assert (info["outcome"] if terminated else info["route"]) == expected
+
+
+def test_lined_up_means_a_straight_run_clears_the_rim():
+    """In front, the route goes straight at the centre only from where flying on along
+    the axis would clear the noodle. Inside the hole but nearer the rim than the
+    drone's half-width, it goes via the approach point, so edging in towards the rim
+    earns nothing."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    centre = np.array(HOOP_AT)
+    for lateral, lined_up in [(0.03, True), (0.06, True), (0.12, False)]:   # hole edge 0.16
+        pos = centre + [-0.3, lateral, 0.0]
+        straight = np.linalg.norm(pos - centre)
+        assert (env._to_go(pos) == pytest.approx(straight)) == lined_up
+
+
+def test_drifting_off_centre_near_the_plane_costs_a_little_at_a_time():
+    """Between lined up and the hole's edge the distance to go blends, so a centimetre
+    of drift just in front of the ring never costs the whole detour at once."""
+    env = make_env()
+    env.place([5.0, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    centre = np.array(HOOP_AT)
+    to_go = [env._to_go(centre + [-0.05, lateral, 0.0]) for lateral in np.arange(0.0, 0.2, 0.005)]
+    detour = max(to_go) - min(to_go)
+    assert np.max(np.diff(to_go)) < detour / 4
 
 
 def _downhill(env, pos, e=1e-4):
@@ -430,12 +502,18 @@ def test_pad_layouts_fit_the_real_cage():
 
 
 def test_level_zero_starts_with_hoop_and_marker_in_view():
-    env = HoopEnv(level=0.0, camera=Camera())
+    # Every start is blind, as on the drone; the detector reports the hoop from step 2.
+    env = HoopEnv(level=0.0, camera=Camera(), detector=Detector(marker_miss=0.0, marker_miss_near=0.0))
     seen = []
     for seed in range(200):
-        obs, _ = env.reset(seed=seed)
-        seen.append(obs[(contract.OBS_STACK - 1) * contract.OBS_DIM + MARKER])
-    assert np.mean(seen) > 0.95
+        x, _ = env.reset(seed=seed)
+        assert not newest(x)[VISIBLE] and x[-1] == 1.0
+        for _ in range(Detector().confirm_frames):
+            x = env.step([0.0, 0.0, 0.0, 0.0])[0]
+        seen.append(newest(x)[MARKER])
+    # Level with the hoop ~1 m out, the camera's 12.8 deg tilt crops a tall hoop's top:
+    # 97% seen for the old 0.45 x 0.46 hoop, 88% with the measured stretch (params.Hoop).
+    assert np.mean(seen) > 0.85
 
 
 def test_randomised_dynamics_stay_in_range_and_fixed_per_episode():
@@ -477,6 +555,27 @@ def test_hanger_bar_is_drawn_per_episode():
         widths.append(env.hanger_half_width)
     assert low <= min(widths) and max(widths) <= high and len(set(widths)) == 30
 
+
+def test_hoop_is_drawn_taller_than_wide_by_a_varying_amount():
+    """The real noodle sags: 1.06-1.13 times taller than wide in the 2026-10-12 videos.
+    Each episode draws a width and a stretch, from about round to more than seen."""
+    hoop = Hoop()
+    env = HoopEnv(camera=Camera())
+    half_t = hoop.thickness / 2
+    widths, stretch = [], []
+    for seed in range(300):
+        env.reset(seed=seed)
+        w, h = 2 * (env._line_h + half_t), 2 * (env._line_v + half_t)
+        widths.append(w)
+        stretch.append(h / w)
+    nominal = hoop.outer_height / hoop.outer_diameter
+    assert abs(min(widths) - hoop.outer_diameter) <= hoop.diameter_tolerance + 1e-9
+    assert abs(max(widths) - hoop.outer_diameter) <= hoop.diameter_tolerance + 1e-9
+    assert nominal * (1 - hoop.stretch_tolerance) - 1e-9 <= min(stretch) < 1.0
+    assert 1.18 < max(stretch) <= nominal * (1 + hoop.stretch_tolerance) + 1e-9
+    assert np.mean(stretch) == pytest.approx(nominal, abs=0.02)
+
+
 def test_gymnasium_api():
     check_env(HoopEnv(randomise=True, camera=Camera()), skip_render_check=True)
 
@@ -488,16 +587,109 @@ def test_hanger_can_be_left_out():
     assert [r for r in routes if r] == ["over"]
 
 
-def test_seen_hoop_flag_reads_1_until_the_first_sighting_then_0_for_good():
-    """The policy input's last number: blind at takeoff must not look like blind mid-lap."""
+def test_flag_stays_1_when_the_hoop_is_only_seen_or_lost_off_the_side():
+    """The policy input's last number: takeoff (and losing the hoop before any pass)
+    must not look like blind mid-lap, just after a pass."""
     env = make_env()
     x = env.place([5.0, 5.0, 1.5], np.pi, HOOP_AT, BACK)   # facing away from the hoop
     assert x[-1] == 1.0 and not newest(x)[VISIBLE]
     seen = []
-    for _ in range(200):   # turn on the spot: the hoop comes into view, then leaves it
+    for _ in range(200):   # turn on the spot: the hoop comes into view, then leaves off the side
         x = env.step([0.0, 0.0, 0.0, 1.0])[0]
         seen.append(bool(newest(x)[VISIBLE]))
-        if seen[-1]:
-            assert x[-1] == 0.0
+        assert x[-1] == 1.0
     assert any(seen) and not seen[-1]
-    assert x[-1] == 0.0
+
+
+def test_flag_drops_once_the_drone_flies_through():
+    env = make_env()
+    x = env.place([4.8, 5.0, 1.5], 0.0, HOOP_AT, BACK)     # 1.2 m in front, facing it
+    flags = []
+    for _ in range(60):
+        x, _, _, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+        flags.append(x[-1])
+        if info["passes"]:
+            break
+    assert info["passes"] == 1
+    assert flags[0] == 1.0 and flags[-1] == 0.0   # dropped as the hoop left the frame, by the pass
+    for _ in range(30):   # hover behind it
+        x = env.step([0.0, 0.0, 0.0, 0.0])[0]
+        assert x[-1] == 0.0                        # until the front is seen again
+    for _ in range(80):   # turn round behind it: the back comes into view, which must not re-arm it
+        x = env.step([0.0, 0.0, 0.0, 1.0])[0]
+        assert x[-1] == 0.0
+
+
+def _frame(major=0.0, u=0.0, marker=False):
+    f = contract.NOT_VISIBLE.copy()
+    if major:
+        f[[U, MAJOR, VISIBLE, MARKER]] = u, major, 1.0, float(marker)
+    return f
+
+
+@pytest.mark.parametrize("before, now, unseen, expected", [
+    (_frame(0.8, 0.1, True), _frame(), True, False),         # left the frame big and centred: flew at it
+    (_frame(0.8, 0.7, True), _frame(), True, True),          # off the side: not at it
+    (_frame(0.4, 0.0, True), _frame(), True, True),          # still far: not at it
+    (_frame(), _frame(0.5, 0.0, marker=True), False, True),  # the front again: re-armed
+    (_frame(), _frame(0.5, 0.0), False, False),              # the back (no marker): stays 0
+    (_frame(), _frame(), False, False),                      # blind: stays 0
+])
+def test_flag_rule(before, now, unseen, expected):
+    assert contract.not_yet_through(unseen, [before, now]) is expected
+
+
+def test_flag_rearms_when_the_front_is_back_in_view():
+    """Circling close in drops the flag with no pass (2026-10-09 flights); seeing
+    the front again must bring it back, or the policy flies the turn-back from in front."""
+    env = make_env()
+    x = env.place([4.8, 5.0, 1.5], 0.0, HOOP_AT, BACK)
+    for _ in range(60):   # fly at it until the flag drops, before reaching the plane
+        x, _, _, _, info = env.step([0.0, 1.0, 0.0, 0.0])
+        if x[-1] == 0.0:
+            break
+    assert x[-1] == 0.0 and info["passes"] == 0
+    for _ in range(40):   # back off until the front is reported again
+        x = env.step([0.0, -1.0, 0.0, 0.0])[0]
+        if newest(x)[MARKER]:
+            break
+    assert newest(x)[MARKER] and x[-1] == 1.0
+
+
+def test_finding_the_front_pays_once():
+    env = make_env()
+    env.place([4.8, 5.0, 1.5], 0.0, HOOP_AT, BACK)        # in front, facing it
+    outcomes = [env.step([0.0, 0.0, 0.0, 0.0])[4]["outcome"] for _ in range(10)]
+    for _ in range(200):                                    # spin: lose it and find it again
+        outcomes.append(env.step([0.0, 0.0, 0.0, 1.0])[4]["outcome"])
+    assert outcomes.count("found") == 1 and outcomes[:10].count("found") == 1
+
+
+def test_the_back_is_not_found():
+    env = make_env()
+    env.place([7.2, 5.0, 1.5], np.pi, HOOP_AT, BACK)      # behind, facing it
+    infos = [env.step([0.0, 0.0, 0.0, 0.0])[4] for _ in range(20)]
+    assert all(i["outcome"] != "found" for i in infos)
+
+
+def test_run_in_starts_are_lined_up_and_found_already():
+    env = HoopEnv(randomise=True, run_in_share=1.0)
+    for seed in range(50):
+        env.reset(seed=seed)
+        rel = env.pos - env.hoop_centre
+        assert env.run_in and env._in_fence(env.pos[:2])
+        assert -1.0 - 1e-9 <= rel @ env.hoop_normal <= -0.4 and abs(rel @ env._axis_h) <= 0.05 + 1e-9
+        infos, frames = [], []
+        for _ in range(3):
+            x, _, _, _, info = env.step([0.0, 0.0, 0.0, 0.0])
+            infos.append(info)
+            frames.append(newest(x))
+        assert abs(frames[-1][U]) < 0.3                               # centred when in view
+        assert all(i["outcome"] != "found" for i in infos) and all(i["run_in"] for i in infos)
+
+
+def test_run_in_share_0_leaves_the_layouts_alone():
+    a, b = HoopEnv(randomise=True), HoopEnv(randomise=True, run_in_share=0.0)
+    for seed in range(20):
+        a.reset(seed=seed), b.reset(seed=seed)
+        assert np.array_equal(a.pos, b.pos) and not b.run_in

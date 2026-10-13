@@ -16,7 +16,7 @@ from typing import Callable
 
 import numpy as np
 
-from src import baseline
+from src import baseline, contract
 from src.params import Drone
 from src.contract import CRASHES
 from src.sim import HoopEnv
@@ -28,14 +28,16 @@ DEFAULT_EPISODES = 200
 Policy = Callable[[np.ndarray], np.ndarray]
 
 
-def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None) -> list[dict]:
+def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None, seed: int = EVAL_SEED) -> list[dict]:
     """One dict per episode: how it ended, passes, steps, and the step of the first pass."""
     env = env or HoopEnv()
     results = []
     for i in range(episodes):
-        obs, _ = env.reset(seed=EVAL_SEED + i)
+        obs, _ = env.reset(seed=seed + i)
         if hasattr(policy, "reset"):
             policy.reset()
+        if hasattr(policy, "bind"):   # a privileged teacher reads the sim's true state
+            policy.bind(env)
         first_pass, done = None, False
         while not done:
             obs, _, terminated, truncated, info = env.step(policy(obs))
@@ -49,9 +51,18 @@ def run_episodes(policy: Policy, episodes: int, env: HoopEnv | None = None) -> l
 
 
 def load_policy(model_path: str) -> Policy:
+    """A saved SAC model, or a src.ppo actor (which keeps a memory: it has reset())."""
+    from src import actor
+    if actor.is_ppo(model_path):
+        return actor.load_policy(model_path)
     from stable_baselines3 import SAC
     model = SAC.load(model_path, device="cpu")
-    return lambda obs: model.predict(obs, deterministic=True)[0]
+    size = model.observation_space.shape[0]
+    adapt = contract.for_model(size)
+    if adapt is None:
+        raise ValueError(f"{model_path} takes {size} inputs; the sim gives {contract.POLICY_INPUT_DIM} "
+                         f"(or {contract.SLOTS_V1_DIM} without the motion readings)")
+    return lambda obs: model.predict(adapt(obs), deterministic=True)[0]
 
 
 def report(results: list[dict], dt: float = Drone().dt) -> str:
@@ -79,7 +90,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--baseline", action="store_true")
-    group.add_argument("--model", help="path to a saved SAC model.zip")
+    group.add_argument("--model", help="path to a saved model.zip, SAC or PPO")
     parser.add_argument("--episodes", type=int)
     parser.add_argument("--level", type=float, default=1.0, help="curriculum level, 0-1")
     parser.add_argument("--randomise", action="store_true", help="draw dynamics per episode")

@@ -1,0 +1,10 @@
+   0.000  connecting to 192.168.10.1
+   0.478  connected, battery 84%, temperature 63 C
+   0.641  mission pads on, downward
+   2.859  video reader open
+   2.859  policy: trainedModels/teacher3-12s-height.zip
+   2.860  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   3.005  phase: countdown
+   7.881  phase: takeoff
+   7.898  phase: airborne check
+  11.936  ! airborne check: not airborne after takeoff (h 0 cm, tof 10 cm). It probably tipped and cut its motors: check props and guards, power-cycle

@@ -71,6 +71,15 @@ print(max(scores, key=lambda s: (scores[s]["ready"],
                                  scores[s].get("passes_per_ep", scores[s].get("passes_per_min", 0)))))
 PY
 )
+# A privileged teacher is judged at its worst: the seed whose worst corner is best
+# (src/teacher_check.py), its gates printed into the job log.
+for arg in ${EXTRA[@]+"${EXTRA[@]}"}; do
+    if [ "$arg" = --privileged-actor ]; then
+        picked=$(.venv/bin/python -m src.teacher_check --pick "$NAME" "$SEEDS" --flights 100) || picked=""
+        [ -n "$picked" ] && best=$picked
+        break
+    fi
+done
 echo "best seed $best: keeping runs/${NAME}_s${best}/model.zip, deleting the rest"
 mkdir -p trainedModels
 cp "runs/${NAME}_s${best}/model.zip" "trainedModels/${NAME}.zip"

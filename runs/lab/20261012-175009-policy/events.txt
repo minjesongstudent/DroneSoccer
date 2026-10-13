@@ -1,0 +1,13 @@
+   0.000  connecting to 192.168.10.1
+   0.105  connected, battery 70%, temperature 80 C
+   0.310  mission pads on, downward
+   2.535  video reader open
+   2.536  policy: trainedModels/ppo-dagger.zip
+   2.584  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   2.714  phase: countdown
+   7.606  phase: takeoff
+  13.409  phase: airborne check
+  14.430  phase: settle
+  17.443  phase: policy
+  58.390  ! too high: tof 193 cm, landing
+  58.390  phase: land

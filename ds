@@ -53,9 +53,16 @@ walltime_min() {
 # One row per running job: id, name, state, elapsed.
 job_rows() {
   command -v qstat >/dev/null 2>&1 || return 1
-  # -w stops the id and name being truncated with a trailing *, which qstat -f
-  # rejects as an illegally formed job identifier.
-  qstat -u "$USER" -w 2>/dev/null | grep -E '^[0-9]+\.' | awk '{print $1, $4, $10, $11}'
+  local id name state elapsed full
+  # -w stops the id being truncated with a trailing *, which qstat -f rejects as
+  # an illegally formed job identifier. It still cuts names past 15 characters
+  # (hoop-teacher2-share25 and hoop-teacher2-level1 both read hoop-teacher2-*),
+  # so take the name from qstat -f.
+  qstat -u "$USER" -w 2>/dev/null | grep -E '^[0-9]+\.' | awk '{print $1, $4, $10, $11}' |
+    while read -r id name state elapsed; do
+      full=$(qstat -f "$id" 2>/dev/null | sed -n 's/^ *Job_Name = //p')
+      echo "$id ${full:-$name} $state $elapsed"
+    done
 }
 
 # Highest eta across the last progress line of every seed log, in minutes.
@@ -96,22 +103,91 @@ cmd_run() {  # local or interactive training
 # 8 cores in all, since medq nodes rarely have 16 free and a 16-core job waits.
 # It answers one question, whether the reward works, before a full run pays for it.
 # Judge it on two numbers only: `wall` under 20%, and `level` above 0.
+# PPO already steps 16 simulators on each seed's core, and train.py refuses --envs with it.
 cmd_screen() {
-  local name=${1:?usage: ds screen <name> [train options]}
+  local name=${1:?usage: ds screen <name> [train options]} prev="" envs=(--envs 4)
   shift
-  cmd_submit 2 800000 "$name" --envs 4 "$@"
+  for arg in "$@"; do
+    { [ "$prev" = --algo ] && [ "$arg" = ppo ]; } || [ "$arg" = --algo=ppo ] && envs=()
+    prev="$arg"
+  done
+  cmd_submit 2 800000 "$name" ${envs[@]+"${envs[@]}"} "$@"
+}
+
+# The policy input's length, which sets how fast a seed trains and how much memory
+# its replay buffer takes. 109 if the venv cannot say.
+input_dim() {
+  have_venv && "$PY" -c 'from src import contract; print(contract.POLICY_INPUT_DIM)' 2>/dev/null || echo 109
+}
+
+# Steps a second for one seed on one environment: 86 measured with the 109-input
+# layout, ~47 with the 430-input slotted history (measured mid-run on a 6-seed job).
+# src.ppo (--algo ppo) steps 16 simulators on its one core and takes no gradient step
+# per env step: ~900 a second measured on the login node, ~600 while its BC term is on,
+# ~450 in DAgger. 450 covers all three, and a node shared with other jobs.
+steps_per_s() {
+  if [ "${1:-sac}" = ppo ]; then echo 450; return; fi
+  [ "$(input_dim)" -gt 200 ] && echo 47 || echo 86
+}
+
+# The algorithm in runs/<name>.args: sac unless it says --algo ppo.
+algo_for() {
+  local args="runs/$1.args" algo=sac prev=""
+  if [ -f "$args" ]; then
+    while IFS= read -r arg; do
+      [ "$prev" = --algo ] && algo="$arg"
+      case "$arg" in --algo=*) algo="${arg#*=}" ;; esac
+      prev="$arg"
+    done < "$args"
+  fi
+  printf '%s' "$algo"
+}
+
+# Memory for the job, in GB. Each seed's 1M-step replay buffer holds two float32
+# copies of the input a step (3.4 GB at 430 inputs, 0.9 GB at 109), plus the demo
+# buffer and the process; 16 GB is the floor every job has had.
+mem_for() {
+  local seeds=$1 gb
+  if [ "${2:-sac}" = ppo ]; then
+    # PPO keeps no replay buffer: DAgger's labels (~0.5 GB float16) and the process.
+    gb=$(( seeds * 2 ))
+  else
+    gb=$(( (seeds * ($(input_dim) * 11 + 600) + 999) / 1000 ))
+  fi
+  [ "$gb" -lt 16 ] && gb=16
+  echo "${gb}GB"
 }
 
 # Wall minutes one seed needs, plus a quarter. Seeds run in parallel on their
-# own cores, so the count does not change the wall time. 86 steps/s is measured
+# own cores, so the count does not change the wall time. steps_per_s is measured
 # on one environment. Parallel environments speed a seed up, and the second
 # argument counts them. Half-linear, because the gradient steps do not shrink.
 walltime_for() {
-  local steps=$1 envs=${2:-1} mins
-  mins=$(( steps * 125 / (86 * 60 * 100) ))
+  local steps=$1 envs=${2:-1} algo=${3:-sac} mins
+  mins=$(( steps * 125 / ($(steps_per_s "$algo") * 60 * 100) ))
   [ "$envs" -gt 1 ] && mins=$(( mins * 2 / envs ))
   [ "$mins" -lt 30 ] && mins=30
   printf '%02d:%02d:00' $(( mins / 60 )) $(( mins % 60 ))
+}
+
+# Minutes run_seeds.sh spends after training checking a --privileged-actor run's seeds
+# (src.teacher_check --pick): per seed, 8 corners of 100 one-minute flights, ~1.2 min a
+# corner on one core (measured on the login node), 3 allowed here for a slower node, on
+# as many cores as the job has, up to the 8 corners. 0 for any other run.
+check_min() {
+  local name=$1 seeds=$2 cpus
+  grep -qx -- --privileged-actor "runs/${name}.args" 2>/dev/null || { echo 0; return; }
+  cpus=$(( seeds * $(envs_for "$name") ))
+  [ "$cpus" -gt 8 ] && cpus=8
+  echo $(( seeds * ((8 + cpus - 1) / cpus) * 3 ))
+}
+
+# A walltime with extra minutes on top.
+add_min() {
+  local h m
+  IFS=: read -r h m _ <<<"$1"
+  m=$(( 10#$h * 60 + 10#$m + $2 ))
+  printf '%02d:%02d:00' $(( m / 60 )) $(( m % 60 ))
 }
 
 cmd_submit() {
@@ -127,7 +203,8 @@ cmd_submit() {
   mkdir -p runs && printf '%s\n' "$name" > "$LAST"
   # Always rewrite, so a reused name never inherits an older run's options.
   if [ $# -gt 0 ]; then printf '%s\n' "$@"; fi > "runs/${name}.args"
-  queue "$name" "$seeds" "$steps" "$(walltime_for "$steps" "$(envs_for "$name")")"
+  queue "$name" "$seeds" "$steps" "$(add_min "$(walltime_for "$steps" "$(envs_for "$name")" "$(algo_for "$name")")" \
+                                             "$(check_min "$name" "$seeds")")"
 }
 
 # Cores one seed needs: one per --envs in runs/<name>.args, else one.
@@ -145,16 +222,24 @@ envs_for() {
 
 # qsub the job for a run whose options are already in runs/<name>.args.
 queue() {
-  local name=$1 seeds=$2 steps=$3 wall=$4 cpus
+  local name=$1 seeds=$2 steps=$3 wall=$4 cpus mem
   cpus=$(( seeds * $(envs_for "$name") ))
+  mem=$(mem_for "$seeds" "$(algo_for "$name")")
   # -l and -N on the command line beat the #PBS lines in the job file, so the
   # walltime always matches the step count. ncpus must cover every seed's envs.
-  qsub -N "hoop-$name" \
-       -l "ncpus=${cpus},mem=16GB,walltime=${wall}" \
+  # DS_AFTER=<job id> holds this job until that one ends well, e.g. a student run
+  # waiting for the --privileged-actor run whose model it names in --teacher.
+  local after=()
+  # DS_AFTER_ANY=<job id> holds it until that one ends however it ends.
+  [ -n "${DS_AFTER:-}" ] && after=(-W "depend=afterok:${DS_AFTER}")
+  [ -n "${DS_AFTER_ANY:-}" ] && after=(-W "depend=afterany:${DS_AFTER_ANY}")
+  # The +"..." form expands an empty array safely under set -u on old bash.
+  qsub -N "hoop-$name" ${after[@]+"${after[@]}"} \
+       -l "ncpus=${cpus},mem=${mem},walltime=${wall}" \
        -v "DS_NAME=${name},DS_SEEDS=${seeds},DS_STEPS=${steps}" \
        "$JOB"
-  printf '%s%s seeds, %s steps, %s cores, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
-    "$D" "$seeds" "$steps" "$cpus" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
+  printf '%s%s seeds, %s steps, %s cores, %s, walltime %s, options [%s], logs runs/%s_s*.log%s\n' \
+    "$D" "$seeds" "$steps" "$cpus" "$mem" "$wall" "$(paste -sd' ' "runs/${name}.args")" "$name" "$N"
 }
 
 # Resubmit a run that was cut off. Each seed carries on from its last snapshot
@@ -177,7 +262,8 @@ cmd_resume() {
   grep -qx -- --resume "runs/${name}.args" || echo --resume >> "runs/${name}.args"
   printf '%s\n' "$name" > "$LAST"
   printf '%sresuming from step %s of %s%s\n' "$D" "$least" "$total" "$N"
-  queue "$name" "$seeds" "$total" "$(walltime_for $(( total - least )) "$(envs_for "$name")")"
+  queue "$name" "$seeds" "$total" "$(add_min "$(walltime_for $(( total - least )) "$(envs_for "$name")" "$(algo_for "$name")")" \
+                                             "$(check_min "$name" "$seeds")")"
 }
 
 cmd_progress() {
