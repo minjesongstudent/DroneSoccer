@@ -1,0 +1,12 @@
+Summary of 20261016-172800-policy
+  rc loop       10.0 Hz mean, interval p95 112 ms, worst 134 ms   (target 10 Hz)
+  telemetry      9.8 Hz (median), worst gap 150 ms
+  video        960x720, 30.4 fps (median), worst gap 123 ms
+  detector     105 frames, 37 ms median, p95 47 ms
+  detected      26.7% of frames the operator marked in view (target > 95%)
+  marker         7.1% of frames with the hoop seen
+  jitter       u 0.0273  v 0.0168  major 0.0210  ratio 0.0139   (per frame; hold still for this to mean noise)
+  dropouts     2, longest 29 frames, median 20
+  sysid        delay_steps 4, tau 0.25, max_speed 0.65, max_up_speed 0.4, up_exponent 1.55
+  pad seen       79% of airborne packets
+  settle       tof 83 cm, h 60 cm   (takeoff_height guessed 80 cm)

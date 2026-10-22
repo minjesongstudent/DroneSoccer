@@ -1,0 +1,4 @@
+Summary of 20261016-171408-policy
+  telemetry      9.8 Hz (median), worst gap 214 ms
+  video        960x720, 32.9 fps (median), worst gap 120 ms
+  pad seen        0% of airborne packets

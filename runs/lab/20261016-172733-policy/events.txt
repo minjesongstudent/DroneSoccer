@@ -1,0 +1,10 @@
+   0.000  connecting to 192.168.10.1
+   0.105  connected, battery 77%, temperature 67 C
+   0.319  mission pads on, downward
+   3.116  video reader open
+   3.117  policy: trainedModels/student-teacher5.zip
+   3.188  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   3.321  phase: countdown
+   4.365  land key
+   4.365  phase: land
+   4.693  ! land: Command 'land' was unsuccessful for 4 tries. Latest response:	'error'

@@ -1,0 +1,15 @@
+   0.000  connecting to 192.168.10.1
+   0.107  connected, battery 70%, temperature 75 C
+   0.315  mission pads on, downward
+   3.086  video reader open
+   3.086  policy: trainedModels/student-teacher5.zip
+   3.142  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   3.269  phase: countdown
+   8.166  phase: takeoff
+  14.050  phase: airborne check
+  15.060  phase: settle
+  18.068  phase: policy
+  23.132  ! too high: tof 208 cm, landing
+  23.132  phase: land
+  30.357  ! land: Command 'land' was unsuccessful for 4 tries. Latest response:	'Aborting command 'land'. Did not receive a response after 7 seconds'
+  51.538  ! land on exit failed: Command 'land' was unsuccessful for 4 tries. Latest response:	'Aborting command 'land'. Did not receive a response after 7 seconds'
