@@ -1,0 +1,6 @@
+   0.000  connecting to 192.168.10.1
+   0.107  connected, battery 67%, temperature 73 C
+   0.319  mission pads on, downward
+  12.402  ! video did not start: Failed to grab video frames from video stream
+  12.403  policy: trainedModels/student-teacher5.zip
+  12.464  ! no video, so no key window for Space and Esc. Not flying.

@@ -1,0 +1,9 @@
+   0.000  connecting to 192.168.10.1
+   0.162  connected, battery 58%, temperature 58 C
+   0.430  mission pads on, downward
+   2.662  video reader open
+   2.662  policy: trainedModels/student-teacher5.zip
+   2.764  taking off in 5 s. Click the video window: Space = emergency, Esc = land
+   2.934  phase: countdown
+   7.786  phase: takeoff
+   8.102  ! takeoff: refused at 60 C. If it is hot, cool it; after a crash or motor cut, power-cycle it
