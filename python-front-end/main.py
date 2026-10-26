@@ -1,14 +1,3 @@
-"""Manual flight window for a Ryze Tello / Tello EDU.
-
-Run from this folder after the computer has joined the Tello Wi-Fi:
-
-    pip install -r requirements.txt
-    python main.py
-
-The video window is this process's main window. Status and the command log
-open beside it. Latency is the age of the telemetry packet and of the camera
-frame, plus the round trip of the last command that expected a reply.
-"""
 
 from __future__ import annotations
 
@@ -29,7 +18,6 @@ from tello_session import (
     default_drone_host,
 )
 
-# Keyboard matches the existing controller.
 KEY_AXES = {
     "Up": ("fb", 1),
     "Down": ("fb", -1),
@@ -55,7 +43,6 @@ BORDER = "#4A5568"
 
 
 def _enable_sharp_text() -> None:
-    """Ask Windows to size Tk against the real display scale."""
     try:
         import ctypes
 
@@ -84,7 +71,6 @@ def _latency_color(milliseconds: float | None) -> str:
 
 
 class FlightApp:
-    """Video, sticks, and the two extra windows."""
 
     def __init__(self) -> None:
         self.session = TelloSession()
@@ -503,7 +489,6 @@ class FlightApp:
         self._run_drone_action("emergency", self.session.emergency)
 
     def _run_drone_action(self, label: str, action) -> None:
-        """Blocking SDK calls stay off the UI thread."""
 
         def work() -> None:
             try:
@@ -560,7 +545,6 @@ class FlightApp:
         command = self._latency_labels["command"]
         telemetry.configure(text=snapshot.telemetry_age, fg=_latency_color(snapshot.telemetry_age_ms))
         frame.configure(text=snapshot.frame_age, fg=_latency_color(snapshot.frame_age_ms))
-        # Takeoff and land include the aircraft action, so a multi-second value is not link latency.
         command_color = MUTED
         if snapshot.command_rtt_ms is not None and snapshot.command_rtt_ms < 1000:
             command_color = _latency_color(snapshot.command_rtt_ms)
@@ -578,7 +562,6 @@ class FlightApp:
         if snapshot.busy:
             flight += "  (busy)"
         left_right, forward, _vertical, yaw = snapshot.stick
-        # Vertical is a step, not an rc percent. Show the command the loop will send.
         if snapshot.stick[2] > 0:
             stick = f"up {ALTITUDE_STEP_CM}"
         elif snapshot.stick[2] < 0:
@@ -622,7 +605,6 @@ class FlightApp:
         self._command_text.configure(state="normal")
         for line in lines:
             self._command_text.insert("end", line + "\n")
-        # Keep the window from growing without limit.
         line_count = int(self._command_text.index("end-1c").split(".")[0])
         if line_count > 800:
             self._command_text.delete("1.0", "200.0")

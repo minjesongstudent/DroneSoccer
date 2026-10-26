@@ -1,33 +1,3 @@
-"""PPO with a privileged critic and a recurrent actor, warm-started by DAgger on src.teacher.
-
-Run: python -m src.train --algo ppo --steps 20000000 --name ppo-v1 --randomise --level 1
-     (hpc: ./ds submit 6 20000000 ppo-v1 --algo ppo --randomise --level 1)
-
-Why not SAC: at 3M steps the teacher3 students (teacher3-12s-height) passed the first
-hoop on 82-88% of flights and never lapped, and 38-46% of flights ended turning back
-through the hoop (wrong_way). Three changes:
-  - The critic sees HoopEnv.privileged(), the true state, as well as the policy input.
-    The lap is flown blind, and a critic on blank frames values every blind state
-    alike, so it cannot say which blind command was the right one. The actor still sees
-    the policy input and nothing else, so what flies on the drone is unchanged.
-  - The actor has a GRU on top of the 12 s of slots. It can carry where it is round
-    the lap for as long as the hoop stays out of view, past the window's end too.
-  - On-policy, with no replay buffer: a seed steps ROLLOUT_ENVS simulators in turn on
-    its one core, and takes no gradient step per env step. SAC trained at ~50 steps/s
-    on the 430 inputs, held back by its updates; the sim alone runs ~1500 steps/s.
-
-Warm start (DAgger): teacher3 decides its blind moves from the policy input alone, so a
-student can copy those exactly. The first round flies the teacher, with DEMO_NOISE on
-its commands. Later rounds fly the student more and more (DAGGER_BETA), and the teacher
-labels every state the student reaches, so the student learns to recover from its own
-mistakes, which a fixed set of demos never shows it. After every round the actor is
-cloned on all the labels so far. Then the critic learns the student's values with
-the actor frozen (CRITIC_WARMUP), because the first policy steps would otherwise follow
-a random critic (the SAC fine-tune collapse). Then PPO takes over, still pulled towards the
-teacher's labels by a BC term that halves every BC_HALF_LIFE steps. Every step flown
-counts towards --steps, the teacher's too. The search stays learned: the teacher
-only labels training states and never flies on the drone.
-"""
 from __future__ import annotations
 
 import math
@@ -41,52 +11,41 @@ from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
 from src import contract, plots, train
-# LOG_STD_* and MEMORY are imported so the settings line logs them with the rest.
-from src.actor import HIDDEN, LOG_STD_INIT, LOG_STD_MIN, MEMORY, Actor, normalised, save_actor  # noqa: F401
-from src.sim import PRIVILEGED_DIM, HoopEnv
-from src.teacher import Teacher
+from src.actor import HIDDEN, LOG_STD_INIT, LOG_STD_MIN, MEMORY, Actor, normalised, save_actor
+from src.sim import GATED_DIM, PRIVILEGED_DIM, HoopEnv
+from src.params import Randomise
+from src.teacher import LearnedTeachers, Teacher
 
-ROLLOUT_ENVS = 16        # simulators per seed, stepped in turn on one core
-ROLLOUT_STEPS = 128      # steps per simulator per update: 2048 a rollout
+ROLLOUT_ENVS = 16
+ROLLOUT_STEPS = 128
 EPOCHS = 5
-MINIBATCHES = 4          # of whole simulator sequences, so the GRU runs through them in order
+MINIBATCHES = 4
 GAE_LAMBDA = 0.95
 CLIP_RANGE = 0.2
-TARGET_KL = 0.02         # stop an update's epochs past 1.5x this, so a cloned actor is not thrown off
+TARGET_KL = 0.02
 ACTOR_LR = 1e-4
 CRITIC_LR = 3e-4
 MAX_GRAD_NORM = 1.0
-# Values in units of 10 reward: a pass is 4, a crash -3, a minute of laps a few tens.
 REWARD_SCALE = 0.1
-# The actor's sizes and its spread (HIDDEN, MEMORY, LOG_STD_*) are in src/actor.py.
-STD_FLOOR = 0.1          # input normalisers never divide by less: inputs are O(1) already
+STD_FLOOR = 0.1
 CHECKPOINT_EVERY = 1_000_000
 
-DAGGER_BETA = (1.0, 0.5, 0.25, 0.0, 0.0, 0.0)   # per round: share of flights the teacher flies
-DAGGER_STEPS = 100_000   # per round
-# Over every label so far, after each round, and after the last. 3 a round left the clone
-# flying 0.01-0.12 passes/flight against the teacher's 2.9 (200 updates a round). A further
-# 40 epochs on the same labels (2026-10-10, 30 eval flights): loss 0.029 -> 0.014, 0.73
-# passes/flight, half its tries at a second pass made it, no wrong_way. Most of what is left is the
-# forward command with the hoop in view: the teacher starts its run in on true state
-# (within 3 cm and 3 degrees of the axis, still), which the input does not show, so the
-# clone averages hovering with running in. PPO's critic sees that state; that is its job.
+DAGGER_BETA = (1.0, 0.5, 0.25, 0.0, 0.0, 0.0)
+DAGGER_STEPS = 100_000
 BC_EPOCHS = 5
-BC_FINAL_EPOCHS = 40     # ~23 s an epoch on 600k labels: ~15 min
-BC_BATCH = 64            # sequences
-BC_BURN_IN = 32          # steps at the start of a mid-episode sequence that only rebuild the memory
+BC_FINAL_EPOCHS = 40
+BC_BATCH = 64
+BC_BURN_IN = 32
 BC_LR = 3e-4
-BC_WEIGHT = 1.0          # BC term's weight once PPO starts: squared command error
+BC_WEIGHT = 1.0
 BC_HALF_LIFE = 2_000_000
-BC_PPO_SEQUENCES = 8     # label sequences per PPO minibatch for the BC term, whatever --rollout-envs
-BC_MIN = 0.01            # below this weight the BC term is dropped, ~13M steps into PPO
-CRITIC_WARMUP = 500_000  # steps after DAgger with the actor frozen
+BC_PPO_SEQUENCES = 8
+BC_MIN = 0.01
+CRITIC_WARMUP = 500_000
 
 
-# --- the critic ----------------------------------------------------------------------------
 
 class Critic(nn.Module):
-    """Policy input and true state -> value, in REWARD_SCALE units."""
 
     def __init__(self, obs_dim: int = contract.POLICY_INPUT_DIM, priv_dim: int = PRIVILEGED_DIM):
         super().__init__()
@@ -100,8 +59,6 @@ class Critic(nn.Module):
 
 
 def fit_normaliser(module: nn.Module, *parts: np.ndarray):
-    """Set module's input scales from samples of each part of its input, (..., width) each,
-    in the order the input joins them."""
     flat = [p.reshape(-1, p.shape[-1]) for p in parts]
     module.mean.copy_(torch.as_tensor(np.concatenate([p.mean(0) for p in flat])))
     module.std.copy_(torch.as_tensor(np.maximum(np.concatenate([p.std(0) for p in flat]), STD_FLOOR)))
@@ -111,20 +68,21 @@ def log_prob(action, mean, std):
     return (-0.5 * ((action - mean) / std) ** 2 - torch.log(std) - 0.5 * math.log(2 * math.pi)).sum(-1)
 
 
-# --- the simulators ---------------------------------------------------------------------
 
 class Fleet:
-    """ROLLOUT_ENVS simulators on this core, each with a teacher to label its states.
-    A finished episode resets at once, so obs is always the next step's input."""
 
     def __init__(self, n: int, level: float, randomise: bool, run_in_share: float, seed: int,
-                 rng: np.random.Generator):
+                 rng: np.random.Generator, privileged_actor: str | None = None, teacher: str | None = None):
         self.envs = [HoopEnv(level=level, randomise=randomise, run_in_share=run_in_share) for _ in range(n)]
-        self.teachers = [Teacher() for _ in range(n)]
+        self.scripted = teacher is None
+        self.teachers = [Teacher() for _ in range(n)] if self.scripted else LearnedTeachers(teacher, n)
+        self.privileged_actor = privileged_actor
+        self.gating = privileged_actor == "gated" or (not self.scripted and self.teachers.gated)
         self.rng, self.n, self.beta = rng, n, 0.0
-        self.expert = np.zeros(n, bool)   # this episode is flown by the teacher
+        self.expert = np.zeros(n, bool)
         self.obs = np.zeros((n, contract.POLICY_INPUT_DIM), np.float32)
         self.priv = np.zeros((n, PRIVILEGED_DIM), np.float32)
+        self.gate = np.zeros((n, GATED_DIM), np.float32)
         self.starts = np.ones(n, np.float32)
         self.ep_reward = np.zeros(n)
         for k in range(n):
@@ -133,15 +91,15 @@ class Fleet:
     def _reset(self, k: int, seed=None):
         env = self.envs[k]
         self.obs[k] = env.reset(seed=seed)[0]
-        self.priv[k] = env.privileged()
-        self.teachers[k].reset(env)
+        self._read_state(k)
+        if self.scripted:
+            self.teachers[k].reset(env)
+        else:
+            self.teachers.reset(k)
         self.expert[k] = self.rng.uniform() < self.beta
         self.starts[k], self.ep_reward[k] = 1.0, 0.0
 
     def restart(self):
-        """Start every simulator on a new episode, drawn at the current beta. At a DAgger
-        round boundary this keeps an episode from being flown by one round's pilot and
-        counted in the next: the episodes cut off here are never reported."""
         for k in range(self.n):
             self._reset(k)
 
@@ -149,25 +107,46 @@ class Fleet:
         for env in self.envs:
             env.set_level(level)
 
+    def set_ranges(self, ranges: Randomise):
+        for env in self.envs:
+            env.ranges = ranges
+
+    def _read_state(self, k: int):
+        env = self.envs[k]
+        self.priv[k] = env.privileged()
+        if self.gating:
+            self.gate[k] = env.gated(self.priv[k])
+
+    def _view(self, gated: bool) -> np.ndarray:
+        return self.gate if gated else self.priv
+
+    def inputs(self) -> np.ndarray:
+        if not self.privileged_actor:
+            return self.obs.copy()
+        return np.concatenate([self.obs, self._view(self.privileged_actor == "gated")], 1)
+
+    def _input(self, k: int) -> np.ndarray:
+        if not self.privileged_actor:
+            return self.obs[k].copy()
+        return np.concatenate([self.obs[k], self._view(self.privileged_actor == "gated")[k]])
+
     def labels(self) -> np.ndarray:
-        """The teacher's command for every simulator's current state. Call it every step
-        of an episode or none: the teacher counts steps since it last saw the hoop."""
+        if not self.scripted:
+            return self.teachers.act(self.obs, self._view(self.teachers.gated))
         return np.stack([t.act(e, o) for t, e, o in zip(self.teachers, self.envs, self.obs)])
 
     def step(self, actions: np.ndarray, value_of):
-        """Step every simulator. Returns rewards, dones and the episodes that ended
-        (info, flown by the teacher, episode reward). A timeout bootstraps: its reward
-        gets GAMMA times the critic's value of the state it was cut off in."""
         rewards, dones, ended = np.zeros(self.n, np.float32), np.zeros(self.n, np.float32), []
         self.starts[:] = 0.0
         for k, env in enumerate(self.envs):
             obs, reward, terminated, truncated, info = env.step(actions[k])
             self.ep_reward[k] += reward
             rewards[k] = REWARD_SCALE * reward
-            self.obs[k], self.priv[k] = obs, env.privileged()
+            self.obs[k] = obs
+            self._read_state(k)
             if terminated or truncated:
                 if truncated and not terminated:
-                    rewards[k] += contract.GAMMA * value_of(self.obs[k], self.priv[k])
+                    rewards[k] += contract.GAMMA * value_of(self._input(k), self.priv[k])
                 dones[k] = 1.0
                 ended.append((info, bool(self.expert[k]), float(self.ep_reward[k])))
                 self._reset(k)
@@ -176,12 +155,8 @@ class Fleet:
 
 def collect(fleet: Fleet, actor: Actor, critic: Critic, h: torch.Tensor, steps: int,
             label: bool = False, noise: float = train.DEMO_NOISE):
-    """steps steps of every simulator. The student acts, sampled, except in episodes the
-    teacher flies (fleet.beta of them), where the teacher's command plus noise does.
-    Returns the rollout as (steps, n, ...) arrays, the GRU state after it, and the
-    episodes that ended."""
     n = fleet.n
-    roll = {"obs": np.zeros((steps, n, contract.POLICY_INPUT_DIM), np.float32),
+    roll = {"obs": np.zeros((steps, n, actor.obs_dim), np.float32),
             "priv": np.zeros((steps, n, PRIVILEGED_DIM), np.float32),
             "actions": np.zeros((steps, n, contract.ACTION_DIM), np.float32),
             "logp": np.zeros((steps, n), np.float32), "values": np.zeros((steps, n), np.float32),
@@ -198,11 +173,12 @@ def collect(fleet: Fleet, actor: Actor, critic: Critic, h: torch.Tensor, steps: 
     with torch.no_grad():
         std = actor.std_now()
         for t in range(steps):
-            obs, priv = torch.as_tensor(fleet.obs), torch.as_tensor(fleet.priv)
+            x = fleet.inputs()
+            obs, priv = torch.as_tensor(x), torch.as_tensor(fleet.priv)
             starts = torch.as_tensor(fleet.starts)
             mean, h = actor.step(obs, h * (1.0 - starts)[:, None])
             action = mean + std * torch.randn_like(mean)
-            roll["obs"][t], roll["priv"][t], roll["starts"][t] = fleet.obs, fleet.priv, fleet.starts
+            roll["obs"][t], roll["priv"][t], roll["starts"][t] = x, fleet.priv, fleet.starts
             roll["logp"][t] = log_prob(action, mean, std).numpy()
             roll["values"][t] = critic(obs, priv).numpy()
             act = action.numpy()
@@ -214,13 +190,11 @@ def collect(fleet: Fleet, actor: Actor, critic: Critic, h: torch.Tensor, steps: 
             roll["actions"][t] = act
             roll["rewards"][t], roll["dones"][t], done = fleet.step(act, value_of)
             ended += done
-        roll["last_value"] = critic(torch.as_tensor(fleet.obs), torch.as_tensor(fleet.priv)).numpy()
+        roll["last_value"] = critic(torch.as_tensor(fleet.inputs()), torch.as_tensor(fleet.priv)).numpy()
     return roll, h, ended
 
 
 def advantages(roll: dict, gamma: float = contract.GAMMA, lam: float = GAE_LAMBDA):
-    """GAE over the rollout. dones[t] means step t ended its episode, so nothing after it
-    counts; a timeout's bootstrap is already in its reward."""
     values, rewards, dones = roll["values"], roll["rewards"], roll["dones"]
     adv = np.zeros_like(rewards)
     last = np.zeros(rewards.shape[1], np.float32)
@@ -233,16 +207,8 @@ def advantages(roll: dict, gamma: float = contract.GAMMA, lam: float = GAE_LAMBD
     return adv, adv + values
 
 
-# --- DAgger's labels ----------------------------------------------------------------------
 
 class Labels:
-    """Every DAgger round's states as sequences of ROLLOUT_STEPS steps, with the teacher's
-    command for each. float16, so 600k steps of 430 inputs take ~0.5 GB.
-
-    The GRU's memory is not stored: what the collecting actor held means nothing to the
-    actor after the next clone. Each sequence replays from a clear memory, and its first
-    BC_BURN_IN steps only rebuild it and are not scored, unless an episode starts there,
-    where a clear memory is the true one."""
 
     def __init__(self):
         self.parts = {"obs": [], "labels": [], "starts": []}
@@ -258,15 +224,13 @@ class Labels:
     def joined(self) -> dict:
         if self._joined is None:
             self._joined = {k: np.concatenate(v) for k, v in self.parts.items()}
-            self.parts = {k: [v] for k, v in self._joined.items()}   # one copy, not two
+            self.parts = {k: [v] for k, v in self._joined.items()}
         return self._joined
 
     def __len__(self):
         return sum(len(x) for x in self.parts["obs"])
 
     def loss(self, actor: Actor, idx) -> torch.Tensor:
-        """Mean squared error of the actor's command against the teacher's, over sequences
-        idx, on the steps scored (the class docstring)."""
         d = self.joined
         obs = torch.as_tensor(d["obs"][idx].astype(np.float32)).transpose(0, 1)
         starts = torch.as_tensor(d["starts"][idx]).T
@@ -288,7 +252,6 @@ class Labels:
 
 
 def clone(actor: Actor, labels: Labels, optimiser, rng, epochs: int = BC_EPOCHS) -> float:
-    """Fit the actor to every label so far; returns the last epoch's mean loss."""
     for _ in range(epochs):
         losses = []
         order = rng.permutation(len(labels))
@@ -302,11 +265,8 @@ def clone(actor: Actor, labels: Labels, optimiser, rng, epochs: int = BC_EPOCHS)
     return float(np.mean(losses))
 
 
-# --- progress -------------------------------------------------------------------------------
 
 class Tracker:
-    """The student's episodes, in a train.Episodes as train.Progress keeps them for SAC, and
-    the TensorBoard numbers. Teacher-flown episodes are left out."""
 
     def __init__(self, total: int, level: float, writer: SummaryWriter, start_steps: int):
         self.episodes = train.Episodes(total, level)
@@ -358,7 +318,6 @@ def _flights(ended, expert: bool) -> str:
 
 
 def _log_dir(name: str, resume: bool) -> Path:
-    """runs/<name>_<N>, as SB3 numbers them: the newest on --resume, else a new one."""
     train.RUNS.mkdir(parents=True, exist_ok=True)
     try:
         newest = plots.find_log_dir(name, train.RUNS)
@@ -368,12 +327,9 @@ def _log_dir(name: str, resume: bool) -> Path:
     return newest if resume else train.RUNS / f"{name}_{n + 1}"
 
 
-# --- training ---------------------------------------------------------------------------------
 
 def update(actor, critic, opt_actor, opt_critic, roll, rng, train_actor: bool,
            labels: Labels | None, bc_weight: float) -> dict:
-    """PPO's epochs over one rollout. Minibatches are whole simulator sequences, so the
-    actor's GRU replays them from the state it started the rollout in."""
     adv, ret = advantages(roll)
     adv_n = (adv - adv.mean()) / (adv.std() + 1e-8)
     t = {k: torch.as_tensor(roll[k]) for k in ("obs", "priv", "actions", "logp", "starts", "h0")}
@@ -417,10 +373,6 @@ def update(actor, critic, opt_actor, opt_critic, roll, rng, train_actor: bool,
 
 
 def snapshot(folder: Path, total: int, state: dict, labels: Labels | None = None):
-    """What --resume needs, through train.write_snapshot as SAC's: state.pt holds the
-    networks, optimisers and where the run is (state's keys), and labels.npz the teacher's
-    labels. Labels are written only while DAgger adds to them: written each time, a
-    snapshot would cost a 0.5 GB write a million steps."""
     files = {"state.pt": lambda f: torch.save(state, f)}
     if labels is not None:
         files["labels.npz"] = lambda f: np.savez(f, **labels.joined)
@@ -431,31 +383,37 @@ def snapshot(folder: Path, total: int, state: dict, labels: Labels | None = None
 def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, resume: bool = False,
               dagger: int = len(DAGGER_BETA), run_in_share: float = train.RUN_IN_SHARE,
               select_episodes: int = train.SELECT_EPISODES, rollout_envs: int = ROLLOUT_ENVS,
-              bc_weight: float = BC_WEIGHT) -> Path:
+              bc_weight: float = BC_WEIGHT, privileged_actor: str | None = None, teacher: str | None = None) -> Path:
     constants = {k: v for k, v in globals().items() if k.isupper() and isinstance(v, (int, float, str, tuple))}
     print(train.settings(extra=constants, algo="ppo", steps=steps, seed=seed, level=level, randomise=randomise,
                          resume=resume, dagger=dagger, run_in_share=run_in_share,
-                         select_episodes=select_episodes, rollout_envs=rollout_envs, bc_weight=bc_weight),
+                         select_episodes=select_episodes, rollout_envs=rollout_envs, bc_weight=bc_weight,
+                         privileged_actor=privileged_actor, teacher=teacher),
           flush=True)
     if rollout_envs < MINIBATCHES:
-        # Fewer simulators than minibatches leaves some empty: NaN losses, no KL stop.
         raise ValueError(f"rollout_envs {rollout_envs} is below MINIBATCHES {MINIBATCHES}")
     out = train.RUNS / name
     folder = out / "resume"
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    actor, critic = Actor(), Critic()
+    privileged_actor = {True: "full", False: None}.get(privileged_actor, privileged_actor)
+    if privileged_actor not in (None, "full", "gated"):
+        raise ValueError(f"privileged_actor {privileged_actor!r}: None, 'full' or 'gated'")
+    in_dim = contract.POLICY_INPUT_DIM + {None: 0, "full": PRIVILEGED_DIM, "gated": GATED_DIM}[privileged_actor]
+    actor, critic = Actor(in_dim), Critic(in_dim)
     opt_actor = torch.optim.Adam(actor.parameters(), ACTOR_LR)
     opt_critic = torch.optim.Adam(critic.parameters(), CRITIC_LR)
     opt_clone = torch.optim.Adam(actor.parameters(), BC_LR)
-    # Where the run is, all saved in every snapshot, so a resume follows the run it carries on
-    # and not the options it was resumed with, nor files an older run of the name left behind.
     run = {"steps": 0, "level": level, "phase": "dagger" if dagger else "scales", "next_round": 0,
            "rounds": min(dagger, len(DAGGER_BETA)), "ppo_start": 0,
            "warmup": CRITIC_WARMUP if dagger else 0, "labels": False}
     labels = None
     if resume:
         state = torch.load(folder / "state.pt", map_location="cpu", weights_only=False)
+        saved = state["actor"]["mean"].shape[0]
+        if saved != in_dim:
+            raise SystemExit(f"{folder} holds an actor on {saved} inputs; this code builds {in_dim} "
+                             f"(the policy input changed since). Start the run again with ./ds submit.")
         for net, key in ((actor, "actor"), (critic, "critic"), (opt_actor, "opt_actor"),
                          (opt_critic, "opt_critic"), (opt_clone, "opt_clone")):
             net.load_state_dict(state[key])
@@ -463,12 +421,12 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
         level = run["level"]
         if run["labels"]:
             labels = Labels.load(folder / "labels.npz")
-        # A fresh seed, so the resumed run does not replay its first episode layouts.
         torch.manual_seed(seed + run["steps"])
         rng = np.random.default_rng(seed + run["steps"])
         print(f"resumed  from step {run['steps']} at level {level:.2f}", flush=True)
     done_steps = run["steps"]
-    fleet = Fleet(rollout_envs, level, randomise, run_in_share, seed + done_steps, rng)
+    fleet = Fleet(rollout_envs, level, randomise, run_in_share, seed + done_steps, rng,
+                  privileged_actor=privileged_actor, teacher=teacher)
     writer = SummaryWriter(str(_log_dir(name, resume)))
     tracker = Tracker(steps, level, writer, done_steps)
     h = actor.initial(rollout_envs)
@@ -482,8 +440,6 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
                  labels if with_labels else None)
 
     def fly(rounds: int, label: bool):
-        """Rollouts with no update, counted and tracked like any. Returns their episodes, the
-        policy inputs flown (None when labelled: the labels hold them) and the true states."""
         nonlocal h, done_steps
         ended, obs, privs = [], [], []
         for _ in range(rounds):
@@ -507,7 +463,7 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
             fleet.beta = beta
             fleet.restart()
             ended, _, privs = fly(rollouts, label=True)
-            if i == 0:   # the teacher's flights set the input scales, all ~100k steps of them
+            if i == 0:
                 obs = labels.joined["obs"].astype(np.float32)
                 fit_normaliser(actor, obs)
                 fit_normaliser(critic, obs, privs)
@@ -521,14 +477,12 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
             run["next_round"] = i + 1
             if last:
                 fleet.beta = 0.0
-                fleet.restart()   # no teacher-flown episode runs on into PPO
-                # The clone alone, before PPO changes it: pick_best scores it with the rest.
-                save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip")
+                fleet.set_ranges(Randomise())
+                fleet.restart()
+                save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip", privileged_actor)
                 run.update(phase="ppo", ppo_start=done_steps)
-            # Every round, so a job cut off in DAgger loses one round at most.
             save(with_labels=True)
     elif run["phase"] == "scales":
-        # No teacher: the untrained actor's own flights set the scales, as many as DAgger's first round.
         _, obs, privs = fly(rollouts, label=False)
         fit_normaliser(actor, obs)
         fit_normaliser(critic, obs, privs)
@@ -544,14 +498,14 @@ def train_ppo(steps: int, name: str, seed: int, level: float, randomise: bool, r
         tracker.add(ended, fleet, done_steps)
         since = done_steps - ppo_start
         weight = bc_weight * 0.5 ** (since / BC_HALF_LIFE) if labels is not None else 0.0
-        weight = weight if weight >= BC_MIN else 0.0   # it costs half the update
+        weight = weight if weight >= BC_MIN else 0.0
         scalars = update(actor, critic, opt_actor, opt_critic, roll, rng, since > warmup, labels, weight)
         scalars.update({"train/std": actor.std_now().mean().item(), "train/bc_weight": weight})
         tracker.record(done_steps, scalars)
         if done_steps // CHECKPOINT_EVERY > saved:
             saved = done_steps // CHECKPOINT_EVERY
-            save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip")
+            save_actor(actor, out / "checkpoints" / f"model_{done_steps}_steps.zip", privileged_actor)
             save()
     writer.close()
-    save_actor(actor, out / "final.zip")
+    save_actor(actor, out / "final.zip", privileged_actor)
     return train.pick_best(out, randomise, select_episodes)

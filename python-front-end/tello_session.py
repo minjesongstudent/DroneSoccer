@@ -1,10 +1,3 @@
-"""Tello EDU session for manual flight.
-
-Flight commands and the camera both go through djitellopy (the Tello library):
-connect, streamon, get_frame_read, send_rc_control, takeoff, and land.
-Horizontal sticks and yaw go out as rc. Climb and descent use short up/down
-moves because this airframe often ignores the up/down channel inside rc.
-"""
 
 from __future__ import annotations
 
@@ -24,24 +17,18 @@ import djitellopy.tello as tello_module
 from djitellopy import Tello, TelloException
 from djitellopy.tello import BackgroundFrameRead
 
-# The library prints every rc line at INFO. The command window is the log.
 Tello.LOGGER.setLevel(logging.WARNING)
 
-# Matches the existing controller: one altitude step per W/S hold cycle.
 ALTITUDE_STEP_CM = 30
 
-# rc axes are a percent of full stick, matching the Tello SDK range.
 MIN_STICK_SPEED = 15
 MAX_STICK_SPEED = 70
 DEFAULT_STICK_SPEED = 35
 
-# djitellopy waits this long inside get_frame_read while the UDP socket is already
-# open. streamon has to land in that window or the H.264 headers are missed.
 LIBRARY_FRAME_WAIT_S = 12
 
 
 def default_drone_host() -> str:
-    """Read the drone IP from the shared settings file when it is present."""
     settings_path = Path(__file__).resolve().parent.parent / "settings.json"
     try:
         payload = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -52,7 +39,6 @@ def default_drone_host() -> str:
 
 
 def format_duration(milliseconds: float | None) -> str:
-    """Format a measured duration for the latency readouts."""
     if milliseconds is None:
         return "—"
     if milliseconds >= 1000:
@@ -62,7 +48,6 @@ def format_duration(milliseconds: float | None) -> str:
 
 @dataclass(frozen=True)
 class DroneSnapshot:
-    """Immutable view of the link, copied onto the UI thread."""
 
     connected: bool
     connecting: bool
@@ -95,7 +80,6 @@ class DroneSnapshot:
 
 
 class TelloSession:
-    """Owns one Tello link, the stick loop, and the command log."""
 
     def __init__(self) -> None:
         self._io = threading.Lock()
@@ -135,7 +119,6 @@ class TelloSession:
         return self._message
 
     def set_channels(self, left_right: int, forward: int, vertical: int, yaw: int) -> None:
-        """Store the stick the flight loop will send. vertical is -1, 0, or 1."""
         self._channels = (
             _clamp(left_right, -100, 100),
             _clamp(forward, -100, 100),
@@ -155,7 +138,6 @@ class TelloSession:
                 return lines
 
     def note_video_frame(self, fresh: bool) -> None:
-        """Record when a new camera frame was displayed, for the latency readout."""
         now = time.perf_counter()
         if fresh:
             if self._last_frame_at is not None:
@@ -167,7 +149,6 @@ class TelloSession:
             self._frame_age_ms = (now - self._last_frame_at) * 1000.0
 
     def copy_frame(self):
-        """Return (is_new, rgb_copy) from djitellopy's BackgroundFrameRead."""
         frame = self._library_frame()
         if frame is None:
             return False, None
@@ -180,13 +161,11 @@ class TelloSession:
         return fresh, frame.copy()
 
     def video_placeholder(self) -> str:
-        """Text for the video surface until the library delivers a picture."""
         if not self._connected and not self._connecting:
             return "Enter the drone IP, then press Connect."
         return self._video_note or "Waiting for the Tello camera."
 
     def _library_frame(self):
-        """Latest real frame from the library. The reader starts on a black placeholder."""
         reader = self._reader
         if reader is None:
             return None
@@ -201,7 +180,6 @@ class TelloSession:
         return frame
 
     def connect(self, host: str) -> None:
-        """Enter SDK mode and open the camera. Safe to call off the UI thread."""
         host = host.strip()
         if not host:
             raise ValueError("Enter the drone IP address.")
@@ -265,7 +243,6 @@ class TelloSession:
             with self._io:
                 if self._stop.is_set():
                     return
-                # Drop any leftover stick before the land command.
                 drone.send_rc_control(0, 0, 0, 0)
                 drone.land()
             self._message = "Landed."
@@ -277,7 +254,6 @@ class TelloSession:
             self._busy = False
 
     def emergency(self) -> None:
-        """Cut the motors immediately. This is not a controlled landing."""
         drone = self._drone
         if drone is None or not self._connected:
             self._message = "No drone is connected."
@@ -294,7 +270,6 @@ class TelloSession:
             raise
 
     def hover(self) -> None:
-        """Zero the stick. The flight loop sends rc 0 0 0 0 on the next tick."""
         self._channels = (0, 0, 0, 0)
 
     def disconnect(self, land_first: bool = True) -> None:
@@ -329,7 +304,6 @@ class TelloSession:
         self._emit("# disconnected")
 
     def shutdown(self) -> None:
-        """Stop sticks, land if needed, and close the link."""
         self._sticks_live = False
         self._channels = (0, 0, 0, 0)
         self.disconnect(land_first=True)
@@ -379,12 +353,6 @@ class TelloSession:
         )
 
     def _start_camera(self, drone: Tello) -> None:
-        """Open the picture with Tello.get_frame_read, then Tello.streamon.
-
-        get_frame_read binds the library video port and waits there for packets.
-        streamon has to follow immediately. Extra SDK calls in between let that
-        wait expire, and the H.264 headers are gone.
-        """
         self._stop_camera()
         stop = threading.Event()
         self._video_stop = stop
@@ -413,10 +381,8 @@ class TelloSession:
         ).start()
 
     def _open_library_reader(self, drone: Tello, stop: threading.Event):
-        """Call get_frame_read on a side thread so this thread can send streamon."""
         self._release_library_reader(drone, self._reader)
         self._reader = None
-        # get_frame_read reuses a dead reader unless this is cleared.
         drone.background_frame_read = None
         box: dict = {}
 
@@ -436,7 +402,6 @@ class TelloSession:
             self._video_note = self._message
             self._emit(f"! UDP {port} is already used by {owner[1]} (pid {owner[0]}). Close it and connect again.")
             return None
-        # The previous decoder has to drop UDP 11111 before get_frame_read binds it.
         _wait_until_udp_closed(port, 2.0, stop)
         opener = threading.Thread(target=open_reader, name="tello-get-frame-read", daemon=True)
         opener.start()
@@ -452,7 +417,6 @@ class TelloSession:
                 if stop.is_set() or self._drone not in (None, drone):
                     opener.join(timeout=1.0)
                     return None
-                # Nothing else on the command socket here. streamon must meet the open wait.
                 drone.streamon()
         except TelloException as ex:
             self._emit(f"! streamon failed: {ex}")
@@ -473,7 +437,6 @@ class TelloSession:
         return reader
 
     def _watch_library_video(self, drone: Tello, stop: threading.Event, reader) -> None:
-        """Restart get_frame_read once if its decoder thread dies before a picture."""
         if stop.wait(5.0) or self._library_frame() is not None or self._reader is not reader:
             return
         error = getattr(reader, "_stream_error", None)
@@ -525,7 +488,6 @@ class TelloSession:
             drone.background_frame_read = None
 
     def _install_command_log(self, drone: Tello) -> None:
-        """Record every SDK command and the round trip of commands that reply."""
         original_with_return = drone.send_command_with_return
         original_without_return = drone.send_command_without_return
         session = self
@@ -541,7 +503,6 @@ class TelloSession:
             return response
 
         def send_command_without_return(command: str) -> None:
-            # rc is repeated many times a second. Keep a line only when it changes.
             if command.startswith("rc "):
                 if command != session._last_rc_line:
                     session._last_rc_line = command
@@ -551,8 +512,8 @@ class TelloSession:
                 session._emit(f"> {command}")
             original_without_return(command)
 
-        drone.send_command_with_return = send_command_with_return  # type: ignore[method-assign]
-        drone.send_command_without_return = send_command_without_return  # type: ignore[method-assign]
+        drone.send_command_with_return = send_command_with_return
+        drone.send_command_without_return = send_command_without_return
 
     def _require_idle_drone(self) -> Tello | None:
         with self._begin:
@@ -567,7 +528,6 @@ class TelloSession:
             return drone
 
     def _flight_loop(self) -> None:
-        """Send sticks until shutdown. Altitude steps block, so they skip the short wait."""
         while not self._stop.is_set():
             vertical_step = False
             try:
@@ -587,7 +547,6 @@ class TelloSession:
 
         left_right, forward, vertical, yaw = self._channels
         with self._io:
-            # Re-check after waiting for the socket so land/emergency is not overwritten.
             if self._stop.is_set() or not self._sticks_live or self._drone is not drone:
                 return False
             if vertical != 0 and time.perf_counter() >= self._vertical_pause_until:
@@ -597,7 +556,6 @@ class TelloSession:
                 else:
                     drone.move_down(ALTITUDE_STEP_CM)
                 return True
-            # The up/down rc channel stays 0. Height changes are the move above.
             drone.send_rc_control(left_right, forward, 0, yaw)
             return False
 
@@ -635,12 +593,10 @@ def _temperature(state: dict) -> str:
 
 
 def _udp_port_open(port: int) -> bool:
-    """True when some socket is already bound to this UDP port."""
     return _udp_listener(port) is not None
 
 
 def _udp_listener(port: int) -> tuple[int, str] | None:
-    """Return (pid, program name) for the socket bound to this UDP port."""
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
         output = subprocess.check_output(
@@ -666,7 +622,6 @@ def _udp_listener(port: int) -> tuple[int, str] | None:
 
 
 def _process_name(pid: int) -> str:
-    """Best-effort executable name. Falls back to the process id."""
     try:
         import ctypes
 
@@ -713,13 +668,6 @@ def _address_in_use(error: object) -> bool:
 
 
 def _install_library_video_hooks() -> None:
-    """Keep djitellopy's reader, and stop its decode thread from dying in silence.
-
-    The published reader only catches ExitError. Any other PyAV error ends the
-    thread and leaves the black placeholder in place, so the window never paints.
-    The UDP flags below are the ones the library comments out; without them
-    ffmpeg on Windows drops the Tello stream.
-    """
     if getattr(BackgroundFrameRead, "_drone_soccer_hooks", False):
         return
 
@@ -739,20 +687,15 @@ def _install_library_video_hooks() -> None:
             self._stream_error = ex
             Tello.LOGGER.error("Tello video decode stopped: %s", ex)
 
-    BackgroundFrameRead.__init__ = init  # type: ignore[method-assign]
-    BackgroundFrameRead.update_frame = update_frame  # type: ignore[method-assign]
-    BackgroundFrameRead._drone_soccer_hooks = True  # type: ignore[attr-defined]
+    BackgroundFrameRead.__init__ = init
+    BackgroundFrameRead.update_frame = update_frame
+    BackgroundFrameRead._drone_soccer_hooks = True
 
 
 _install_library_video_hooks()
 
 
 def _install_state_clock() -> None:
-    """Record a monotonic timestamp on every state packet.
-
-    The published 2.5.0 listener replaces the state dict and does not keep
-    when the datagram arrived, so telemetry age would otherwise stay blank.
-    """
     if getattr(Tello.udp_state_receiver, "_stamps_arrival", False):
         return
 
@@ -777,16 +720,14 @@ def _install_state_clock() -> None:
                 Tello.LOGGER.error(ex)
                 break
 
-    udp_state_receiver._stamps_arrival = True  # type: ignore[attr-defined]
-    Tello.udp_state_receiver = udp_state_receiver  # type: ignore[method-assign]
+    udp_state_receiver._stamps_arrival = True
+    Tello.udp_state_receiver = udp_state_receiver
 
 
-# Patch before the first Tello() starts the state thread.
 _install_state_clock()
 
 
 def _telemetry_age_ms(state: dict) -> float | None:
-    """Age of the newest state packet. This is the live link-latency figure."""
     received = state.get("received_at")
     if isinstance(received, datetime):
         return max(0.0, (datetime.now() - received).total_seconds() * 1000.0)

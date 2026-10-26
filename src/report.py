@@ -1,14 +1,3 @@
-"""One plain-text report per experiment: settings, results and warning flags.
-
-Run: python -m src.report <name> [--seeds N]      e.g. verticalBar_negative50CrashPenalty_noTimePenalty
-Read: cat trainingReports/<name>.txt
-
-Reads only the seed logs, runs/<name>_s<seed>.log, plus runs/<name>.args and
-each seed's eval.json. run_seeds.sh calls it when a job ends; run it by hand on a
-running job for a partial report. Each experiment writes only its own file, and
-writes it whole (tmp file, then rename), so jobs running at once never clash.
-Imports nothing heavy, so it is quick on the login node.
-"""
 from __future__ import annotations
 
 import argparse
@@ -24,24 +13,21 @@ RUNS = ROOT / "runs"
 REPORTS = ROOT / "trainingReports"
 MODELS = ROOT / "trainedModels"
 
-STALE_MIN = 10          # a log untouched this long with no result belongs to a dead run
-LEARNED = 0.1           # passes per episode (per minute in older runs) to count as having learned something
-HOVER_TIMEOUT = 0.5     # this share of timeouts with under LEARNED passes is hovering
-CRASH_HEAVY = 0.5       # crash share that earns a flag
-COLLAPSE = 0.5          # final below this share of the seed's peak is a collapse
-TAIL = 0.3              # "the end of training": this share of the progress lines
-CLIMBING = 0.1          # rising by this share over the tail: more steps may help
-STUCK_TAIL = 0.4        # curriculum level unchanged over this share of steps is stuck
-SMOOTH = 10             # progress lines averaged when judging a curve
+STALE_MIN = 10
+LEARNED = 0.1
+HOVER_TIMEOUT = 0.5
+CRASH_HEAVY = 0.5
+COLLAPSE = 0.5
+TAIL = 0.3
+CLIMBING = 0.1
+STUCK_TAIL = 0.4
+SMOOTH = 10
 
 PAIR = re.compile(r"([a-z_/]+)\s+(-?\d+(?:\.\d+)?)(%?)")
 FIRST_PASS = re.compile(r"first pass\s+(never|[\d.]+s)")
 PROGRESS = re.compile(r"^progress\s+(\d+)/(\d+)")
 LEVEL = re.compile(r"^level\s+([\d.]+) at step (\d+)")
 
-# Result columns, in this order when present. The first three are the headline
-# score: passes/ep for the laps mission, passes/min for its runs before 2026-10-04,
-# passed for the older single-pass runs.
 HEADLINES = ("passes/ep", "passes/min", "passed")
 COLUMNS = [("passes/ep", "pass/ep"), ("passes/min", "pass/min"), ("passed", "passed"),
            ("never_passed", "never"), ("lap_success", "laps"), ("crashed", "crashed"),
@@ -51,12 +37,10 @@ COLUMNS = [("passes/ep", "pass/ep"), ("passes/min", "pass/min"), ("passed", "pas
 
 
 def pairs(text: str) -> dict[str, float]:
-    """`key 1.5  other 20%` as {key: 1.5, other: 0.2}. Tolerant of format changes."""
     return {k: float(v) / (100 if pct else 1) for k, v, pct in PAIR.findall(text)}
 
 
 def parse_result(line: str) -> dict:
-    """A `policy ...` or `baseline ...` line from evaluate.report, either format."""
     body = line.split(None, 1)[1] if " " in line else ""
     first = FIRST_PASS.search(body)
     result = pairs(FIRST_PASS.sub("", body))
@@ -80,7 +64,7 @@ def parse_log(path: Path) -> dict:
         elif line.startswith("baseline "):
             seed["baseline"] = parse_result(line)
         elif re.match(r"^[\w.]*(Error|Exception|Interrupt)\b", line):
-            seed["error"] = line    # the last line of a traceback says what went wrong
+            seed["error"] = line
     if seed["policy"]:
         seed["status"] = "done"
     elif seed["error"] or seed["age_min"] >= STALE_MIN:
@@ -91,14 +75,12 @@ def parse_log(path: Path) -> dict:
 
 
 def score(result: dict | None) -> float | None:
-    """The headline number: passes/ep, or passes/min or the pass share for older runs."""
     if not result:
         return None
     return next((result[k] for k in HEADLINES if k in result), None)
 
 
 def curve(seed: dict) -> list[tuple[int, float]]:
-    """The training score over steps, from the progress lines."""
     points = []
     for step, _, values in seed["progress"]:
         value = next((values[k] for k in ("passes/ep", "passes/min", "pass_rate") if k in values), None)
@@ -119,7 +101,6 @@ def final_level(seed: dict) -> float | None:
 
 
 def best_seed(seeds: dict[int, dict], name: str) -> int | None:
-    """run_seeds.sh's pick: eval.json's (ready, passes_per_ep). Else the best log score."""
     evals = {}
     for s in seeds:
         path = RUNS / f"{name}_s{s}" / "eval.json"
@@ -208,7 +189,6 @@ def _list(seeds) -> str:
 
 
 def _constants(line: str) -> str:
-    """A settings line without the per-launch options, to compare across resumes."""
     return " ".join(p for p in line.split() if p.split("=")[0].isupper() or p.startswith("git="))
 
 
@@ -243,7 +223,7 @@ def results_table(seeds: dict[int, dict], best: int | None) -> list[str]:
     lines = [header]
     for label, status, result, d in rows:
         result = result or {}
-        if not d["policy"] and d["progress"]:   # running: show the training numbers
+        if not d["policy"] and d["progress"]:
             last = d["progress"][-1][2]
             result = {k: last.get(k) for k in ("passes/ep", "passes/min", "crashed") if k in last}
         level = final_level(d)
@@ -277,7 +257,6 @@ def build(name: str, expected: int | None = None, job: str = "-") -> str:
     out = [name, f"job {job}   git {git}   {counts}{steps}",
            f"written {datetime.now():%Y-%m-%d %H:%M}", ""]
     out += ["SETTINGS"] + settings_table(line, args) + [""]
-    # What changed in the sim or reward for this run, in words: runs/<name>.notes.
     notes_file = RUNS / f"{name}.notes"
     if notes_file.exists():
         out += ["NOTES"] + [f"  {n}".rstrip() for n in notes_file.read_text().splitlines()] + [""]
@@ -301,8 +280,6 @@ def write(name: str, expected: int | None = None) -> Path:
     REPORTS.mkdir(exist_ok=True)
     path = REPORTS / f"{name}.txt"
     old = path.read_text() if path.exists() else ""
-    # Outside the job there is no PBS_JOBID, and ./ds report passes no --seeds:
-    # keep what the job itself wrote rather than blanking it.
     job = os.environ.get("PBS_JOBID", "").split(".")[0]
     if not job:
         m = re.search(r"^job (\S+)", old, re.M)
@@ -310,7 +287,6 @@ def write(name: str, expected: int | None = None) -> Path:
     if expected is None and (m := re.search(r"seeds \d+/(\d+)", old)):
         expected = int(m.group(1))
     new = build(name, expected, job)
-    # Only rewrite on a real change, so viewing a report leaves git clean.
     if _without_date(new) != _without_date(old):
         tmp = path.with_suffix(f".tmp{os.getpid()}")
         tmp.write_text(new)

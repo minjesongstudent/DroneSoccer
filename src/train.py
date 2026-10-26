@@ -1,24 +1,3 @@
-"""Train SAC on the hoop simulator.
-
-Run: python -m src.train --steps 3000000 --name laps-v1
-Watch: tensorboard --logdir runs
-    rollout/passes_per_ep and curriculum/level are the numbers that matter
-
-Saves a checkpoint to runs/<name>/checkpoints/ every CHECKPOINT_EVERY steps and
-runs/<name>/final.zip at the end. Then it scores every checkpoint and the final
-model on SELECT_EPISODES episodes of their own (checkpoints.json) and copies the
-best to runs/<name>/model.zip: seeds have peaked at 1.3M steps and collapsed by 5M.
-That one is evaluated against the baseline on the held-out episodes, then the
-training curves go to runs/<name>/plots/. The
-policy's scores also go to runs/<name>/eval.json, which run_seeds.sh reads to
-keep only the best seed's models.
-See what a checkpoint does: python -m src.replay --model runs/<name>/checkpoints/<file>.zip
-
-At each checkpoint it also overwrites runs/<name>/resume/ with everything needed
-to carry on: the model with its optimisers, the replay buffer and the curriculum
-level. Continue a run that was cut off with the same command plus --resume;
---steps is still the total, not the steps left.
-"""
 from __future__ import annotations
 
 import argparse
@@ -47,46 +26,19 @@ from src.demo_buffer import DemoReplayBuffer
 from src.teacher import Teacher
 
 RUNS = ROOT / "runs"
-CHECKPOINT_EVERY = 250_000   # steps; ~3 MB each, without the replay buffer
-BUFFER_SIZE = 1_000_000      # SB3's default; ~700 MB in each resume snapshot
-# --init flies the loaded policy this long, unchanged, before the first update. With
-# SB3's 5k random steps the first 1k updates on so small a buffer wiped out the
-# lap (2.04 passes/ep to 0.28); 200k of its own flying kept it near 2.
+CHECKPOINT_EVERY = 250_000
+BUFFER_SIZE = 1_000_000
 INIT_WARMUP = 200_000
-# --demos flies src.teacher before the first update and keeps its flights for the whole
-# run, so the critic sees the whole mission from the start: the blind climb until the
-# hoop is in view, passes, and the way round. From scratch, the first passes came only
-# after 150-240k steps at level 0 (firstpass-curriculum), and the new detector makes
-# them rarer. They fly the real start (level 1), whatever the curriculum level. Noise
-# on the teacher's actions widens what they cover (the first teacher: 0.1 cost little,
-# 0.2 crashed 27% of flights). They go in a buffer of their own (demo_buffer.py) that
-# supplies DEMO_SHARE of every batch: in the ordinary buffer they were gone by 1M steps,
-# before the curriculum reached the start they show.
 DEMO_LEVEL = 1.0
 DEMO_NOISE = 0.1
-DEMO_SHARE = 0.25       # RLPD uses 0.5
-DEMO_SEED = 2_000_000   # layouts apart from training's and evaluate.EVAL_SEED's
+DEMO_SHARE = 0.25
+DEMO_SEED = 2_000_000
 
-# Run-in starts (sim.RUN_IN_*): this share of training episodes starts lined up
-# 0.6-1.0 m in front of the hoop, whatever the curriculum level, so the blind last
-# half metre of a pass gets practised. teacher2-level1 stopped there on the drone.
-# They do not count towards the curriculum (Progress), and evaluation never has them.
 RUN_IN_SHARE = 0.1
 
-# Picking the model: every checkpoint and the final model fly SELECT_EPISODES episodes
-# from SELECT_SEED, apart from evaluation's, so the reported score is not the one it
-# was picked on. Ranked as run_seeds.sh ranks seeds (scores()).
 SELECT_EPISODES = 50
 SELECT_SEED = 3_000_000
 
-# Curriculum: step the start level up by LEVEL_STEP once LEVEL_UP of the last
-# LEVEL_WINDOW episodes made at least LEVEL_PASSES passes, however they ended.
-# The level only changes the start, so its bar is the first pass. A second pass
-# needs the lap, which is the same at every level: at 2 passes, leaving level 0
-# meant lapping as well as the best model yet (seenflag-s1-level1 s1: 2+ passes in
-# 71% of level-0 episodes), and 7 of 8 seeds from scratch never left it. Level 0
-# also never needs a line-up, which the lap's second pass does. Lasting the minute
-# with MISSION_PASSES+ passes is the mission's bar, which scores() ranks seeds by.
 LEVEL_STEP = 0.25
 LEVEL_WINDOW = 200
 LEVEL_UP = 0.7
@@ -95,34 +47,27 @@ MISSION_PASSES = 2
 
 
 class Episodes:
-    """The last LEVEL_WINDOW training episodes: they raise the curriculum level and make
-    the progress line. Progress (SAC) and src.ppo's Tracker keep one each, so both
-    algorithms climb the curriculum and print their progress the same way, which
-    src.report and hpc/progress.sh read. Run-in starts are kept apart."""
 
     def __init__(self, total: int, level: float = 0.0, every: int = 10_000):
         self.total, self.level, self.every = total, level, every
         self.recent = deque(maxlen=LEVEL_WINDOW)
-        self.run_ins = deque(maxlen=LEVEL_WINDOW)   # run-in starts, kept apart
+        self.run_ins = deque(maxlen=LEVEL_WINDOW)
         self.start_clock(0)
 
     def start_clock(self, steps: int):
-        """The progress line's elapsed and eta count from here: non-zero after --resume."""
         self.start, self.start_steps = time.time(), steps
         self.printed = steps // self.every
 
     def add(self, info: dict, reward: float):
-        """reward: the episode's summed (unscaled) reward."""
         if info.get("run_in"):
             self.run_ins.append(info["passes"] > 0)
         else:
             self.recent.append({**info, "reward": reward})
 
     def level_up(self) -> bool:
-        """Step the level up if the full window met the bar. The caller tells its envs."""
         if len(self.recent) == LEVEL_WINDOW and self.ready() >= LEVEL_UP and self.level < 1.0:
             self.level = min(1.0, self.level + LEVEL_STEP)
-            self.recent.clear()   # judge the new level on its own episodes
+            self.recent.clear()
             return True
         return False
 
@@ -136,24 +81,17 @@ class Episodes:
         return float(np.mean([i["outcome"] in CRASHES for i in self.recent]))
 
     def ready(self) -> float:
-        """Share of recent episodes with LEVEL_PASSES+ passes, however they ended."""
         return float(np.mean([i["passes"] >= LEVEL_PASSES for i in self.recent]))
 
     def summary(self) -> str:
         if not self.recent:
             return "-"
-        # ready: how close the level-up is. It counts over up to LEVEL_WINDOW
-        # episodes, and the level only rises once the window is full.
         ready = f"ready {self.ready():.0%}/{LEVEL_UP:.0%} of {len(self.recent)}/{LEVEL_WINDOW} eps"
-        # Episodes that end before the minute are crashes.
         seconds = np.mean([i["steps"] for i in self.recent]) * Drone().dt
         return (f"passes/ep {self.passes_per_ep():.2f}  reward/ep {self.reward_per_ep():.2f}  "
                 f"crashed {self.crash_rate():.0%}  ep {seconds:.0f}s  level {self.level:.2f}  {ready}")
 
     def progress_line(self, steps: int) -> str | None:
-        """The line to print once every `every` steps, else None. N parallel envs raise
-        the count by N, so an exact multiple may never come round: it fires on the
-        step that crosses one instead."""
         if steps // self.every <= self.printed:
             return None
         self.printed = steps // self.every
@@ -164,8 +102,6 @@ class Episodes:
 
 
 class Progress(BaseCallback):
-    """Logs how the last training episodes went, raises the curriculum level,
-    and prints a one-line progress report every `every` steps."""
 
     def __init__(self, total: int, every: int = 10_000):
         super().__init__()
@@ -180,7 +116,7 @@ class Progress(BaseCallback):
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
             if not done:
                 continue
-            episodes.add(info, info["episode"]["r"])   # Monitor's episode sum
+            episodes.add(info, info["episode"]["r"])
             if info.get("run_in"):
                 self.logger.record("rollout/run_in_passed", float(np.mean(episodes.run_ins)))
                 continue
@@ -197,10 +133,6 @@ class Progress(BaseCallback):
 
 
 def scores(results: list[dict]) -> dict:
-    """What run_seeds.sh ranks seeds by. ready is the mission's bar: the share of
-    episodes that last the full minute with MISSION_PASSES+ passes. The curriculum's
-    bar is looser: one pass, however the episode ended. Passes are per episode, not
-    per minute flown, which flattered seeds that pass once and crash within seconds."""
     return {"ready": float(np.mean([r["outcome"] == "timeout" and r["passes"] >= MISSION_PASSES
                                     for r in results])),
             "passes_per_ep": float(np.mean([r["passes"] for r in results])),
@@ -208,8 +140,6 @@ def scores(results: list[dict]) -> dict:
 
 
 class Snapshot(BaseCallback):
-    """Every CHECKPOINT_EVERY steps, overwrites `folder` with what --resume needs.
-    Only one copy is kept: the replay buffer alone is ~700 MB."""
 
     def __init__(self, folder: Path, total: int):
         super().__init__()
@@ -232,10 +162,6 @@ class Snapshot(BaseCallback):
 
 
 def write_snapshot(folder: Path, state: dict, files: dict):
-    """Write `files` ({name: writer(file)}) and state.json ({steps, total, level}, which
-    ds resume reads) into folder. Every file is written in full before any is replaced,
-    so a job killed mid-save still leaves the previous snapshot to resume from.
-    src.ppo's snapshots go through here too."""
     folder.mkdir(parents=True, exist_ok=True)
     files = {**files, "state.json": lambda f: f.write(json.dumps(state).encode())}
     for file, write in files.items():
@@ -247,14 +173,10 @@ def write_snapshot(folder: Path, state: dict, files: dict):
 
 
 def settings(extra: dict | None = None, **args) -> str:
-    """One `settings` line for the log: the run's options, every constant in
-    contract.py and sim.py, the constants here, any `extra` (src.ppo's), and the git commit.
-    src.report reads it back, so a report shows what the run was trained with
-    even after contract.py or sim.py is edited for the next experiment."""
     constants = {k: v for scope in (vars(contract), vars(sim), globals()) for k, v in scope.items()
                  if k.isupper() and isinstance(v, (int, float, str, tuple))}
     constants.update(extra or {})
-    try:  # compute nodes have no git
+    try:
         git = subprocess.run(["git", "describe", "--always", "--dirty"], cwd=ROOT,
                              capture_output=True, text=True).stdout.strip() or "unknown"
     except FileNotFoundError:
@@ -265,34 +187,18 @@ def settings(extra: dict | None = None, **args) -> str:
 
 
 def make_env(level: float, randomise: bool, envs: int, run_in_share: float = 0.0):
-    """One environment, or `envs` of them in their own processes.
-
-    Stepping is numpy and the policy runs on CPU, so copies scale nearly
-    linearly. train_freq and gradient_steps rise with them, which keeps the
-    ratio of steps flown to gradients taken the same as with one.
-    """
     def one():
         return Monitor(HoopEnv(level=level, randomise=randomise, run_in_share=run_in_share))
     return one() if envs == 1 else SubprocVecEnv([one] * envs)
 
 
 class PolicyWarmup(SAC):
-    """SAC that fills its buffer with its own policy's actions before learning
-    starts, not uniform random ones, so a loaded policy keeps flying as it did."""
 
     def _sample_action(self, learning_starts, action_noise=None, n_envs=1):
         return super()._sample_action(0, action_noise, n_envs)
 
 
 def grown(init: str, env, seed: int, envs: int, buffer: dict | None = None) -> SAC:
-    """A fresh model for `env` with a trained model's networks, optimiser state and
-    entropy coefficient, and an empty replay buffer (fine-tuning). Unlike --resume,
-    this needs only the model.zip.
-
-    If the saved policy input was shorter, the inputs added after it (the seen-hoop
-    flag) get zero weights in the actor and both critics, so the new model acts and
-    values exactly as the old one did until training changes them.
-    """
     old = SAC.load(init, device="cpu")
     model = PolicyWarmup("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
                          gamma=old.gamma, learning_rate=old.learning_rate,
@@ -305,13 +211,10 @@ def grown(init: str, env, seed: int, envs: int, buffer: dict | None = None) -> S
     if added < 0:
         raise ValueError(f"{init} takes {n_old} inputs, more than the {n_old + added} the env gives")
     if added > 1:
-        # Growing only appends inputs at the end (the flag). A different history
-        # layout moves every input, so zero columns at the end would scramble the old weights.
         raise ValueError(f"{init} takes {n_old} inputs and the env gives {n_old + added}: only the flag can be "
                          f"added. Set contract.SLOT_STEPS to the layout the model was trained on")
 
     def widen(old_t, new_t):
-        # First layers read [obs, (action)]: insert zero columns where the old obs ended.
         if old_t.shape == new_t.shape:
             return old_t.clone()
         zeros = old_t.new_zeros(old_t.shape[0], added, *old_t.shape[2:])
@@ -334,7 +237,6 @@ def grown(init: str, env, seed: int, envs: int, buffer: dict | None = None) -> S
 
 
 def demo_buffer(demos: int, share: float) -> dict:
-    """SAC's replay buffer options: with demos, a DemoReplayBuffer to hold them."""
     if not demos:
         return {}
     return {"replay_buffer_class": DemoReplayBuffer,
@@ -342,8 +244,6 @@ def demo_buffer(demos: int, share: float) -> dict:
 
 
 def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
-    """Fly src.teacher for `steps` steps into model's teacher buffer, one flight per
-    environment at a time, and say how the flights went."""
     n = model.n_envs
     buffer = model.replay_buffer.demos
     envs = [HoopEnv(level=DEMO_LEVEL, randomise=randomise) for _ in range(n)]
@@ -364,7 +264,6 @@ def add_demos(model: SAC, steps: int, randomise: bool, seed: int) -> str:
             after.append(o)
             rewards.append(r)
             dones.append(terminated or truncated)
-            # As SB3's VecEnv marks it: a timeout bootstraps, a crash does not.
             infos.append({"TimeLimit.truncated": truncated and not terminated})
             if terminated or truncated:
                 flights, passes, crashes = flights + 1, passes + info["passes"], crashes + terminated
@@ -392,7 +291,6 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
     if resume:
         model = SAC.load(snapshot / "model.zip", env=env, device="cpu")
         model.load_replay_buffer(snapshot / "replay_buffer.pkl")
-        # A fresh seed, so the resumed run does not replay its first episode layouts.
         model.set_random_seed(seed + model.num_timesteps)
         print(f"resumed  from step {model.num_timesteps} at level {level:.2f}", flush=True)
     elif init:
@@ -403,15 +301,13 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
         model = SAC("MlpPolicy", env, seed=seed, device="cpu", verbose=0,
                     gamma=contract.GAMMA,
                     train_freq=envs, gradient_steps=envs,
-                    learning_starts=5_000,   # fill the buffer with random flying first
+                    learning_starts=5_000,
                     buffer_size=BUFFER_SIZE, **demo_buffer(demos, demo_share),
                     tensorboard_log=str(RUNS))
-    if demos and not resume:   # a resumed run's buffer has them already
+    if demos and not resume:
         print(f"demos    {add_demos(model, demos, randomise, seed)}", flush=True)
     checkpoints = CheckpointCallback(CHECKPOINT_EVERY // envs, str(out / "checkpoints"),
                                      name_prefix="model")
-    # With reset_num_timesteps=False, learn() counts total_timesteps on from the
-    # loaded step count and appends to the same tensorboard run.
     model.learn(total_timesteps=steps - model.num_timesteps,
                 callback=[Progress(steps), checkpoints, Snapshot(snapshot, steps)],
                 tb_log_name=name, reset_num_timesteps=not resume)
@@ -420,9 +316,6 @@ def train(steps: int, name: str, seed: int, level: float, randomise: bool,
 
 
 def pick_best(out: Path, randomise: bool, episodes: int) -> Path:
-    """Copy the best of the checkpoints and final.zip to out/model.zip, scored on
-    `episodes` selection episodes, and write every score to checkpoints.json.
-    With episodes 0, final.zip is the model."""
     candidates = [out / "final.zip"]
     if episodes:
         candidates += sorted((out / "checkpoints").glob("model_*_steps.zip"),
@@ -474,19 +367,33 @@ if __name__ == "__main__":
                         help="ppo: simulators stepped in turn on the seed's one core (default ppo.ROLLOUT_ENVS)")
     parser.add_argument("--bc-weight", type=float,
                         help="ppo: weight of the pull towards the teacher's labels as PPO starts (default ppo.BC_WEIGHT)")
+    parser.add_argument("--privileged-actor", nargs="?", const="full", choices=("full", "gated"),
+                        help="ppo: the actor also reads the sim's true state, all of it (full, the "
+                             "default) or only as far as a student could know it (gated: "
+                             "sim.HoopEnv.gated). Trains a teacher for --teacher, never a policy for the drone")
+    parser.add_argument("--teacher",
+                        help="ppo: label DAgger with this privileged actor (a --privileged-actor run's "
+                             "model) instead of src.teacher's teacher3")
     args = parser.parse_args()
     if args.init and args.resume:
         parser.error("--init and --resume do not mix")
     if args.algo == "ppo" and (args.init or args.demos or args.envs != 1):
         parser.error("--init, --demos and --envs are SAC's; ppo warm-starts by --dagger and steps --rollout-envs")
-    if args.algo == "sac" and any(v is not None for v in (args.dagger, args.rollout_envs, args.bc_weight)):
-        parser.error("--dagger, --rollout-envs and --bc-weight need --algo ppo")
+    if args.algo == "sac" and (any(v is not None for v in (args.dagger, args.rollout_envs, args.bc_weight))
+                               or args.privileged_actor or args.teacher):
+        parser.error("--dagger, --rollout-envs, --bc-weight, --privileged-actor and --teacher need --algo ppo")
 
     if args.algo == "ppo":
         from src import ppo
         if args.rollout_envs is not None and args.rollout_envs < ppo.MINIBATCHES:
             parser.error(f"--rollout-envs must be at least ppo.MINIBATCHES ({ppo.MINIBATCHES})")
-        given = {"dagger": args.dagger, "rollout_envs": args.rollout_envs, "bc_weight": args.bc_weight}
+        if args.teacher and not Path(args.teacher).exists():
+            named = ROOT / "trainedModels" / f"{args.teacher}.zip"
+            if not named.exists():
+                parser.error(f"--teacher {args.teacher}: no such file, and no {named}")
+            args.teacher = str(named)
+        given = {"dagger": args.dagger, "rollout_envs": args.rollout_envs, "bc_weight": args.bc_weight,
+                 "privileged_actor": args.privileged_actor or None, "teacher": args.teacher}
         path = ppo.train_ppo(args.steps, args.name, args.seed, args.level, args.randomise, args.resume,
                              run_in_share=args.run_in_share, select_episodes=args.select_episodes,
                              **{k: v for k, v in given.items() if v is not None})
@@ -504,7 +411,6 @@ if __name__ == "__main__":
     print("policy   ", report(results))
     print("baseline ", report(evaluate(baseline.Lapper())))
     (path.parent / "eval.json").write_text(json.dumps(scores(results)))
-    # Last, and never fatal: the model and scores matter more than the pictures.
     try:
         print(f"plots    {save_plots(args.name)}")
     except Exception as e:

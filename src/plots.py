@@ -1,11 +1,3 @@
-"""Training curves as PNGs, read back from a run's TensorBoard log.
-
-train.py calls this when a run finishes. For runs that already exist:
-Run: python -m src.plots <name> [<name> ...]   e.g. centredist-pass25-3m_s0
-
-Writes runs/<name>/plots/<chart>.png for each chart below, plus overview.png
-with all of them on one page.
-"""
 from __future__ import annotations
 
 import argparse
@@ -14,7 +6,7 @@ from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")  # the HPC has no display
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, PercentFormatter
@@ -24,11 +16,9 @@ from src.params import ROOT
 
 RUNS = ROOT / "runs"
 
-# TensorBoard tag, file name, title; charts a run did not log are skipped. Progress first, then the training-health
-# diagnostics, which say whether training is stable but not whether it is working.
 CHARTS = [
     ("rollout/passes_per_ep", "passes_per_ep", "Passes per episode (last 200 episodes)"),
-    ("rollout/passes_per_min", "passes_per_min", "Passes per minute (last 200 episodes)"),   # runs before 2026-10-04
+    ("rollout/passes_per_min", "passes_per_min", "Passes per minute (last 200 episodes)"),
     ("curriculum/level", "curriculum_level", "Curriculum level"),
     ("rollout/crash_rate", "crash_rate", "Crash rate (last 200 episodes)"),
     ("rollout/ep_rew_mean", "episode_reward", "Episode reward"),
@@ -38,17 +28,15 @@ CHARTS = [
     ("train/ent_coef", "entropy_coef", "Entropy coefficient"),
 ]
 
-RAW = "#b7d3f6"       # blue 150: every logged point, recedes
-SMOOTH = "#2a78d6"    # blue 450: the trend
+RAW = "#b7d3f6"
+SMOOTH = "#2a78d6"
 INK = "#52514e"
 GRID = "#e4e3df"
 SURFACE = "#fcfcfb"
-SMOOTHING = 0.9       # TensorBoard-style exponential moving average weight
+SMOOTHING = 0.9
 
 
 def find_log_dir(name: str, runs: Path | None = None) -> Path:
-    """The newest TensorBoard directory for a run. SB3 writes runs/<name>_<N>, and src.ppo
-    numbers its own the same way through here, so the two always agree."""
     runs = runs or RUNS
     pattern = re.compile(rf"^{re.escape(name)}_(\d+)$")
     found = [(int(m.group(1)), p) for p in runs.iterdir() if (m := pattern.match(p.name))]
@@ -58,7 +46,7 @@ def find_log_dir(name: str, runs: Path | None = None) -> Path:
 
 
 def read_scalars(log_dir: Path) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    events = EventAccumulator(str(log_dir), size_guidance={"scalars": 0})  # 0 keeps every point
+    events = EventAccumulator(str(log_dir), size_guidance={"scalars": 0})
     events.Reload()
     return {tag: (np.array([e.step for e in events.Scalars(tag)]),
                   np.array([e.value for e in events.Scalars(tag)]))
@@ -92,7 +80,6 @@ def _draw(ax, steps, values, title, tag):
 
 
 def save_plots(name: str, log_dir: Path | None = None) -> Path:
-    """Write every chart in CHARTS that the log contains. Returns the plots directory."""
     scalars = read_scalars(log_dir or find_log_dir(name))
     charts = [c for c in CHARTS if c[0] in scalars and len(scalars[c[0]][0])]
     out = RUNS / name / "plots"

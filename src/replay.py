@@ -1,18 +1,3 @@
-"""See how a policy flies: replay episodes and draw each flight path.
-
-Run: python -m src.replay --model runs/<name>/model.zip
-     python -m src.replay --model runs/<name>/checkpoints/model_1000000_steps.zip
-     python -m src.replay --baseline
-Options: --episodes 6, --level 1.0, --randomise, --out <dir>,
-         --no-hanger for models trained before the hanger was modelled
-
-Uses the evaluation layouts (evaluate.EVAL_SEED), so episode k here is episode k
-there. Writes one PNG per episode, two views each:
-    from above   the cage, the hoop and the path, light (start) to dark (end)
-    face-on      the path as seen from the hoop's front, in front and behind in
-                 two colours, with the hanger: this shows which way it goes round
-Prints how each episode ended and which way every lap went round.
-"""
 from __future__ import annotations
 
 import argparse
@@ -21,7 +6,7 @@ from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")  # the HPC has no display
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
@@ -34,17 +19,18 @@ from src.plots import GRID, INK, SURFACE
 from src import contract
 from src.sim import HoopEnv
 
-TIME = LinearSegmentedColormap.from_list("time", ["#b7d3f6", "#0d366b"])  # blue 150 -> 700
-FRONT, BACK = "#2a78d6", "#eb6834"   # categorical slots 1 and 2
+TIME = LinearSegmentedColormap.from_list("time", ["#b7d3f6", "#0d366b"])
+FRONT, BACK = "#2a78d6", "#eb6834"
 HOOP = "#0b0b0b"
-CRASH = "#e34948"                    # critical; always labelled
+CRASH = "#e34948"
 
 
 def fly(policy, env: HoopEnv, seed: int) -> dict:
-    """One episode: positions, pass points, routes and how it ended."""
     obs, info = env.reset(seed=seed)
     if hasattr(policy, "reset"):
         policy.reset()
+    if hasattr(policy, "bind"):
+        policy.bind(env)
     path, passes, routes, done = [info["drone_pos"]], [], [], False
     while not done:
         obs, _, terminated, truncated, info = env.step(policy(obs))
@@ -81,7 +67,6 @@ def draw(env: HoopEnv, run: dict, title: str, path: Path):
 
     fig, (top, face) = plt.subplots(1, 2, figsize=(11, 5.4), facecolor=SURFACE)
 
-    # From above.
     top.add_patch(Rectangle((0, 0), cage.length, cage.width, fill=False, ec=INK, lw=1))
     top.add_patch(Rectangle((m, m), cage.length - 2 * m, cage.width - 2 * m, fill=False,
                             ec=INK, lw=0.8, ls="--"))
@@ -99,11 +84,10 @@ def draw(env: HoopEnv, run: dict, title: str, path: Path):
     top.set_ylim(-0.05, cage.width + 0.05)
     _style(top, "From above   (light = early, dark = late; dashed = layout margin)")
 
-    # Face-on, looking from the front: +axis_h is the viewer's left, so negate it.
     rel = xyz - c
     across, up, depth = -(rel @ h), xyz[:, 2], rel @ n
     for sign, colour, label in ((-1, FRONT, "in front of the hoop"), (1, BACK, "behind the hoop")):
-        mask = np.sign(depth) == sign   # NaN breaks the line where the other side takes over
+        mask = np.sign(depth) == sign
         face.plot(np.where(mask, across, np.nan), np.where(mask, up, np.nan),
                   color=colour, lw=1.6, label=label)
     face.add_patch(Ellipse((0, c[2]), 2 * radius_h, 2 * radius_v, fill=False, ec=HOOP, lw=4))
